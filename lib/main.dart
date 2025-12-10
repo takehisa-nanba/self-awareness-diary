@@ -1,0 +1,41 @@
+// lib/main.dart
+
+import 'package:flutter/material.dart';
+import 'package:isar/isar.dart'; // DBを使う
+import 'package:path_provider/path_provider.dart'; // 保存場所を探す
+import 'models/diary_entry.dart'; // 設計図を読み込む
+import 'screens/mood_selector_screen.dart'; // 画面
+
+// アプリのどこからでもアクセスできる「金庫」の変数
+late Isar isar;
+
+void main() async {
+  // 1. おまじない（アプリの準備ができるまで待つ）
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. スマホの中の「書類保存フォルダ」の場所を探す
+  final dir = await getApplicationDocumentsDirectory();
+
+  // 3. その場所に「金庫（Isar）」を開く
+  // 以前作った設計図 (DiaryEntrySchema) を渡します
+  isar = await Isar.open([DiaryEntrySchema], directory: dir.path);
+
+  // 4. 準備ができたらアプリを起動
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Self Awareness Diary',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        useMaterial3: true,
+      ),
+      home: const MoodSelectorScreen(),
+    );
+  }
+}

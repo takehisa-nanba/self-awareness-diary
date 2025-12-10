@@ -1,0 +1,91 @@
+name: myapp
+description: "新しいFlutterプロジェクト"
+
+# 次の行は、パッケージが誤って `flutter pub publish` で pub.dev（公共の場所）に
+# 公開されるのを防ぎます。個人のアプリ開発ではこの設定が推奨されます。
+publish_to: 'none' # pub.dev に公開したい場合はこの行を削除してください
+
+# 以下は、アプリケーションのバージョンとビルド番号を定義します。
+# バージョン番号は 1.2.43 のようにドットで区切られた3つの数字で、
+# その後に + で区切られたビルド番号（オプション）が続きます。
+#
+# Androidでは: build-name が versionName に、build-number が versionCode になります。
+# iOSでは: build-name が CFBundleShortVersionString に、build-number が CFBundleVersion になります。
+# Windowsでは: build-name が製品バージョンの主要部分に、build-number がビルド接尾辞になります。
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+# Dependencies（依存関係）には、アプリが動作するために必要なパッケージを指定します。
+# パッケージの依存関係を最新バージョンに自動的にアップグレードするには、
+# `flutter pub upgrade --major-versions` を実行することを検討してください。
+# `flutter pub outdated` を実行すると、新しいバージョンがあるパッケージを確認できます。
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # ▼▼▼ ここから追加 ▼▼▼
+  isar: ^3.1.0            # データベース本体
+  isar_flutter_libs: ^3.1.0 # スマホ用エンジン
+  path_provider: ^2.1.2   # 保存場所を教えてくれる人
+  # ▲▲▲ ここまで追加 ▲▲▲
+
+  # 以下は、iOSスタイルのアイコンを使用するためのフォントを追加します。
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # 以下の "flutter_lints" パッケージには、良いコーディング習慣を推奨するための
+  # ルールセット（採点係）が含まれています。
+  # 設定はルートディレクトリにある `analysis_options.yaml` ファイルで行います。
+  flutter_lints: ^5.0.0
+  
+  # ▼▼▼ ここから追加 ▼▼▼
+  build_runner: ^2.4.8    # コード生成を実行する人
+  isar_generator: ^3.1.0  # Isarのコードを作る職人
+  # ▲▲▲ ここまで追加 ▲▲▲
+
+
+# このファイルの一般的なDart部分の情報については、以下のページを参照してください:
+# https://dart.dev/tools/pub/pubspec
+
+# 以下のセクションは Flutter パッケージに固有のものです。
+flutter:
+
+  # 次の行は、Material Icons フォントがアプリに含まれることを保証します。
+  # これにより、Material Icons クラスのアイコンを使用できるようになります。
+  uses-material-design: true
+
+  # アプリケーションに画像などのアセット（素材）を追加するには、
+  # 以下のように assets セクションを追加します:
+  # assets:
+  #   - images/a_dot_burr.jpeg
+  #   - images/a_dot_ham.jpeg
+
+  # 画像アセットは、解像度固有の「バリアント」を参照できます。詳細はこちら:
+  # https://flutter.dev/to/resolution-aware-images
+
+  # パッケージの依存関係からアセットを追加する方法の詳細はこちら:
+  # https://flutter.dev/to/asset-from-package
+
+  # アプリケーションにカスタムフォントを追加するには、この "flutter" セクションに
+  # fonts セクションを追加します。各エントリにはフォントファミリー名を持つ "family" キーと、
+  # フォントのアセットなどを指定する "fonts" キーが必要です。
+  # 例:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # パッケージの依存関係からのフォントについては、以下を参照してください:
+  # https://flutter.dev/to/font-from-package
