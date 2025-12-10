@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'tag_selection_screen.dart'; // 次の画面へのリンク
+import 'history_screen.dart'; // 履歴画面へのリンク
 
 class MoodSelectorScreen extends StatefulWidget {
   const MoodSelectorScreen({super.key});
@@ -26,7 +27,19 @@ class _MoodSelectorScreenState extends State<MoodSelectorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('今の気分は？')),
+      appBar: AppBar(title: const Text('今の気分は？'),
+      actions: [
+          IconButton(
+            icon: const Icon(Icons.history), // 時計マーク
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HistoryScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

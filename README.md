@@ -1,16 +1,21 @@
-# myapp
+# Self Awareness Diary (感情深掘り日記)
 
-A new Flutter project.
+自分の感情を記録し、その背後にある欲求（マズローの欲求階層説など）を深掘りして可視化するアプリ。
+「なぜ今、この気分なのか？」を客観視することで、自己理解を深めます。
 
-## Getting Started
+## 📱 機能
+- **感情入力:** 5段階の顔アイコンで今の気分を記録。
+- **要因タグ:** 「なぜその気分なのか？」をタグで選択（仕事、人間関係、達成感、安らぎなど）。
+- **データ保存:** 高速なNoSQLデータベース「Isar」を使用し、端末内にデータを安全に永続化。
 
-This project is a starting point for a Flutter application.
+## 🛠️ 技術スタック
+- **Framework:** Flutter
+- **Language:** Dart
+- **Database:** Isar
+- **Environment:** Project IDX / VS Code
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🚀 開発状況
+- [x] UI作成（気分選択画面）
+- [x] データベース連携（保存機能）
+- [x] 実機動作確認
+- [ ] 履歴表示機能（次回実装予定）
