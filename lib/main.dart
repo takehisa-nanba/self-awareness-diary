@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:isar/isar.dart'; // DBを使う
 import 'package:path_provider/path_provider.dart'; // 保存場所を探す
 import 'models/diary_entry.dart'; // 設計図を読み込む
-import 'screens/mood_selector_screen.dart'; // 画面
+import 'main_scaffold.dart'; // ★ ここを修正: アプリの骨組み（ナビゲーション）
 import 'package:intl/date_symbol_data_local.dart'; // 日付のローカライズ用
 
 // アプリのどこからでもアクセスできる「金庫」の変数
@@ -39,7 +39,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const MoodSelectorScreen(),
+      // ★ ここを修正: アプリの骨組み MainScaffold をホーム画面にする
+      home: const MainScaffold(),
     );
   }
 }

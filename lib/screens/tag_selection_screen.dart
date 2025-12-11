@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart'; // DBを使うための道具
 import '../main.dart'; // isar変数をもらう
 import '../models/diary_entry.dart'; // データの設計図
 
