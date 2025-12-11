@@ -3,9 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart'; // DBを使う
 import 'package:path_provider/path_provider.dart'; // 保存場所を探す
-import 'models/diary_entry.dart'; // 設計図を読み込む
-import 'main_scaffold.dart'; // ★ ここを修正: アプリの骨組み（ナビゲーション）
 import 'package:intl/date_symbol_data_local.dart'; // 日付のローカライズ用
+import 'main_scaffold.dart'; // ★ ここを修正: アプリの骨組み（ナビゲーション）
+import 'models/diary_entry.dart'; // 設計図を読み込む
+import 'models/record.dart'; // ★★★ 新しいモデルをインポート ★★★
 
 // アプリのどこからでもアクセスできる「金庫」の変数
 late Isar isar;
@@ -18,8 +19,11 @@ void main() async {
   final dir = await getApplicationDocumentsDirectory();
 
   // 3. その場所に「金庫（Isar）」を開く
-  // 以前作った設計図 (DiaryEntrySchema) を渡します
-  isar = await Isar.open([DiaryEntrySchema], directory: dir.path);
+  // 以前作った設計図 (RecordSchema) を渡します
+  isar = await Isar.open(
+    [RecordSchema], // 新しいモデルのスキーマを渡す
+    directory: dir.path,
+  );
 
   // 日付のローカライズを初期化（日本語対応）
   await initializeDateFormatting('ja_JP');
