@@ -35,6 +35,8 @@ dependencies:
   uuid: ^4.3.3            # UUID生成
   http: ^1.1.2            # HTTP:通信用
   fl_chart: ^0.68.0       # グラフ描画ライブラリ
+  google_generative_ai: ^0.4.7 # ★★★ Gemini API公式ライブラリ ★★★
+  flutter_dotenv: ^5.1.0 # ★★★ 環境変数管理ライブラリ ★★★
 
   # 以下は、iOSスタイルのアイコンを使用するためのフォントを追加します。
   cupertino_icons: ^1.0.8

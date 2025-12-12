@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import '../models/record.dart';
 import 'package:isar/isar.dart';
 import '../main.dart';
-import 'package:http/http.dart' as http; // AIアシスト用
+import '../services/gemini_service.dart';
+import 'package:flutter/foundation.dart';
 
 class HistoryDetailScreen extends StatefulWidget {
   final Record record;
@@ -66,26 +67,28 @@ class _HistoryDetailScreenState extends State<HistoryDetailScreen> {
       _aiQuestion = null;
     });
 
-    // TODO: 実際はGemini APIをコールし、記録データに基づいて質問を生成する
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // サービスを呼び出し、必要な記録データを渡す
+      final question = await geminiService.generateReflectionQuestion(
+        moodTags: widget.record.moodTags.join(', '),
+        eventText: widget.record.eventText,
+        moodScore: widget.record.moodScore,
+        location: widget.record.location,
+        weather: widget.record.weather,
+      );
+      
+      setState(() {
+        _aiQuestion = question;
+        _isLoadingAi = false;
+      });
 
-    // ★★★ 修正箇所: タグが空の場合に備える ★★★
-    final firstTag = widget.record.moodTags.isNotEmpty
-        ? widget.record.moodTags.first
-        : "未選択の感情"; // タグがない場合は代替テキストを使用
-
-    final eventSnippet = widget.record.eventText.length > 15
-        ? widget.record.eventText.substring(0, 15) + '...'
-        : widget.record.eventText;
-
-    // 要件定義に沿った「行動」に焦点を当てた質問を提示
-    final question =
-        "あなたが選択したタグ「${firstTag}」は、出来事（${eventSnippet}）のどの側面から生じ、その感情に**あなたはどのような行動（反応）**を取りましたか？その行動は適切でしたか？";
-
-    setState(() {
-      _aiQuestion = question;
-      _isLoadingAi = false;
-    });
+    } catch (e) {
+      setState(() {
+        _aiQuestion = "エラー: AIサービスの起動に失敗しました。";
+        _isLoadingAi = false;
+      });
+      debugPrint("AI Question Generation Failed: $e");
+    }
   }
 
   @override
