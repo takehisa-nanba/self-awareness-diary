@@ -1,40 +1,36 @@
-// lib/models/record.dart
+// lib/models/record.dart (isarId修正後の最終版)
 
 import 'package:isar/isar.dart';
+import 'package:flutter/foundation.dart';
 
-part 'record.g.dart'; // Isarに自動生成を依頼するファイル名
+part 'record.g.dart';
 
 // 記録データモデル (最終確定版)
 @collection
+@immutable // 不変性を宣言
 class Record {
-  // IsarのID（主キー）
-  Id isarId = Isar.autoIncrement;
+  // ★★★ 修正箇所1: isarIdをfinalかつNullableにする ★★★
+  // DB保存時はnullで渡され、保存後にIsarが値を割り当てる
+  final Id? isarId;
 
-  // 記録の一意な識別子 (Isarでの検索を高速化)
   @Index(unique: true)
   final String recordId;
 
-  // 記録日時
   final DateTime recordDate;
-
-  // 気分タグのリスト (Step 1)
   final List<String> moodTags;
-
-  // 気分スコア (1〜10) (Step 2)
   final int moodScore;
-
-  // 出来事の記述 (Step 2)
   final String eventText;
 
-  // ★★★ 外部データ（自動取得）★★★
+  // 外部データ
   final String location;
   final String weather;
 
-  // 自己分析/言語化（事後入力 - Step 3のデータ）
+  // 事後言語化
   final String selfAnalysis;
 
-  // コンストラクタ
+  // コンストラクタ (修正2: isarIdをコンストラクタに追加)
   Record({
+    this.isarId, // 修正2: 追加
     required this.recordId,
     required this.recordDate,
     required this.moodTags,
@@ -44,4 +40,29 @@ class Record {
     required this.weather,
     this.selfAnalysis = '',
   });
+
+  // copyWithメソッド (修正3: isarIdをcopyの対象に追加)
+  Record copyWith({
+    Id? isarId, // 修正3: 追加
+    String? recordId,
+    DateTime? recordDate,
+    List<String>? moodTags,
+    int? moodScore,
+    String? eventText,
+    String? location,
+    String? weather,
+    String? selfAnalysis,
+  }) {
+    return Record(
+      isarId: isarId ?? this.isarId, // 修正3: 追加
+      recordId: recordId ?? this.recordId,
+      recordDate: recordDate ?? this.recordDate,
+      moodTags: moodTags ?? this.moodTags,
+      moodScore: moodScore ?? this.moodScore,
+      eventText: eventText ?? this.eventText,
+      location: location ?? this.location,
+      weather: weather ?? this.weather,
+      selfAnalysis: selfAnalysis ?? this.selfAnalysis,
+    );
+  }
 }

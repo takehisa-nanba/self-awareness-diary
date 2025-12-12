@@ -2,10 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart'; // DBを使う
+import 'package:myapp/screens/new_entry_screen.dart';
 import 'package:path_provider/path_provider.dart'; // 保存場所を探す
 import 'package:intl/date_symbol_data_local.dart'; // 日付のローカライズ用
-import 'main_scaffold.dart'; // ★ ここを修正: アプリの骨組み（ナビゲーション）
-import 'models/diary_entry.dart'; // 設計図を読み込む
 import 'models/record.dart'; // ★★★ 新しいモデルをインポート ★★★
 
 // アプリのどこからでもアクセスできる「金庫」の変数
@@ -44,7 +43,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // ★ ここを修正: アプリの骨組み MainScaffold をホーム画面にする
-      home: const MainScaffold(),
+      home: const NewEntryScreen(),
     );
   }
 }

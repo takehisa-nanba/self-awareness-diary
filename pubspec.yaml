@@ -29,9 +29,12 @@ dependencies:
   isar: ^3.1.0            # データベース本体
   isar_flutter_libs: ^3.1.0 # スマホ用エンジン
   path_provider: ^2.1.2   # 保存場所を教えてくれる人
+  table_calendar: ^3.1.0  # カレンダー表示
   intl: ^0.20.2            # 日付のフォーマットなどを助けてくれる人
   geolocator: ^11.0.0     # 位置情報(GPS)
-  # ▲▲▲ ここまで追加 ▲▲▲
+  uuid: ^4.3.3            # UUID生成
+  http: ^1.1.2            # HTTP:通信用
+  fl_chart: ^0.68.0       # グラフ描画ライブラリ
 
   # 以下は、iOSスタイルのアイコンを使用するためのフォントを追加します。
   cupertino_icons: ^1.0.8

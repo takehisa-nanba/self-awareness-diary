@@ -1,10 +1,12 @@
-// lib/screens/history_screen.dart
+// lib/screens/history_screen.dart (修正後の全体)
 
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:isar/isar.dart';
-import 'package:intl/intl.dart'; // 日付整形用
-import '../main.dart'; // isar
-import '../models/diary_entry.dart'; // モデル
+import '../main.dart';
+import '../models/record.dart';
+// ★★★ 修正1: HistoryDetailScreenのインポートを追加 ★★★
+import 'history_detail_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -14,149 +16,184 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  List<DiaryEntry> _entries = [];
+  // カレンダーの状態管理
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
+  // 記録データを保持するリスト
+  List<Record> _records = [];
+  Map<DateTime, List<Record>> _recordsByDay = {};
 
   @override
   void initState() {
     super.initState();
-    _readDiaries();
+    _selectedDay = _focusedDay; // ★初期選択日をfocusedDayに設定★
+    _fetchRecords();
   }
 
-  // DBから読み込み
-  Future<void> _readDiaries() async {
-    // isar.diaryEntrys は、Isarの自動生成コードに依存
-    // Isarのバージョンによっては isar.diaryEntrys が isar.diaryEntrys になる
-    final entries = await isar.diaryEntrys.where().sortByDateDesc().findAll();
+  // Isar DBからデータを取得するロジック
+  Future<void> _fetchRecords() async {
+    final allRecords = await isar.records
+        .where()
+        .sortByRecordDateDesc()
+        .findAll();
+
+    final Map<DateTime, List<Record>> map = {};
+    for (var record in allRecords) {
+      final day = DateTime(
+        record.recordDate.year,
+        record.recordDate.month,
+        record.recordDate.day,
+      );
+      if (map[day] == null) {
+        map[day] = [];
+      }
+      map[day]!.add(record);
+    }
+
     setState(() {
-      _entries = entries;
+      _records = allRecords;
+      _recordsByDay = map;
     });
   }
 
-  // スコアごとのアイコン
-  String _getMoodIcon(int score) {
-    switch (score) {
-      case 1:
-        return '😫';
-      case 2:
-        return '😞';
-      case 3:
-        return '😐';
-      case 4:
-        return '🙂';
-      case 5:
-        return '😄';
-      default:
-        return '❓';
-    }
+  // 選択した日の記録リストを返す関数 (カレンダーのドット表示に使用)
+  List<Record> _getRecordsForDay(DateTime day) {
+    return _recordsByDay[DateTime(day.year, day.month, day.day)] ?? [];
   }
 
-  // スコアごとの色
-  Color _getMoodColor(int score) {
-    switch (score) {
-      case 1:
-        return Colors.blueGrey;
-      case 2:
-        return Colors.blueAccent;
-      case 3:
-        return Colors.green;
-      case 4:
-        return Colors.orange;
-      case 5:
-        return Colors.pinkAccent;
-      default:
-        return Colors.grey;
-    }
+  // スコアに基づいた色を返す (UIの視覚化 F-5)
+  Color _getScoreColor(int score) {
+    if (score >= 8) return Colors.green.shade600;
+    if (score >= 5) return Colors.amber.shade600;
+    return Colors.red.shade600;
   }
 
   @override
   Widget build(BuildContext context) {
-    // ★Scaffoldを外し、AppBarとBodyを直接返すように修正
-    return Column(
-      // 縦に並べるためにColumnを使用
-      children: [
-        AppBar(
-          title: const Text('これまでの記録'),
-          // 履歴/ホームはアプリの顔なので、elevationを調整すると良い
-          elevation: 1,
-        ),
-        Expanded(
-          child: _entries.isEmpty
-              ? const Center(child: Text('まだ記録がありません'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(10),
-                  itemCount: _entries.length,
-                  itemBuilder: (context, index) {
-                    final entry = _entries[index];
-                    final dateStr = DateFormat(
-                      'MM/dd(E) HH:mm',
-                      'ja', // 'ja' は 'ja_JP' の環境依存を避けるため
-                    ).format(entry.date);
+    // 選択された日の記録リストをフィルタリング
+    final List<Record> selectedDayRecords = _records.where((record) {
+      if (_selectedDay == null) return true;
+      // TableCalendarのisSameDayヘルパーを使用
+      return isSameDay(record.recordDate, _selectedDay!);
+    }).toList();
 
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: ListTile(
-                        // 感情スコアのアイコン
-                        leading: Text(
-                          _getMoodIcon(entry.moodScore),
-                          style: const TextStyle(fontSize: 32),
-                        ),
-                        // 日付と時刻
-                        title: Text(
-                          dateStr,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        // 投稿本文の先頭を表示 (視認性向上)
-                        trailing: SizedBox(
-                          width: 150, // 横幅を指定
+    return Scaffold(
+      appBar: AppBar(title: const Text('履歴を見る'), elevation: 1),
+      body: Column(
+        children: [
+          // 1. カレンダーウィジェット (F-5: カレンダー機能)
+          TableCalendar(
+            locale: 'ja_JP',
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: _focusedDay,
+            calendarFormat: _calendarFormat,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+            },
+
+            eventLoader: _getRecordsForDay,
+            calendarBuilders: CalendarBuilders(
+              markerBuilder: (context, day, events) {
+                if (events.isNotEmpty) {
+                  // ★★★ 修正3: Null Safety対応と型キャスト ★★★
+                  // eventsがRecord型であることを保証し、安全にmoodScoreにアクセス
+                  final recordList = events.cast<Record>();
+                  final avgScore =
+                      recordList
+                          .map((e) => e.moodScore)
+                          .reduce((a, b) => a + b) /
+                      recordList.length;
+                  final markerColor = _getScoreColor(avgScore.round());
+
+                  return Positioned(
+                    right: 1,
+                    bottom: 1,
+                    child: Container(
+                      width: 8.0,
+                      height: 8.0,
+                      decoration: BoxDecoration(
+                        color: markerColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  );
+                }
+                return null;
+              },
+            ),
+
+            onFormatChanged: (format) {
+              if (_calendarFormat != format) {
+                setState(() {
+                  _calendarFormat = format;
+                });
+              }
+            },
+            onPageChanged: (focusedDay) {
+              _focusedDay = focusedDay;
+            },
+          ),
+
+          const SizedBox(height: 8.0),
+
+          // 2. タイムライン表示エリア (F-5: タイムライン)
+          Expanded(
+            child: selectedDayRecords.isEmpty
+                ? Center(
+                    child: Text(
+                      _selectedDay != null &&
+                              isSameDay(_selectedDay!, DateTime.now())
+                          ? '今日の記録はありません'
+                          : (_selectedDay != null
+                                ? '${_selectedDay!.month}/${_selectedDay!.day} の記録はありません'
+                                : '日付を選択してください'),
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: selectedDayRecords.length,
+                    itemBuilder: (context, index) {
+                      final record = selectedDayRecords[index];
+
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: _getScoreColor(record.moodScore),
                           child: Text(
-                            entry.content.isNotEmpty
-                                ? entry.content.split('\n').first
-                                : '(本文なし)',
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.end,
-                            style: TextStyle(color: Colors.grey[700]),
+                            record.moodScore.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        // タグリスト
-                        subtitle: Wrap(
-                          spacing: 4,
-                          children: entry.tags
-                              .map(
-                                (tag) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    // withAlphaで透明度を設定し、警告を避ける
-                                    color: _getMoodColor(
-                                      entry.moodScore,
-                                    ).withAlpha(30),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: _getMoodColor(
-                                        entry.moodScore,
-                                      ).withAlpha(100),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    tag,
-                                    style: const TextStyle(fontSize: 10),
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                        title: Text(record.eventText),
+                        subtitle: Text(
+                          'タグ: ${record.moodTags.join(', ')} | ${record.weather} | ${record.location.split(',').first}',
                         ),
-                        onTap: () {
-                          // TODO: 詳細画面への遷移ロジック
+                        // ★★★ 修正2: onTapをasyncとして正しく定義 ★★★
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  HistoryDetailScreen(record: record),
+                            ),
+                          );
+                          _fetchRecords(); // 詳細画面から戻ったらデータを再取得
                         },
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ],
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

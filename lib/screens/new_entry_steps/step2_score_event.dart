@@ -1,136 +1,156 @@
-// lib/screens/new_entry_steps/step2_score_event.dart (修正後)
+// lib/screens/new_entry_steps/step2_score_event.dart (最新版)
 
 import 'package:flutter/material.dart';
 
 class Step2ScoreEventScreen extends StatelessWidget {
   final int moodScore;
-  final Function(int) onScoreChanged;
   final TextEditingController eventController;
+  final ValueChanged<int> onScoreChanged;
   final VoidCallback onContentChanged;
 
   const Step2ScoreEventScreen({
     super.key,
     required this.moodScore,
-    required this.onScoreChanged,
     required this.eventController,
+    required this.onScoreChanged,
     required this.onContentChanged,
   });
 
-  // ★★★ 修正箇所1: スコアに基づく色を取得 (赤 → 黄 → 緑のグラデーション) ★★★
+  // ★★★ 1. スコアに基づいて背景色を計算するロジック ★★★
   Color _getScoreColor(int score) {
-    // スコアを1から10の間に固定
+    // 範囲を1から10に固定
     final clampedScore = score.clamp(1, 10);
 
+    // スコア5（アンバー）を基準に、赤と緑に分ける
     if (clampedScore <= 5) {
-      // 1 (赤) から 5 (黄色) へのグラデーション
-      final t = (clampedScore - 1) / 4.0; // tは0.0から1.0に変化
-      // DarkRedからAmberへ補間
+      // 1 (濃赤) から 5 (濃アンバー) へのグラデーション
+      final t = (clampedScore - 1) / 4.0;
       return Color.lerp(Colors.red.shade700, Colors.amber.shade700, t)!;
     } else {
-      // 6 (黄色) から 10 (緑) へのグラデーション
-      // 5と6の間にギャップが生じないよう、補間開始を調整
-      final t = (clampedScore - 5) / 5.0; // tは0.0から1.0に変化
-      // AmberからGreenへ補間
+      // 6 (濃アンバー) から 10 (濃緑) へのグラデーション
+      // tは0.0 (スコア6) から 1.0 (スコア10) に変化
+      final t = (clampedScore - 5) / 5.0;
+      // 濃アンバーと濃緑の間で補間する
       return Color.lerp(Colors.amber.shade700, Colors.green.shade700, t)!;
     }
   }
 
+  // ★★★ 2. スコアに基づいて文字色を決定するロジック（コントラスト確保） ★★★
+  Color _getTextColor(int score) {
+    // スコア 4〜7 の中間色（濃い黄色/アンバー）は黒文字で見やすくする
+    if (score >= 4 && score <= 7) {
+      return Colors.black;
+    }
+    // それ以外（濃赤、濃緑）は白文字にする
+    return Colors.white;
+  }
+
+  // ★★★ 3. スコアに基づいて感情ワードを返すロジック ★★★
+  String _getMoodWord(int score) {
+    if (score >= 9) return '[最高] / [歓喜]';
+    if (score >= 7) return '[満足] / [良好]';
+    if (score == 6) return '[ニュートラル] / [普通]';
+    if (score == 5) return '【モヤっとする】 / [曖昧]'; // 要件に合わせた最重要ポイント
+    if (score >= 3) return '[不調] / [不安]';
+    return '[最悪] / [絶望]';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final Color displayColor = moodScore > 0
-        ? _getScoreColor(moodScore)
-        : Colors.grey;
-
-    // スコアボタンのサイズ定義
-    const unselectedSize = 30.0;
-    const selectedSize = 45.0;
+    // 選択されたスコアに基づいて色と文字色を決定
+    final displayColor = _getScoreColor(moodScore);
+    final displayTextColor = _getTextColor(moodScore);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 2-1. スコア評価 (10段階)
-          const Text(
-            'Step 2-1. 今の気分を10段階で評価してください',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-
-          Center(
-            // ★★★ 修正箇所2: WrapからRowに変更し、1行表示にする ★★★
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(10, (index) {
-                final score = index + 1;
-                final isSelected = score == moodScore;
-
-                return GestureDetector(
-                  onTap: () => onScoreChanged(score),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutBack,
-                    // ★★★ 修正箇所3: サイズを調整して1行に収める ★★★
-                    height: isSelected ? selectedSize : unselectedSize,
-                    width: isSelected ? selectedSize : unselectedSize,
-
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? _getScoreColor(score)
-                          : Colors.grey.shade200,
-                      shape: BoxShape.circle,
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: _getScoreColor(score).withAlpha(153),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Text(
-                      score.toString(),
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black87,
-                        fontWeight: FontWeight.bold,
-                        fontSize: isSelected ? 18 : 14, // フォントサイズも調整
-                      ),
+          // 1. 気分スコア表示エリア
+          Card(
+            color: displayColor, // ★★★ 色をスコアと連動 ★★★
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: 20.0,
+                horizontal: 16.0,
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    '今の気分スコアを選択してください',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: displayTextColor, // ★★★ 文字色をスコアと連動 ★★★
                     ),
                   ),
-                );
-              }),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-          Center(
-            child: Text(
-              moodScore > 0 ? '評価スコア: $moodScore / 10' : 'スコアを選択してください',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: displayColor,
+                  const SizedBox(height: 10),
+                  Text(
+                    '$moodScore / 10',
+                    style: TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: displayTextColor, // ★★★ 文字色をスコアと連動 ★★★
+                    ),
+                  ),
+                  Text(
+                    _getMoodWord(moodScore), // ★★★ 感情ワードを表示 ★★★
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: displayTextColor,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
 
+          const SizedBox(height: 20),
+
+          // 2. スコア選択ボタンエリア
+          Wrap(
+            spacing: 10.0,
+            runSpacing: 10.0,
+            alignment: WrapAlignment.center,
+            children: List.generate(10, (index) {
+              final score = index + 1;
+              return RawMaterialButton(
+                onPressed: () => onScoreChanged(score),
+                elevation: 2.0,
+                fillColor: _getScoreColor(score), // 各ボタンも色を付ける
+                padding: const EdgeInsets.all(12.0),
+                shape: const CircleBorder(),
+                constraints: const BoxConstraints(minWidth: 50, minHeight: 50),
+                child: Text(
+                  score.toString(),
+                  style: TextStyle(
+                    color: _getTextColor(score),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            }),
+          ),
+
           const SizedBox(height: 30),
 
-          // 2-2. 出来事入力
+          // 3. 出来事の入力エリア
           const Text(
-            'Step 2-2. 感情を引き起こした出来事を簡潔に',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            '【出来事】何がトリガーでしたか？',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           TextField(
-            onChanged: (_) => onContentChanged(),
             controller: eventController,
-            maxLines: 5,
+            onChanged: (text) => onContentChanged(),
+            maxLines: 4,
             decoration: const InputDecoration(
+              hintText: '例: プロジェクトの締め切りが近づいている。上司に褒められた。',
               border: OutlineInputBorder(),
-              hintText: '例：〇〇プロジェクトが完了した など',
             ),
           ),
         ],

@@ -131,6 +131,7 @@ Record _recordDeserialize(
 ) {
   final object = Record(
     eventText: reader.readString(offsets[0]),
+    isarId: id,
     location: reader.readString(offsets[1]),
     moodScore: reader.readLong(offsets[2]),
     moodTags: reader.readStringList(offsets[3]) ?? [],
@@ -139,7 +140,6 @@ Record _recordDeserialize(
     selfAnalysis: reader.readStringOrNull(offsets[6]) ?? '',
     weather: reader.readString(offsets[7]),
   );
-  object.isarId = id;
   return object;
 }
 
@@ -172,16 +172,14 @@ P _recordDeserializeProp<P>(
 }
 
 Id _recordGetId(Record object) {
-  return object.isarId;
+  return object.isarId ?? Isar.autoIncrement;
 }
 
 List<IsarLinkBase<dynamic>> _recordGetLinks(Record object) {
   return [];
 }
 
-void _recordAttach(IsarCollection<dynamic> col, Id id, Record object) {
-  object.isarId = id;
-}
+void _recordAttach(IsarCollection<dynamic> col, Id id, Record object) {}
 
 extension RecordByIndex on IsarCollection<Record> {
   Future<Record?> getByRecordId(String recordId) {
@@ -488,7 +486,23 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Record, Record, QAfterFilterCondition> isarIdEqualTo(Id value) {
+  QueryBuilder<Record, Record, QAfterFilterCondition> isarIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'isarId',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> isarIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'isarId',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> isarIdEqualTo(Id? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isarId',
@@ -498,7 +512,7 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> isarIdGreaterThan(
-    Id value, {
+    Id? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -511,7 +525,7 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> isarIdLessThan(
-    Id value, {
+    Id? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -524,8 +538,8 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> isarIdBetween(
-    Id lower,
-    Id upper, {
+    Id? lower,
+    Id? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {

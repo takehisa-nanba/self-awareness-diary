@@ -1,11 +1,11 @@
-// lib/screens/new_entry_steps/step1_mood_tag.dart
+// lib/screens/new_entry_steps/step1_mood_tag.dart (最新版)
 
 import 'package:flutter/material.dart';
+import 'package:myapp/data/mood_tags.dart'; // ★★★ 新しく作成したタグデータをインポート ★★★
 
-// 外部から必要なデータとコールバックを受け取るためのStatelessWidget
 class Step1MoodTagScreen extends StatelessWidget {
-  final Set<String> selectedTags; // 現在選択されているタグ
-  final Function(String tag) onTagSelected; // タグがタップされたときの処理
+  final Set<String> selectedTags;
+  final ValueChanged<String> onTagSelected;
 
   const Step1MoodTagScreen({
     super.key,
@@ -13,56 +13,125 @@ class Step1MoodTagScreen extends StatelessWidget {
     required this.onTagSelected,
   });
 
-  static const List<String> _moodTags = [
-    '楽しい',
-    '落ち着いている',
-    '集中',
-    '達成感',
-    'フラット',
-    '退屈',
-    'イライラ',
-    '不安',
-    '悲しい',
-    '疲労',
-  ];
-
   @override
   Widget build(BuildContext context) {
+    // 便宜上、全てのタグ（無料版のみ）を分類ごとにフィルタリング
+    final positiveTags = visibleMoodTags
+        .where((t) => t.category == TagCategory.positive)
+        .toList();
+    final flatTags = visibleMoodTags
+        .where((t) => t.category == TagCategory.flat)
+        .toList();
+    final negativeTags = visibleMoodTags
+        .where((t) => t.category == TagCategory.negative)
+        .toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Step 1. 今の気分に合うタグを選択してください',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            '今の気分に合うタグを選択してください（複数選択可）',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          const Text(
-            '（複数選択可。最低1つ選択してください。）',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+          const SizedBox(height: 20),
+
+          // --- ポジティブタグエリア ---
+          _buildTagSection(
+            title: 'ポジティブ (${positiveTags.length}個)',
+            tags: positiveTags,
+            context: context,
           ),
-          const SizedBox(height: 16),
+
+          // --- フラットタグエリア ---
+          _buildTagSection(
+            title: 'フラット (${flatTags.length}個)',
+            tags: flatTags,
+            context: context,
+          ),
+
+          // --- ネガティブタグエリア ---
+          _buildTagSection(
+            title: 'ネガティブ (${negativeTags.length}個)',
+            tags: negativeTags,
+            context: context,
+          ),
+
+          const SizedBox(height: 30),
+
+          // --- 有料版タグへの導線 (F-10) ---
+          _buildPremiumAd(context),
+        ],
+      ),
+    );
+  }
+
+  // タグセクションのウィジェット構築
+  Widget _buildTagSection({
+    required String title,
+    required List<MoodTag> tags,
+    required BuildContext context,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: tags.first.color,
+            ),
+          ),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8.0,
             runSpacing: 8.0,
-            children: _moodTags.map((tag) {
-              final isSelected = selectedTags.contains(tag);
+            children: tags.map((tag) {
+              final isSelected = selectedTags.contains(tag.name);
               return ActionChip(
-                label: Text(tag),
+                label: Text(tag.name),
+                onPressed: () => onTagSelected(tag.name),
                 backgroundColor: isSelected
-                    // ignore: deprecated_member_use
-                    ? Theme.of(context).primaryColor.withAlpha(25)
-                    : Colors.grey.shade100,
-                side: BorderSide(
-                  color: isSelected
-                      ? Theme.of(context).primaryColor
-                      : Colors.grey.shade300,
+                    ? tag.color
+                    : Colors.grey.shade200, // 選択時に色を付ける
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w600,
                 ),
-                onPressed: () => onTagSelected(tag), // 親ウィジェットのコールバックを呼び出す
+                side: BorderSide(
+                  color: tag.color,
+                  width: 1.5,
+                ), // ★★★ 枠線で分類を示す ★★★
               );
             }).toList(),
           ),
         ],
+      ),
+    );
+  }
+
+  // 有料プランへの広告ウィジェット
+  Widget _buildPremiumAd(BuildContext context) {
+    return Card(
+      color: Colors.indigo.shade50,
+      elevation: 2,
+      child: ListTile(
+        leading: const Icon(Icons.lock, color: Colors.indigo),
+        title: Text(
+          '${premiumTagCount}個の感情タグを解放',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: const Text('より詳細な感情を言語化し、自己覚知の粒度を細かくしましょう。'),
+        trailing: const Icon(Icons.arrow_forward_ios),
+        onTap: () {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('【有料プラン】課金プラン画面へ遷移')));
+        },
       ),
     );
   }
