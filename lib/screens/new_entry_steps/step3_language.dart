@@ -28,7 +28,7 @@ class Step3LanguageScreen extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const Text(
-            '自己覚知を深めるための重要なステップです。',
+            'このステップでは、あなたの感情や気分を自由に言葉で表現してください。履歴画面でも編集できます。',
             style: TextStyle(fontSize: 14, color: Colors.grey),
           ),
           const SizedBox(height: 8),
@@ -43,41 +43,6 @@ class Step3LanguageScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 30),
-
-          Card(
-            margin: const EdgeInsets.only(bottom: 20),
-            color: Colors.blueGrey.shade50,
-            elevation: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '📍 外部データ取得状況',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '位置情報: $locationString',
-                    style: TextStyle(
-                      color: locationString.contains('取得中') || locationString.contains('エラー') 
-                        ? Colors.red.shade700 
-                        : Colors.green.shade700
-                    ),
-                  ),
-                  Text(
-                    '天気情報: $weatherString',
-                    style: TextStyle(
-                      color: weatherString.contains('取得中') || weatherString.contains('エラー') 
-                        ? Colors.red.shade700 
-                        : Colors.green.shade700
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
 
           // ★★★ AIアシスト（有料プラン導線）の配置 ★★★
           Card(

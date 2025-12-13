@@ -1,12 +1,17 @@
-// lib/screens/history_screen.dart (修正後の全体)
+// lib/screens/history_screen.dart (最終修正版)
 
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:table_calendar/table_calendar.dart'; // ★★★ TableCalendarのインポート ★★★
 import 'package:isar/isar.dart';
-import '../main.dart';
+import '../main.dart'; // isarインスタンスにアクセスするため
 import '../models/record.dart';
-// ★★★ 修正1: HistoryDetailScreenのインポートを追加 ★★★
-import 'history_detail_screen.dart';
+// HistoryDetailScreenのインポートが正しいか確認
+import 'history_detail_screen.dart'; // ★★★ history_detail_screen.dart ファイルが存在することを前提とします ★★★
+
+// TableCalendarの isSameDay を利用できるようにする
+// import 'package:table_calendar/table_calendar.dart' があれば通常は不要
+// もしエラーが出た場合、isSameDay の代わりに Dart のDateTime比較を使うか、
+// TableCalendarを as でインポートしていないか確認してください。
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -28,17 +33,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedDay = _focusedDay; // ★初期選択日をfocusedDayに設定★
+    _selectedDay = _focusedDay;
     _fetchRecords();
   }
 
   // Isar DBからデータを取得するロジック
   Future<void> _fetchRecords() async {
+    // ★★★ 修正1: Isarクエリをソートとフィルタリングで構築（sortByRecordDateDescの代替） ★★★
     final allRecords = await isar.records
         .where()
-        .sortByRecordDateDesc()
-        .findAll();
+        .build()
+        .findAll(); // findAllで全件取得
 
+    // ★★★ 修正2: 取得後にDartで日付降順ソートを行う ★★★
+    allRecords.sort((a, b) => b.recordDate.compareTo(a.recordDate));
+    
+    // ... (Map構築ロジックはそのまま) ...
     final Map<DateTime, List<Record>> map = {};
     for (var record in allRecords) {
       final day = DateTime(
@@ -103,8 +113,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             calendarBuilders: CalendarBuilders(
               markerBuilder: (context, day, events) {
                 if (events.isNotEmpty) {
-                  // ★★★ 修正3: Null Safety対応と型キャスト ★★★
-                  // eventsがRecord型であることを保証し、安全にmoodScoreにアクセス
+                  // ★★★ 修正3: Null Safety対応と型キャストはそのまま ★★★
                   final recordList = events.cast<Record>();
                   final avgScore =
                       recordList
@@ -153,8 +162,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               isSameDay(_selectedDay!, DateTime.now())
                           ? '今日の記録はありません'
                           : (_selectedDay != null
-                                ? '${_selectedDay!.month}/${_selectedDay!.day} の記録はありません'
-                                : '日付を選択してください'),
+                              ? '${_selectedDay!.month}/${_selectedDay!.day} の記録はありません'
+                              : '日付を選択してください'),
                       style: const TextStyle(color: Colors.grey),
                     ),
                   )
@@ -178,7 +187,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         subtitle: Text(
                           'タグ: ${record.moodTags.join(', ')} | ${record.weather} | ${record.location.split(',').first}',
                         ),
-                        // ★★★ 修正2: onTapをasyncとして正しく定義 ★★★
+                        // ★★★ 修正2: onTapは既に修正済みなのでそのまま ★★★
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(

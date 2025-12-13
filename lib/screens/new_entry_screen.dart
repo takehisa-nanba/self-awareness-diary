@@ -1,23 +1,22 @@
-// lib/screens/new_entry_screen.dart (責務分離・待機ブロック機能搭載版)
+// lib/screens/new_entry_screen.dart (AppShell統合版 - データ入力・保存特化)
 
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async'; 
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // ★★★ 追記 ★★★
 
 import '../models/record.dart';
 import '../services/record_service.dart'; 
 import '../services/location_weather_service.dart'; 
 import '../widgets/location_status_bar.dart';
+import '../widgets/app_shell.dart'; // ★★★ AppShellをインポート ★★★
 
 import 'new_entry_steps/step1_mood_tag.dart';
 import 'new_entry_steps/step2_score_event.dart';
 import 'new_entry_steps/step3_language.dart';
 
-import 'history_screen.dart';
-import 'analysis_screen.dart';
-import 'settings_screen.dart';
-import 'subscription_screen.dart';
+import 'subscription_screen.dart'; // 有料プラン画面のみ必要
+
+import '../widgets/app_shell.dart' show AppShell, kAppHeaderH;
 
 class NewEntryScreen extends StatefulWidget {
   const NewEntryScreen({super.key});
@@ -58,12 +57,9 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
   }
 
   // ★★★ 1. 位置情報と天気を非同期で取得するメソッド ★★★
-  // ★★★ 1. 位置情報と天気を非同期で取得するメソッド ★★★
   Future<void> _loadLocationAndWeather() async {
-    // ★★★ サービスを利用してデータ取得 ★★★
     final result = await _locationWeatherService.getLocationAndWeather();
     
-    // 状態を更新し、UIを再描画する
     if (mounted) {
       setState(() {
       locationString = result['location']!;
@@ -72,6 +68,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
       debugPrint('デバッグ: 位置情報と天気の取得が完了しました。');
     }
   }
+  
   // ★★★ 2. 画面リセットと再取得のトリガー ★★★
   void _resetEntry() {
     setState(() {
@@ -93,7 +90,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
       _isWaitingForLocation = true; // アニメーション開始
     });
     
-    const timeoutDuration = Duration(seconds: 20); // 20秒の待機リミット
+    const timeoutDuration = Duration(seconds: 20); 
     DateTime startTime = DateTime.now();
 
     // 待機アニメーションを表示しながら、バックグラウンドの取得処理の完了をポーリング
@@ -120,8 +117,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
     });
 
     if (mounted) {
-      // 待機が完了（またはタイムアウト）した後、保存処理を再開
-      _saveEntry(isResuming: true); 
+      _saveEntry(isResuming: true); // 待機が完了（またはタイムアウト）した後、保存処理を再開
     }
   }
 
@@ -139,20 +135,16 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
     }
   }
 
-  // ★★★ 5. ナビゲーションロジック ★★★
+  // ★★★ 5. ステップ切り替えロジック ★★★
   void _nextStep() async {
     if (!_isStepValid()) return;
     
-    // 待機中はボタンが disabled のため、ここでは _isWaitingForLocation のチェックは不要
-
     if (_currentStep < 2) {
-      // Step 0, 1 から次へ進む
       setState(() {
         _currentStep++;
       });
       
     } else {
-      // Step 2 から保存へ
       _saveEntry();
     }
   }
@@ -163,7 +155,6 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
       if (_currentStep > 0) {
         _currentStep--;
       } else {
-      // ルート画面なので Navigator.pop(context) は削除
         debugPrint('デバッグ: Step 1 で戻るボタンが押されましたが、ルート画面のため何もしません。');
       }
     });
@@ -176,7 +167,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
       return;
     }
     
-    // 待機が必要かどうかのチェック (isResumingがtrueの場合は、待機を経ているのでダイアログをスキップ)
+    // 待機が必要かどうかのチェック
     if ((locationString == '位置情報取得中...' || weatherString == '天気取得中...') && !isResuming) {
       
       final bool? shouldSave = await showDialog<bool>(
@@ -202,12 +193,11 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
       );
 
       if (shouldSave == false) {
-        _awaitLocationAndWeather(); // 待機ロジックに移行し、保存処理は待機後に再開される
+        _awaitLocationAndWeather(); 
         return; 
       }
       
-      // 「そのまま保存」またはダイアログ外タップの場合
-      // 「取得中...」の文字列を「未取得」に変換して保存
+      // 未取得として保存する場合の文字列変換
       if (locationString == '位置情報取得中...') {
         locationString = '未取得';
       }
@@ -216,8 +206,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
       }
     }
 
-
-    // --- データモデルの構築 ---
+    // --- データモデルの構築と保存 ---
     final newRecord = Record(
       recordId: _uuid.v4(), 
       recordDate: DateTime.now(), 
@@ -229,14 +218,9 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
       weather: weatherString,
     ); 
     
-    // --- サービスを利用した書き込み ---
     try {
-      debugPrint('デバッグ: Isar書き込み処理開始...');
-      // ★★★ サービスを呼び出し、保存ロジックを委譲 ★★★
       await _recordService.saveRecord(newRecord); 
-      debugPrint('デバッグ: Isar書き込み処理完了！');
       
-      // 成功後の処理
       if (mounted) {
         await ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('記録を保存しました！')),
@@ -246,16 +230,14 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
       }
     } catch (e) {
       debugPrint('デバッグ: データベース書き込みエラーが発生しました: $e');
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('データベース書き込みエラー: $e')));
       }
-      return;
     } 
   }
 
-  // ★★★ 有料プラン画面への遷移 (F-10) ★★★
+  // ★★★ 有料プラン画面への遷移 (AppShellのナビゲーションには含めない) ★★★
   void _goToSubscription() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -272,6 +254,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
     // 待機中はボタンを無効化
     final bool isButtonEnabled = (isLastStep || isValid) && !_isWaitingForLocation; 
 
+    // ステップ定義
     final List<Widget> steps = [
       Step1MoodTagScreen(
       selectedTags: _selectedMoodTags,
@@ -284,7 +267,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
             }
           });
         },
-      ), // Step 1 終了
+      ), 
 
       Step2ScoreEventScreen(
         moodScore: _moodScore,
@@ -297,7 +280,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
         onContentChanged: () {
           setState(() {});
         },
-      ), // Step 2 終了
+      ),
 
       Step3LanguageScreen(
         languageController: _languageController,
@@ -305,122 +288,75 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
         locationString: locationString,
         weatherString: weatherString,
       ),
-    ]; // stepsリストの終了
+    ]; 
 
-    return Scaffold(
-      appBar: AppBar(
-        // titleのテキストを調整
-        title: Text(
-          _currentStep == 0 ? '新規記録作成' : 'ステップ ${_currentStep + 1} / 3',
-        ),
-        // leadingのロジックを修正
-        leading: _currentStep == 0
-            ? Builder(
-                builder: (BuildContext context) {
-                  return IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                  );
-                },
-              )
-            : IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _previousStep,
-              ),
-        automaticallyImplyLeading: false, 
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    final Widget? stepFab = _currentStep < 3
+        ? FloatingActionButton.extended(
+              onPressed: isButtonEnabled ? _nextStep : null,
+              // ★★★ 修正: ラベルとアイコンをステップに応じて変更 ★★★
+              label: Text(actionText),
+              icon: Icon(isLastStep ? Icons.save : Icons.arrow_forward),
+              // ... (色はそのまま) ...
+              backgroundColor: isButtonEnabled
+                ? Theme.of(context).colorScheme.primary
+                : Colors.grey.shade400,
+              foregroundColor: isButtonEnabled ? Colors.white : Colors.grey.shade600,
+            )
+          : null; // 存在しない Step 3 以降は null
+          
+    // 保存ボタンの位置 (Step 2 のみ右下)
+    final fabLocation = isLastStep
+        ? FloatingActionButtonLocation.endFloat
+        : null;
+
+    // ★★★ AppShell に渡す変数を saveFab から stepFab に変更 (名前を分かりやすく) ★★★
+    return AppShell(
+      floatingActionButton: stepFab, // ★★★ ここを修正 ★★★
+      floatingActionButtonLocation: fabLocation,
+
+      // メインコンテンツ (Stack)
+      child: Stack(
+        children: [
+          // 1. 画面上部のカスタムヘッダーエリアをStackの一番上に配置
+          Positioned( // ContainerをPositionedでラップし、明確に位置指定する
+             left: 0,
+             right: 0,
+             top: 0, // ★★★ 修正: AppShellがステータスバーを考慮したので、ここは0でOK ★★★
+            child: Container(
+              height: kAppHeaderH, // ★★★ 修正: kAppHeaderHを使用 ★★★
+              color: Theme.of(context).scaffoldBackgroundColor, // 背景色を不透明にして、下のコンテンツを隠す
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
                 children: [
-                  Text(
-                    '自覚日記',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  // 戻るボタン (Step 0以外)
+                  if (_currentStep > 0)
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: _previousStep,
                     ),
-                  ),
-                  SizedBox(height: 4),
+                  const SizedBox(width: 8),
+                  // ステップタイトル
                   Text(
-                    '良い時も、悪い時も、どんな感情もあなたを照らす羅針盤',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                    _currentStep == 0 
+                        ? '新規記録作成' : 'ステップ ${_currentStep + 1} / 3',
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ],
               ),
             ),
-            
-            // Drawerの遷移ボタンはそのまま
-            ListTile(
-              leading: const Icon(Icons.history),
-              title: const Text('履歴を見る'),
-              onTap: () {
-                Navigator.pop(context); 
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const HistoryScreen(),
-                  ),
-                );
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.analytics_outlined),
-              title: const Text('気分分析'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const AnalysisScreen(),
-                  ),
-                );
-              },
-            ),
-
-            const Divider(), 
-            
-            ListTile(
-              leading: const Icon(Icons.workspace_premium, color: Colors.amber),
-              title: const Text('プレミアムプラン'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const SubscriptionScreen(),
-                  ),
-                );
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('設定'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-
-      // ★★★ Stack で body をラップし、インジケータを追加 ★★★
-      body: Stack(
-        children: [
-          IndexedStack(index: _currentStep, children: steps),
+          ),
           
+          // 2. 実際の入力コンテンツ 
+          // ★★★ 修正: カスタムヘッダーの高さ分、下にスペースを確保(60.0) ★★★
+          Padding(
+            padding: const EdgeInsets.only(top: kAppHeaderH), // ★★★ 修正: kAppHeaderHを使用 ★★★
+            child: IndexedStack(index: _currentStep, children: steps),
+          ),
+
+          // ... (待機インジケータとロケーションステータスバーのロジックはそのまま) ...
           if (_isWaitingForLocation)
             Container(
-              color: Colors.black.withAlpha(128), // 半透明のオーバーレイ 
+              color: Colors.black.withAlpha(128), 
               child: const Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -437,26 +373,21 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
                 ),
               ),
             ),
-            Align(
-            alignment: Alignment.bottomCenter,
-            child: LocationStatusBar(
-              location: locationString,
-              weather: weatherString,
+          
+          // ロケーションステータスバーのロジックはそのまま
+          Positioned(
+            left: 10,
+            bottom: 10,
+            child: Padding( 
+              padding: isLastStep ? const EdgeInsets.only(right: 80.0) : EdgeInsets.zero,
+              child: LocationStatusBar(
+                location: locationString,
+                weather: weatherString,
+              ),
             ),
           ),
         ],
       ),
-
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: isButtonEnabled ? _nextStep : null,
-        label: Text(actionText),
-        icon: Icon(isLastStep ? Icons.save : Icons.arrow_forward),
-        backgroundColor: isButtonEnabled
-          ? Theme.of(context).colorScheme.primary
-            : Colors.grey.shade400,
-        foregroundColor: isButtonEnabled ? Colors.white : Colors.grey.shade600,
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
