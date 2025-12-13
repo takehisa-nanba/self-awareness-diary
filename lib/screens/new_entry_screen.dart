@@ -9,6 +9,7 @@ import 'dart:convert'; // JSONデコード用
 
 import '../main.dart';
 import '../models/record.dart';
+import '../services/record_service.dart';
 import 'new_entry_steps/step1_mood_tag.dart';
 import 'new_entry_steps/step2_score_event.dart';
 import 'new_entry_steps/step3_language.dart';
