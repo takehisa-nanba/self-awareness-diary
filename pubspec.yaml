@@ -67,7 +67,8 @@ flutter:
 
   # アプリケーションに画像などのアセット（素材）を追加するには、
   # 以下のように assets セクションを追加します:
-  # assets:
+  assets: # ★★★ 追記/修正 ★★★
+    - .env
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

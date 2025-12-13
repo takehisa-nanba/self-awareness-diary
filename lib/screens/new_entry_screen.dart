@@ -1,14 +1,15 @@
-// lib/screens/new_entry_screen.dart (データ保存統合版)
+// lib/screens/new_entry_screen.dart (責務分離・待機ブロック機能搭載版)
 
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http; // ★★★ HTTP通信用ライブラリ
-import 'dart:convert'; // JSONデコード用
-import 'dart:async'; // TimeoutException を使用するために必要
+import 'dart:async'; 
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // ★★★ 追記 ★★★
 
-import '../main.dart';
 import '../models/record.dart';
+import '../services/record_service.dart'; 
+import '../services/location_weather_service.dart'; 
+import '../widgets/location_status_bar.dart';
+
 import 'new_entry_steps/step1_mood_tag.dart';
 import 'new_entry_steps/step2_score_event.dart';
 import 'new_entry_steps/step3_language.dart';
@@ -16,7 +17,7 @@ import 'new_entry_steps/step3_language.dart';
 import 'history_screen.dart';
 import 'analysis_screen.dart';
 import 'settings_screen.dart';
-import 'subscription_screen.dart'; // 仮で作成します
+import 'subscription_screen.dart';
 
 class NewEntryScreen extends StatefulWidget {
   const NewEntryScreen({super.key});
@@ -26,6 +27,11 @@ class NewEntryScreen extends StatefulWidget {
 }
 
 class _NewEntryScreenState extends State<NewEntryScreen> {
+  // ★★★ サービスインスタンスの生成 ★★★
+  final _recordService = RecordService();
+  final _locationWeatherService = LocationWeatherService();
+  final _uuid = const Uuid();
+
   // ★★★ データと状態の管理 ★★★
   int _currentStep = 0;
   final Set<String> _selectedMoodTags = {};
@@ -33,18 +39,10 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
   final TextEditingController _eventController = TextEditingController();
   final TextEditingController _languageController = TextEditingController();
 
-  // UUIDジェネレーターのインスタンス
-  final _uuid = const Uuid();
-
-  // ★★★ 気象情報APIの設定 (要置換) ★★★
-  // ※ 実装時はAPIキーを安全に扱う必要があります
-  // ここをあなたのAPIキーに置き換えてください。ダミーの場合はダミーのまま実行
-  final String _openWeatherApiKey = '5206a2c883a8a10b280e09ebb4f1c12e';
-  final String _weatherBaseUrl =
-      'https://api.openweathermap.org/data/2.5/weather';
+  String locationString = '位置情報取得中...'; 
+  String weatherString = '天気取得中...'; 
   
-  String locationString = '位置情報取得中...'; // 初期値
-  String weatherString = '天気取得中...';   // 初期値
+  bool _isWaitingForLocation = false; // 待機アニメーション表示用フラグ
 
   @override
   void dispose() {
@@ -56,108 +54,78 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadLocationAndWeather(); // アプリ起動と同時に取得開始
+    _loadLocationAndWeather(); // 画面起動と同時に取得開始
   }
 
-  // ★★★ 追記: 位置情報と天気を非同期で取得するメソッド ★★★
+  // ★★★ 1. 位置情報と天気を非同期で取得するメソッド ★★★
+  // ★★★ 1. 位置情報と天気を非同期で取得するメソッド ★★★
   Future<void> _loadLocationAndWeather() async {
-    Position? position;
-    String newLocation = '不明';
-    String newWeather = '不明';
-
-    try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
-      if (permission == LocationPermission.whileInUse ||
-          permission == LocationPermission.always) 
-      {
-        position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.low,
-          timeLimit: const Duration(seconds: 10),
-        );
-
-        // 位置情報文字列の生成
-        newLocation =
-            'Lat: ${position.latitude.toStringAsFixed(2)}, Lon: ${position.longitude.toStringAsFixed(2)}';
-
-        // 天気情報取得
-        newWeather = await _getWeather(
-          position.latitude,
-          position.longitude,
-        );
-      } else {
-        newLocation = '権限なし';
-        newWeather = '権限なし';
-      }
-    } on TimeoutException {
-      newLocation = 'タイムアウト';
-      newWeather = 'タイムアウト';
-      debugPrint('位置情報取得タイムアウト');
-    } catch (e) {
-      newLocation = '取得エラー';
-      newWeather = '取得エラー';
-      debugPrint('外部データ取得エラー: $e');
-    } // end try-catch
-
+    // ★★★ サービスを利用してデータ取得 ★★★
+    final result = await _locationWeatherService.getLocationAndWeather();
+    
     // 状態を更新し、UIを再描画する
     if (mounted) {
       setState(() {
-        locationString = newLocation;
-        weatherString = newWeather;
-      }); // end setState
+      locationString = result['location']!;
+      weatherString = result['weather']!;
+      });
+      debugPrint('デバッグ: 位置情報と天気の取得が完了しました。');
     }
-  } // end _loadLocationAndWeather
-
+  }
+  // ★★★ 2. 画面リセットと再取得のトリガー ★★★
   void _resetEntry() {
-  setState(() {
-    _currentStep = 0; // Step 1 に戻す
-    _selectedMoodTags.clear(); // タグをクリア
-    _moodScore = 5; // スコアをリセット
-    _eventController.clear(); // イベントテキストをクリア
-    _languageController.clear(); // 言語テキストをクリア
-    
-    // 位置情報と天気情報を再度「取得中」の状態にし、再取得をトリガー
-    locationString = '位置情報取得中...';
-    weatherString = '天気取得中...';
-    _loadLocationAndWeather(); // 新しい記録のために非同期で再取得を開始
-  });
-} // end _resetEntry
+    setState(() {
+      _currentStep = 0; 
+      _selectedMoodTags.clear(); 
+      _moodScore = 5; 
+      _eventController.clear(); 
+      _languageController.clear(); 
 
-  // ★★★ 気象情報を取得する関数 (緯度経度からAPIコール) ★★★
-  Future<String> _getWeather(double lat, double lon) async {
-    if (_openWeatherApiKey == 'YOUR_OPENWEATHERMAP_API_KEY') {
-      // APIキー設定前のダミーデータ (要件 F-2対応)
-      return "晴れ/25°C (API設定前)";
+      locationString = '位置情報取得中...';
+      weatherString = '天気取得中...';
+      _loadLocationAndWeather(); // 新しい記録のために再取得を開始
+    });
+  } 
+
+  // ★★★ 3. 待機ロジック (20秒のポーリングループ) ★★★
+  Future<void> _awaitLocationAndWeather() async {
+    setState(() {
+      _isWaitingForLocation = true; // アニメーション開始
+    });
+    
+    const timeoutDuration = Duration(seconds: 20); // 20秒の待機リミット
+    DateTime startTime = DateTime.now();
+
+    // 待機アニメーションを表示しながら、バックグラウンドの取得処理の完了をポーリング
+    while ((locationString == '位置情報取得中...' || weatherString == '天気取得中...') &&
+          DateTime.now().difference(startTime) < timeoutDuration) {
+      await Future.delayed(const Duration(milliseconds: 100)); // 100msごとにチェック
     }
 
-    final url = Uri.parse(
-      '$_weatherBaseUrl?lat=$lat&lon=$lon&appid=$_openWeatherApiKey&units=metric&lang=ja',
-    );
+    bool completedSuccessfully = 
+      locationString != '位置情報取得中...' && weatherString != '天気取得中...';
 
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes));
-
-        final weatherDescription = data['weather'][0]['description'] ?? '不明';
-        final temperature = data['main']['temp'].toStringAsFixed(1) ?? 'N/A';
-
-        return '$weatherDescription / $temperature°C';
-      } else {
-        debugPrint('天気情報取得失敗: ${response.statusCode}');
-        return '天気情報取得失敗';
+    setState(() {
+      _isWaitingForLocation = false; // アニメーションを停止
+      
+      // 20秒待っても取得できなかった場合、状態を「タイムアウト」に更新
+      if (!completedSuccessfully) {
+        if (locationString == '位置情報取得中...') {
+          locationString = 'タイムアウト';
+        }
+        if (weatherString == '天気取得中...') {
+          weatherString = 'タイムアウト';
+        }
       }
-    } catch (e) {
-      debugPrint('天気情報通信エラー: $e');
-      return '天気情報通信エラー';
+    });
+
+    if (mounted) {
+      // 待機が完了（またはタイムアウト）した後、保存処理を再開
+      _saveEntry(isResuming: true); 
     }
   }
 
-  // ★★★ バリデーション（入力チェック） ★★★
+  // ★★★ 4. バリデーション（入力チェック） ★★★
   bool _isStepValid() {
     switch (_currentStep) {
       case 0:
@@ -171,87 +139,129 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
     }
   }
 
-  // ★★★ ナビゲーションロジック ★★★
-  void _nextStep() {
+  // ★★★ 5. ナビゲーションロジック ★★★
+  void _nextStep() async {
     if (!_isStepValid()) return;
+    
+    // 待機中はボタンが disabled のため、ここでは _isWaitingForLocation のチェックは不要
 
-    setState(() {
-      if (_currentStep < 2) {
+    if (_currentStep < 2) {
+      // Step 0, 1 から次へ進む
+      setState(() {
         _currentStep++;
-      } else {
-        _saveEntry();
-      }
-    });
+      });
+      
+    } else {
+      // Step 2 から保存へ
+      _saveEntry();
+    }
   }
 
+  // 画面がルート画面なので、戻るボタンは画面を閉じるのではなく、Step 1より手前では何もしない
   void _previousStep() {
     setState(() {
       if (_currentStep > 0) {
         _currentStep--;
       } else {
-        Navigator.pop(context);
+      // ルート画面なので Navigator.pop(context) は削除
+        debugPrint('デバッグ: Step 1 で戻るボタンが押されましたが、ルート画面のため何もしません。');
       }
     });
   }
 
-  // ★★★ データ保存ロジック（F-1, F-2対応） ★★★
-Future<void> _saveEntry() async {
-  if (!_isStepValid()) {
-    debugPrint('デバッグ: バリデーションに失敗し、保存処理が中止されました。'); // ★★★ 追加
-    return;
-  }
-  
-  debugPrint('デバッグ: バリデーション成功。データ構築に進みます。'); // ★★★ 追加
+  // ★★★ 6. データ保存ロジック（サービス利用版） ★★★
+  Future<void> _saveEntry({bool isResuming = false}) async {
+    if (!_isStepValid()) {
+      debugPrint('デバッグ: バリデーションに失敗し、保存処理が中止されました。');
+      return;
+    }
+    
+    // 待機が必要かどうかのチェック (isResumingがtrueの場合は、待機を経ているのでダイアログをスキップ)
+    if ((locationString == '位置情報取得中...' || weatherString == '天気取得中...') && !isResuming) {
+      
+      final bool? shouldSave = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('位置情報／天気情報の取得中です'),
+            content: const Text(
+              'データ取得が完了していません。このまま未取得として保存しますか？\n（待機することで取得できる場合があります）',
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false), // 待機
+                child: const Text('待機する'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true), // 未取得として保存
+                child: const Text('そのまま保存'),
+              ),
+            ],
+          );
+        },
+      );
 
-  // --- 3. データモデルの構築 ---
-  final newRecord = Record(
-    recordId: _uuid.v4(), // RecordモデルのIDフィールド名に修正
-    recordDate: DateTime.now(), // 以前のコードにはありませんでしたが、Recordモデルに必要と仮定
-    moodScore: _moodScore,
-    eventText: _eventController.text,
-    moodTags: _selectedMoodTags.toList(),
-    selfAnalysis: _languageController.text,
-    location: locationString, // 事前取得した値を使用
-    weather: weatherString,   // 事前取得した値を使用
+      if (shouldSave == false) {
+        _awaitLocationAndWeather(); // 待機ロジックに移行し、保存処理は待機後に再開される
+        return; 
+      }
+      
+      // 「そのまま保存」またはダイアログ外タップの場合
+      // 「取得中...」の文字列を「未取得」に変換して保存
+      if (locationString == '位置情報取得中...') {
+        locationString = '未取得';
+      }
+      if (weatherString == '天気取得中...') {
+        weatherString = '未取得';
+      }
+    }
+
+
+    // --- データモデルの構築 ---
+    final newRecord = Record(
+      recordId: _uuid.v4(), 
+      recordDate: DateTime.now(), 
+      moodScore: _moodScore,
+      eventText: _eventController.text,
+      moodTags: _selectedMoodTags.toList(),
+      selfAnalysis: _languageController.text,
+      location: locationString, 
+      weather: weatherString,
     ); 
-  // --- 4. Isar への書き込み ---
-  try {
-    debugPrint('デバッグ: Isar書き込み処理開始...'); // ★★★ 追加
-
-    await isar.writeTxn(() async {
-    await isar.records.put(newRecord);
-    });
     
-    debugPrint('デバッグ: Isar書き込み処理完了！'); // ★★★ 追加    
-    
-    // 成功した場合
+    // --- サービスを利用した書き込み ---
+    try {
+      debugPrint('デバッグ: Isar書き込み処理開始...');
+      // ★★★ サービスを呼び出し、保存ロジックを委譲 ★★★
+      await _recordService.saveRecord(newRecord); 
+      debugPrint('デバッグ: Isar書き込み処理完了！');
+      
+      // 成功後の処理
       if (mounted) {
-        // ユーザーにフィードバック
         await ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('記録を保存しました！')),
         ).closed;
         
-        // ★★★ 修正: pop/push を削除し、画面をリセットする ★★★
-        // 画面を閉じずに、Step 1 に戻す
-        _resetEntry(); 
+        _resetEntry(); // 画面リセット
       }
-  } catch (e) {
-    debugPrint('デバッグ: データベース書き込みエラーが発生しました: $e'); // ★★★ 追加
+    } catch (e) {
+      debugPrint('デバッグ: データベース書き込みエラーが発生しました: $e');
 
-    // 書き込みエラーが発生した場合
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('データベース書き込みエラー: $e')));
-    }
-    return;
-  } // End of try-catch
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('データベース書き込みエラー: $e')));
+      }
+      return;
+    } 
+  }
 
-} // End of _saveEntry
   // ★★★ 有料プラン画面への遷移 (F-10) ★★★
   void _goToSubscription() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('【有料プラン】課金プラン画面へ遷移')));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const SubscriptionScreen(),
+      ),
+    );
   }
 
   @override
@@ -259,11 +269,12 @@ Future<void> _saveEntry() async {
     final bool isValid = _isStepValid();
     final bool isLastStep = _currentStep == 2;
     final String actionText = isLastStep ? '保存' : '次へ';
-    final bool isButtonEnabled = isLastStep || isValid;
+    // 待機中はボタンを無効化
+    final bool isButtonEnabled = (isLastStep || isValid) && !_isWaitingForLocation; 
 
     final List<Widget> steps = [
       Step1MoodTagScreen(
-        selectedTags: _selectedMoodTags,
+      selectedTags: _selectedMoodTags,
         onTagSelected: (tag) {
           setState(() {
             if (_selectedMoodTags.contains(tag)) {
@@ -273,26 +284,28 @@ Future<void> _saveEntry() async {
             }
           });
         },
-      ),
+      ), // Step 1 終了
 
       Step2ScoreEventScreen(
         moodScore: _moodScore,
         eventController: _eventController,
         onScoreChanged: (score) {
-          setState(() {
-            _moodScore = score;
+        setState(() {
+          _moodScore = score;
           });
         },
         onContentChanged: () {
           setState(() {});
         },
-      ),
+      ), // Step 2 終了
 
       Step3LanguageScreen(
         languageController: _languageController,
         onPremiumTap: _goToSubscription,
+        locationString: locationString,
+        weatherString: weatherString,
       ),
-    ];
+    ]; // stepsリストの終了
 
     return Scaffold(
       appBar: AppBar(
@@ -302,23 +315,19 @@ Future<void> _saveEntry() async {
         ),
         // leadingのロジックを修正
         leading: _currentStep == 0
-            // Step 1 (最初の画面) ではDrawerを開くアイコンを表示させる
             ? Builder(
-                // Builderで囲み、Scaffoldのコンテキストを取得
                 builder: (BuildContext context) {
                   return IconButton(
                     icon: const Icon(Icons.menu),
-                    // ★修正: Scaffold.of(context)ではなく、Builder経由のcontextを使用★
                     onPressed: () => Scaffold.of(context).openDrawer(),
                   );
                 },
               )
-            // それ以外は戻るボタン
             : IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: _previousStep,
               ),
-        automaticallyImplyLeading: false, // leadingを自分で制御するためfalseを維持
+        automaticallyImplyLeading: false, 
       ),
       drawer: Drawer(
         child: ListView(
@@ -338,7 +347,6 @@ Future<void> _saveEntry() async {
                     ),
                   ),
                   SizedBox(height: 4),
-                  // キャッチコピーの表示
                   Text(
                     '良い時も、悪い時も、どんな感情もあなたを照らす羅針盤',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
@@ -346,14 +354,13 @@ Future<void> _saveEntry() async {
                 ],
               ),
             ),
-
-            // 履歴を見る (F-5)
+            
+            // Drawerの遷移ボタンはそのまま
             ListTile(
               leading: const Icon(Icons.history),
               title: const Text('履歴を見る'),
               onTap: () {
-                Navigator.pop(context); // Drawerを閉じる
-                // 画面遷移
+                Navigator.pop(context); 
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const HistoryScreen(),
@@ -362,13 +369,11 @@ Future<void> _saveEntry() async {
               },
             ),
 
-            // 分析画面 (F-8)
             ListTile(
               leading: const Icon(Icons.analytics_outlined),
               title: const Text('気分分析'),
               onTap: () {
                 Navigator.pop(context);
-                // 画面遷移
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const AnalysisScreen(),
@@ -377,14 +382,13 @@ Future<void> _saveEntry() async {
               },
             ),
 
-            const Divider(), // 区切り線
-            // 課金プラン (F-10 への導線)
+            const Divider(), 
+            
             ListTile(
               leading: const Icon(Icons.workspace_premium, color: Colors.amber),
               title: const Text('プレミアムプラン'),
               onTap: () {
                 Navigator.pop(context);
-                // 画面遷移
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const SubscriptionScreen(),
@@ -393,13 +397,11 @@ Future<void> _saveEntry() async {
               },
             ),
 
-            // 設定
             ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('設定'),
               onTap: () {
                 Navigator.pop(context);
-                // 画面遷移
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const SettingsScreen(),
@@ -411,14 +413,46 @@ Future<void> _saveEntry() async {
         ),
       ),
 
-      body: IndexedStack(index: _currentStep, children: steps),
+      // ★★★ Stack で body をラップし、インジケータを追加 ★★★
+      body: Stack(
+        children: [
+          IndexedStack(index: _currentStep, children: steps),
+          
+          if (_isWaitingForLocation)
+            Container(
+              color: Colors.black.withOpacity(0.5), 
+              child: const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      '位置情報と天気の取得を待機中...',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Align(
+            alignment: Alignment.bottomCenter,
+            child: LocationStatusBar(
+              location: locationString,
+              weather: weatherString,
+            ),
+          ),
+        ],
+      ),
 
       floatingActionButton: FloatingActionButton.extended(
         onPressed: isButtonEnabled ? _nextStep : null,
         label: Text(actionText),
         icon: Icon(isLastStep ? Icons.save : Icons.arrow_forward),
         backgroundColor: isButtonEnabled
-            ? Theme.of(context).colorScheme.primary
+          ? Theme.of(context).colorScheme.primary
             : Colors.grey.shade400,
         foregroundColor: isButtonEnabled ? Colors.white : Colors.grey.shade600,
       ),

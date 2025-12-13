@@ -3,13 +3,17 @@
 import 'package:flutter/material.dart';
 
 class Step3LanguageScreen extends StatelessWidget {
-  final TextEditingController languageController;
+  final TextEditingController languageController; // 言語化テキストコントローラー
   final VoidCallback onPremiumTap; // 有料プラン画面への遷移コールバック
+  final String locationString; // 位置情報文字列 
+  final String weatherString; // 天気情報文字列
 
   const Step3LanguageScreen({
     super.key,
     required this.languageController,
     required this.onPremiumTap,
+    required this.locationString, 
+    required this.weatherString,
   });
 
   @override
@@ -39,6 +43,41 @@ class Step3LanguageScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 30),
+
+          Card(
+            margin: const EdgeInsets.only(bottom: 20),
+            color: Colors.blueGrey.shade50,
+            elevation: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '📍 外部データ取得状況',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '位置情報: $locationString',
+                    style: TextStyle(
+                      color: locationString.contains('取得中') || locationString.contains('エラー') 
+                        ? Colors.red.shade700 
+                        : Colors.green.shade700
+                    ),
+                  ),
+                  Text(
+                    '天気情報: $weatherString',
+                    style: TextStyle(
+                      color: weatherString.contains('取得中') || weatherString.contains('エラー') 
+                        ? Colors.red.shade700 
+                        : Colors.green.shade700
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
           // ★★★ AIアシスト（有料プラン導線）の配置 ★★★
           Card(
