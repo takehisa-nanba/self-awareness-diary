@@ -420,7 +420,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
           
           if (_isWaitingForLocation)
             Container(
-              color: Colors.black.withOpacity(0.5), 
+              color: Colors.black.withAlpha(128), // 半透明のオーバーレイ 
               child: const Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
