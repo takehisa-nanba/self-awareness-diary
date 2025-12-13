@@ -122,7 +122,7 @@ class Step1MoodTagScreen extends StatelessWidget {
       child: ListTile(
         leading: const Icon(Icons.lock, color: Colors.indigo),
         title: Text(
-          '${premiumTagCount}個の感情タグを解放',
+          '$premiumTagCount個の感情タグを解放',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: const Text('より詳細な感情を言語化し、自己覚知の粒度を細かくしましょう。'),

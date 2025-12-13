@@ -2,10 +2,8 @@
 
 import 'package:flutter/material.dart';
 import '../models/record.dart';
-import 'package:isar/isar.dart';
 import '../main.dart';
 import '../services/gemini_service.dart';
-import 'package:flutter/foundation.dart';
 
 class HistoryDetailScreen extends StatefulWidget {
   final Record record;

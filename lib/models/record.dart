@@ -29,7 +29,7 @@ class Record {
   final String selfAnalysis;
 
   // コンストラクタ (修正2: isarIdをコンストラクタに追加)
-  Record({
+  const Record({
     this.isarId, // 修正2: 追加
     required this.recordId,
     required this.recordDate,

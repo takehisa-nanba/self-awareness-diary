@@ -26,6 +26,16 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+    compileOptions {
+        // Javaのソース/ターゲットバージョンをJava 21に設定
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    kotlinOptions {
+        // KotlinのターゲットJVMバージョンをJava 21に設定
+        jvmTarget = "21"
+    }
 }
 
 flutter {

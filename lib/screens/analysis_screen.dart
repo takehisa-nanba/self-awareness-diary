@@ -14,7 +14,7 @@ class AnalysisScreen extends StatefulWidget {
 class _AnalysisScreenState extends State<AnalysisScreen> {
   // ★★★ 仮のユーザー状態 (実際はRiverpodなどで管理) ★★★
   // ここでユーザーのプランを判定し、UIを切り替えます
-  bool _isPremium = false; // 初期は無料ユーザーとして想定
+  final bool _isPremium = false; // 初期は無料ユーザーとして想定
 
   @override
   void initState() {
