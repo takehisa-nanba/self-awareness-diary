@@ -27,7 +27,7 @@ class Step1WriteScreen extends StatelessWidget {
         .toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.only(right: 16.0, left: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

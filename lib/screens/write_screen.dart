@@ -1,10 +1,10 @@
-// lib/screens/write_screen.dart (カスタムヘッダーの記述を削除した後の全文)
+// lib/screens/write_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/write_core.dart';
 import '../widgets/location_status_bar.dart';
-import '../widgets/app_shell.dart'; 
+import '../widgets/app_shell.dart';
 import 'write_steps/step1_write.dart' show Step1WriteScreen; 
 import 'write_steps/step2_write.dart' show Step2WriteScreen; 
 import 'write_steps/step3_write.dart' show Step3WriteScreen; 
@@ -21,18 +21,19 @@ class WriteScreen extends StatelessWidget {
         builder: (context, core, child) {
           
           return AppShell(
-            // ★★★ 修正1: customHeader: _buildCustomStepHeader(...) の記述を削除 ★★★
-            // WriteScreen は AppShell にカスタムヘッダーを渡さなくなる
+            
+            customHeader: _buildCustomStepHeader(context, core), 
             
             floatingActionButton: _buildFab(context, core),
-            // FABの位置は endFloat を維持
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             
             child: Column( 
               children: [
+                
                 Expanded(
-                  child: WriteContent(core: core),
+                  child: WriteContent(core: core), 
                 ),
+                
                 // LocationStatusBar の配置は左下を維持
                 Align(
                   alignment: Alignment.bottomLeft, 
@@ -53,46 +54,72 @@ class WriteScreen extends StatelessWidget {
     );
   }
 
-  // ★★★ 修正2: _buildCustomStepHeader メソッドは、今後の再利用のために残しておく ★★★
   PreferredSizeWidget _buildCustomStepHeader(BuildContext context, WriteCore core) {
+    // 戻るボタン
+    Widget backButton = core.currentStepIndex > 1
+        ? TextButton.icon(
+            onPressed: core.previousStep,
+            icon: const Icon(Icons.arrow_back_ios, size: 16, color: Colors.black87),
+            label: const Text('戻る', style: TextStyle(color: Colors.black87)),
+          )
+        : const SizedBox(width: 56.0); // 戻るボタンがないステップ1でも、タイトルと位置を揃えるため同等の幅を確保
+
+    // タイトルとステップ表示 (Columnで縦にまとめる)
+    Widget titleAndStep = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center, // 垂直方向の中央揃え
+      children: [
+        Text(
+          core.currentStepTitle,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+            fontSize: 18.0, 
+            height: 1.0, 
+          ),
+        ),
+        Text(
+          'ステップ${core.currentStepIndex}/${WriteCore.stepTitles.length}',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: Colors.black54,
+            fontSize: 12.0,
+            height: 1.0, 
+          ),
+        ),
+      ],
+    );
+
     return PreferredSize(
-      preferredSize: const Size.fromHeight(40.0), 
-      child: AppBar(
-        toolbarHeight: 40.0,
-        titleSpacing: 0.0, 
-        title: SizedBox(
-          height: 40.0, 
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center, 
+      preferredSize: const Size.fromHeight(40.0), // 高さを60.0に調整
+      child: Container(
+        color: Colors.transparent, 
+        
+        // ★★★ 修正1: 戻るボタンとタイトルをRowで並べ、全体のパディングを設定 ★★★
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0), // 左右パディング
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center, // 垂直方向の中央揃え
             children: [
-              Text(
-                core.currentStepTitle, 
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith( 
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.0,
-                  height: 1.0, 
-                ),
-              ),
-              Text(
-                'ステップ${core.currentStepIndex}/${WriteCore.stepTitles.length}',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith( 
-                  color: Colors.white70,
-                  fontSize: 10.0,
-                  height: 1.0, 
+              // 1. 戻るボタン/SizedBox (左端)
+              backButton,
+              
+              // 2. スペース
+              const SizedBox(width: 10.0),
+              
+              // 3. タイトルとステップ表示 (残りのスペースを占有)
+              Expanded(
+                child: Padding(
+                   padding: const EdgeInsets.symmetric(vertical: 8.0), // 上下のパディングで高さを調整
+                   child: titleAndStep,
                 ),
               ),
             ],
           ),
         ),
-        automaticallyImplyLeading: false, 
-        backgroundColor: Theme.of(context).colorScheme.primary, 
-        elevation: 0, 
       ),
     );
   }
-
+  
   Widget _buildFab(BuildContext context, WriteCore core) {
     final bool isValid = core.isStepValid();
 
@@ -121,7 +148,6 @@ class WriteScreen extends StatelessWidget {
   }
 
   Future<void> _handleSaveEntry(BuildContext context, WriteCore core) async {
-    // ... (中略) ...
     if (!core.isLocationAndWeatherReady()) {
       await showDialog(
         context: context,
@@ -158,27 +184,12 @@ class WriteContent extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    // 戻るボタンのための余白は維持
-    const backButtonHeight = 56.0;
-
+    
     return Column(
       children: [
-        // 戻るボタン
-        if (core.currentStepIndex > 1)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: core.previousStep,
-              icon: const Icon(Icons.arrow_back_ios, size: 16),
-              label: const Text('戻る'),
-            ),
-          )
-        else
-          const SizedBox(height: backButtonHeight), // ステップ1のときも高さを確保
-
+        
         Expanded(
           child: Padding(
-            // パディングは削減した値を維持 (8.0)
             padding: const EdgeInsets.all(8.0),
             child: SingleChildScrollView(
               child: _buildCurrentStep(context, core.currentStepIndex),
@@ -190,7 +201,6 @@ class WriteContent extends StatelessWidget {
   }
 
   Widget _buildCurrentStep(BuildContext context, int index) {
-    // ... (ステップウィジェットのロジックは維持) ...
     switch (index) {
       case 1:
         return Step1WriteScreen(
