@@ -1,66 +1,108 @@
-// lib/screens/write_steps/step3_write.dart
+// lib/screens/write_steps/step3_write.dart (修正版)
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/write_core.dart';
 
 class Step3WriteScreen extends StatelessWidget {
-  final TextEditingController languageController; // 言語化テキストコントローラー
-  final VoidCallback onPremiumTap; // 有料プラン画面への遷移コールバック
-  final String locationString; // 位置情報文字列 
-  final String weatherString; // 天気情報文字列
+  final TextEditingController languageController;
+  final VoidCallback onPremiumTap;
+  final String locationString;
+  final String weatherString;
 
   const Step3WriteScreen({
     super.key,
     required this.languageController,
     required this.onPremiumTap,
-    required this.locationString, 
+    required this.locationString,
     required this.weatherString,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Step 3. 気分を自由に言語化してください (オプション)',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const Text(
-            'このステップでは、あなたの感情や気分を自由に言葉で表現してください。',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          const SizedBox(height: 8),
-
-          TextField(
-            controller: languageController,
-            maxLines: 8,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: '例：プロジェクト完了は嬉しいが、次のタスクへの不安で落ち着かない。\n※履歴画面でも編集できますので、そのまま保存しても大丈夫です。',
+    final core = Provider.of<WriteCore>(context);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        
+        // 1. AIからの内省の質問表示エリア
+        if (core.isGeneratingQuestion)
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (core.reflectionQuestion.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '【AIコーチからの質問】',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.lightBlue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.lightBlue.shade200),
+                  ),
+                  child: Text(
+                    core.reflectionQuestion, // ★★★ 質問を表示 ★★★
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
-
-          const SizedBox(height: 30),
-
-          // ★★★ AIアシスト（有料プラン導線）の配置 ★★★
-          Card(
-            color: Colors.indigo.shade50,
-            elevation: 2,
-            child: ListTile(
-              leading: const Icon(Icons.auto_awesome, color: Colors.indigo),
-              title: const Text(
-                '【有料プラン】AIアシストを利用して言語化',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: const Text('AIがあなたの出来事とタグから、感情を詳細に分析・言語化します。'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: onPremiumTap, // 課金プラン画面へ遷移
+          
+        // 2. 詳細（内省/回答）の入力エリア
+        const Text(
+          '【内省】質問に対する答えを記録する',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: languageController,
+          maxLines: 8,
+          decoration: InputDecoration(
+            hintText: '例：この質問に答えるためには、まずあの時の自分の表情を思い出しました。…',
+            border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.all(12.0),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.star_border),
+              onPressed: onPremiumTap,
+              tooltip: 'AIによる記述サマリー（有料機能）',
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 10),
+        
+        // 補足説明テキスト
+        const Text(
+          '例：プロジェクト完了は嬉しいが、次のタスクへの不安で落ち着かない。\n※履歴画面でも編集できますので、そのまま保存しても大丈夫です。',
+          style: TextStyle(fontSize: 12.0, color: Colors.black54),
+        ),
+
+        const SizedBox(height: 20),
+        
+        // 環境ステータス（ダミー）を非表示にする
+        // LocationStatusBar(location: locationString, weather: weatherString),
+      ],
     );
   }
 }

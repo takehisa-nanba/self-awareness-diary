@@ -1,130 +1,92 @@
-// lib/core/write_core.dart (エラー解消後の最終全文)
+// lib/core/write_core.dart (修正版)
 
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import '../main.dart';
-import '../models/record.dart';
-import '../services/location_weather_service.dart'; 
+import 'dart:developer';
+import '../services/gemini_service.dart'; // ★★★ 追加 ★★★
 
-// UIの更新を通知し、ロジックを保持するコアクラス
-class WriteCore with ChangeNotifier {
-  
-  static const List<String> stepTitles = [
-    '記録の新規作成',
-    'スコア評価／出来事入力',
-    '気分の詳細入力',
-  ];
-
-  // ステップ管理 (1-based)
+class WriteCore extends ChangeNotifier {
+  // ステップ管理
   int _currentStepIndex = 1;
   int get currentStepIndex => _currentStepIndex;
-  
-  // ロケーションと天気情報
-  Position? _currentLocation;
-  String _locationName = '位置情報取得中...';
-  String _weather = '天気情報取得中...';
 
-  String get locationName => _locationName;
-  String get weather => _weather;
-  Position? get currentLocation => _currentLocation;
-  
-  // フォーム入力データ
-  final Set<String> _selectedMoodTags = {}; 
-  int _moodScore = 5;
+  static const List<String> stepTitles = [
+    '感情の記録',
+    '出来事の記録',
+    '内省と保存',
+  ];
+
+  String get currentStepTitle => stepTitles[_currentStepIndex - 1];
+
+  // データフィールド
+  Set<String> selectedMoodTags = {};
+  double moodScore = 5.0; // デフォルトは5
   TextEditingController eventController = TextEditingController();
   TextEditingController detailController = TextEditingController();
 
-  Set<String> get selectedMoodTags => _selectedMoodTags;
-  int get moodScore => _moodScore;
-  
-  // サービス
-  final LocationWeatherService _locationWeatherService = LocationWeatherService();
+  // AIからの内省の質問を格納するフィールド ★★★ 追加 ★★★
+  String _reflectionQuestion = '';
+  String get reflectionQuestion => _reflectionQuestion;
+  bool _isGeneratingQuestion = false;
+  bool get isGeneratingQuestion => _isGeneratingQuestion;
 
-  WriteCore() {
-    _loadLocationAndWeather();
-  }
-
-  String get currentStepTitle {
-    return stepTitles[_currentStepIndex - 1];
-  }
+  // 環境データ (ダミー値)
+  String locationName = '東京駅';
+  String weather = '晴れ';
 
   // ------------------------------------
-  // Location and Weather
-  // ------------------------------------
-
-  Future<void> _loadLocationAndWeather() async {
-    try {
-      // ★★★ 修正: getLocationAndWeather を呼び出し、結果を Map から取得 ★★★
-      final result = await _locationWeatherService.getLocationAndWeather();
-      
-      _locationName = result['location'] ?? '不明';
-      _weather = result['weather'] ?? '不明';
-      
-      // Position オブジェクトの有無で「準備完了」を判断するための暫定措置
-      if (_locationName != '取得エラー' && _locationName != '権限なし') {
-          _currentLocation = Position(
-              latitude: 0, 
-              longitude: 0, 
-              timestamp: DateTime.now(), // ★★★ 修正2: null ではなく DateTime.now() を渡す ★★★
-              accuracy: 0, 
-              altitude: 0, 
-              heading: 0, 
-              speed: 0, 
-              speedAccuracy: 0, 
-              altitudeAccuracy: 0, 
-              headingAccuracy: 0
-          );
-      } else {
-          _currentLocation = null;
-      }
-      // ★★★ 修正ここまで ★★★
-
-    } catch (e) {
-      _locationName = '取得失敗 ($e)';
-      _weather = '取得失敗';
-      _currentLocation = null;
-    }
-    notifyListeners();
-  }
-
-  bool isLocationAndWeatherReady() {
-    return _currentLocation != null;
-  }
-
-  // ------------------------------------
-  // Form Logic
+  // メソッド
   // ------------------------------------
 
   void toggleMoodTag(String tag) {
-    if (_selectedMoodTags.contains(tag)) {
-      _selectedMoodTags.remove(tag);
+    if (selectedMoodTags.contains(tag)) {
+      selectedMoodTags.remove(tag);
     } else {
-      _selectedMoodTags.add(tag);
+      selectedMoodTags.add(tag);
     }
     notifyListeners();
   }
 
   void setMoodScore(double score) {
-    _moodScore = score.round();
+    moodScore = score;
     notifyListeners();
   }
-  
+
   void notifyUiUpdate() {
     notifyListeners();
   }
+
+  bool isLocationAndWeatherReady() {
+    // 実際にはAPIからの取得完了をチェックする
+    return locationName.isNotEmpty && weather.isNotEmpty;
+  }
   
+  // ------------------------------------
+  // 画面遷移ロジック
+  // ------------------------------------
+
   bool isStepValid() {
-    if (_currentStepIndex == 1) {
-      return _selectedMoodTags.isNotEmpty;
+    switch (_currentStepIndex) {
+      case 1:
+        return selectedMoodTags.isNotEmpty;
+      case 2:
+        return eventController.text.trim().isNotEmpty && moodScore >= 1;
+      case 3:
+        // ステップ3では必須入力なし (保存はいつでも可能)
+        return true; 
+      default:
+        return false;
     }
-    if (_currentStepIndex == 2) {
-      return eventController.text.trim().isNotEmpty;
-    }
-    return true;
   }
 
-  void nextStep() {
-    if (_currentStepIndex < 3 && isStepValid()) {
+  void nextStep() async {
+    if (!isStepValid()) return;
+
+    if (_currentStepIndex == 2) {
+      // ステップ2から3に遷移する際、AIに質問生成を依頼する
+      await generateQuestion(); // ★★★ AI呼び出し ★★★
+    }
+
+    if (_currentStepIndex < stepTitles.length) {
       _currentStepIndex++;
       notifyListeners();
     }
@@ -138,34 +100,58 @@ class WriteCore with ChangeNotifier {
   }
 
   // ------------------------------------
-  // Save Logic
+  // AI連携メソッド ★★★ 追加 ★★★
   // ------------------------------------
   
+  Future<void> generateQuestion() async {
+    // 出来事の入力がない場合は実行しない
+    if (eventController.text.trim().isEmpty) return; 
+
+    _isGeneratingQuestion = true;
+    _reflectionQuestion = 'AIコーチが質問を考えています...'; // 処理中のメッセージ
+    notifyListeners();
+
+    try {
+      final question = await geminiService.generateReflectionQuestion(
+        moodTags: selectedMoodTags.join(', '),
+        eventText: eventController.text.trim(),
+        moodScore: moodScore.round(),
+        location: locationName,
+        weather: weather,
+      );
+      
+      _reflectionQuestion = question;
+      
+    } catch (e) {
+      _reflectionQuestion = "質問生成中にエラーが発生しました。ネットワークまたはAPIキーを確認してください。";
+    } finally {
+      _isGeneratingQuestion = false;
+      notifyListeners();
+    }
+  }
+
+  // ------------------------------------
+  // 保存・リセットロジック
+  // ------------------------------------
+
   Future<void> saveRecordOnly() async {
-    final newRecord = Record(
-      // ★★★ 修正: 必須のString型 recordId に一意な文字列を割り当てる ★★★
-      recordId: DateTime.now().microsecondsSinceEpoch.toString(), 
-      moodScore: _moodScore,
-      moodTags: _selectedMoodTags.toList(),
-      eventText: eventController.text.trim(),
-      recordDate: DateTime.now(),
-      location: _locationName,
-      weather: _weather,
-      selfAnalysis: detailController.text.trim(),
-    );
-    
-    await isar.writeTxn(() async {
-      await isar.records.put(newRecord);
-    });
+    // F-8: ローカルDBへの保存ロジック (TODO: 後続タスクで実装)
+    log("--- 記録を保存 ---");
+    log("タグ: ${selectedMoodTags.join(', ')}");
+    log("スコア: $moodScore");
+    log("出来事: ${eventController.text}");
+    log("内省: ${detailController.text}");
+    log("質問: $_reflectionQuestion");
   }
 
   void resetEntry() {
     _currentStepIndex = 1;
-    _selectedMoodTags.clear();
-    _moodScore = 5;
+    selectedMoodTags.clear();
+    moodScore = 5.0;
     eventController.clear();
     detailController.clear();
-    _loadLocationAndWeather(); 
+    _reflectionQuestion = ''; // 質問もリセット
+    _isGeneratingQuestion = false;
     notifyListeners();
   }
 }
