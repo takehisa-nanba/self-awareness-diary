@@ -25,20 +25,20 @@ class Step3WriteScreen extends StatelessWidget {
         children: [
           const Text(
             'Step 3. 気分を自由に言語化してください (オプション)',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const Text(
-            'このステップでは、あなたの感情や気分を自由に言葉で表現してください。履歴画面でも編集できますので、そのまま保存しても大丈夫です。',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+            'このステップでは、あなたの感情や気分を自由に言葉で表現してください。',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
           const SizedBox(height: 8),
 
           TextField(
             controller: languageController,
-            maxLines: 10,
+            maxLines: 8,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
-              hintText: '例：プロジェクト完了は嬉しいが、次のタスクへの不安で落ち着かない。',
+              hintText: '例：プロジェクト完了は嬉しいが、次のタスクへの不安で落ち着かない。\n※履歴画面でも編集できますので、そのまま保存しても大丈夫です。',
             ),
           ),
 

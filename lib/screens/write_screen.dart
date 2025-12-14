@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 import '../core/write_core.dart';
 import '../widgets/location_status_bar.dart';
 import '../widgets/app_shell.dart';
-import 'write_steps/step1_write.dart' show Step1WriteScreen; 
-import 'write_steps/step2_write.dart' show Step2WriteScreen; 
-import 'write_steps/step3_write.dart' show Step3WriteScreen; 
+import 'write_steps/step1_write.dart'; 
+import 'write_steps/step2_write.dart'; 
+import 'write_steps/step3_write.dart'; 
 
 class WriteScreen extends StatelessWidget {
   const WriteScreen({super.key});
@@ -62,7 +62,8 @@ class WriteScreen extends StatelessWidget {
             icon: const Icon(Icons.arrow_back_ios, size: 16, color: Colors.black87),
             label: const Text('戻る', style: TextStyle(color: Colors.black87)),
           )
-        : const SizedBox(width: 56.0); // 戻るボタンがないステップ1でも、タイトルと位置を揃えるため同等の幅を確保
+        // ★★★ 修正1: ステップ1の時は幅 0 のSizedBoxを返す（左寄せのため） ★★★
+        : const SizedBox.shrink(); 
 
     // タイトルとステップ表示 (Columnで縦にまとめる)
     Widget titleAndStep = Column(
@@ -90,11 +91,10 @@ class WriteScreen extends StatelessWidget {
     );
 
     return PreferredSize(
-      preferredSize: const Size.fromHeight(40.0), // 高さを60.0に調整
+      preferredSize: const Size.fromHeight(60.0), 
       child: Container(
         color: Colors.transparent, 
         
-        // ★★★ 修正1: 戻るボタンとタイトルをRowで並べ、全体のパディングを設定 ★★★
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0), // 左右パディング
           child: Row(
@@ -103,13 +103,15 @@ class WriteScreen extends StatelessWidget {
               // 1. 戻るボタン/SizedBox (左端)
               backButton,
               
-              // 2. スペース
-              const SizedBox(width: 10.0),
+              // 2. スペース - 戻るボタンがあるときのみスペースを空ける
+              // ★★★ 修正2: if を追加し、ステップ2, 3 のみスペースを空ける ★★★
+              if (core.currentStepIndex > 1)
+                const SizedBox(width: 10.0),
               
               // 3. タイトルとステップ表示 (残りのスペースを占有)
               Expanded(
                 child: Padding(
-                   padding: const EdgeInsets.symmetric(vertical: 8.0), // 上下のパディングで高さを調整
+                   padding: const EdgeInsets.symmetric(vertical: 4.0), 
                    child: titleAndStep,
                 ),
               ),
@@ -209,7 +211,7 @@ class WriteContent extends StatelessWidget {
         );
       case 2:
         return Step2WriteScreen(
-          moodScore: core.moodScore, 
+          moodScore: core.moodScore.toDouble(), 
           eventController: core.eventController,
           onScoreChanged: (int score) {
             core.setMoodScore(score.toDouble());
