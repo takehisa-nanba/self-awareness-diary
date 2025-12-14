@@ -1,14 +1,14 @@
-// lib/screens/new_entry_steps/step3_language.dart
+// lib/screens/write_steps/step3_write.dart
 
 import 'package:flutter/material.dart';
 
-class Step3LanguageScreen extends StatelessWidget {
+class Step3WriteScreen extends StatelessWidget {
   final TextEditingController languageController; // 言語化テキストコントローラー
   final VoidCallback onPremiumTap; // 有料プラン画面への遷移コールバック
   final String locationString; // 位置情報文字列 
   final String weatherString; // 天気情報文字列
 
-  const Step3LanguageScreen({
+  const Step3WriteScreen({
     super.key,
     required this.languageController,
     required this.onPremiumTap,
@@ -28,7 +28,7 @@ class Step3LanguageScreen extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const Text(
-            'このステップでは、あなたの感情や気分を自由に言葉で表現してください。履歴画面でも編集できます。',
+            'このステップでは、あなたの感情や気分を自由に言葉で表現してください。履歴画面でも編集できますので、そのまま保存しても大丈夫です。',
             style: TextStyle(fontSize: 14, color: Colors.grey),
           ),
           const SizedBox(height: 8),

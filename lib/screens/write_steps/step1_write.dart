@@ -1,13 +1,13 @@
-// lib/screens/new_entry_steps/step1_mood_tag.dart (最新版)
+// lib/screens/write_steps/step1_write.dart (最新版)
 
 import 'package:flutter/material.dart';
 import 'package:myapp/data/mood_tags.dart'; // ★★★ 新しく作成したタグデータをインポート ★★★
 
-class Step1MoodTagScreen extends StatelessWidget {
+class Step1WriteScreen extends StatelessWidget {
   final Set<String> selectedTags;
   final ValueChanged<String> onTagSelected;
 
-  const Step1MoodTagScreen({
+  const Step1WriteScreen({
     super.key,
     required this.selectedTags,
     required this.onTagSelected,

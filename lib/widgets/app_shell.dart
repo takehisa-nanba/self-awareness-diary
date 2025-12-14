@@ -8,12 +8,19 @@ class AppShell extends StatelessWidget {
   final Widget child;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
+  final bool showNavigator; // ★★★ 修正1: ナビゲーター表示フラグを追加 ★★★
+  final String? title;      // ★★★ 修正2: タイトルを外部から渡せるようにする ★★★
+  final PreferredSizeWidget? customHeader; // ★★★ 修正1: customHeader 引数を追加 ★★★
+  
 
   const AppShell({
     super.key,
     required this.child,
     this.floatingActionButton,
     this.floatingActionButtonLocation,
+    this.showNavigator = true, // ★★★ デフォルトを true に設定 ★★★
+    this.title = '自己覚知日記', // ★★★ デフォルトを設定 ★★★
+    this.customHeader, // ★★★ customHeader を受け入れる ★★★
   });
 
   void _navigateToScreen(BuildContext context, int index) {
@@ -55,19 +62,23 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     
     final double safePaddingTop = MediaQuery.of(context).padding.top;
+    final double navigatorWidth = showNavigator ? (56.0 + 5.0) : 0.0;
+    final double customHeaderHeight = customHeader?.preferredSize.height ?? 0.0;
+    final double totalHeaderHeight = kAppHeaderH  + customHeaderHeight;
 
     return Scaffold(
       // AppBarを削除し、bodyのStackでカスタムヘッダーを構築
       body: Stack(
         children: [
-          // 1. メインコンテンツ (NewEntryScreen) - ヘッダーの高さ分下にずらす
+          // 1. メインコンテンツ (WriteScreen) - ヘッダーの高さ分下にずらす
           Padding(
-            // カスタムヘッダーの高さ(56.0)分、コンテンツ全体を下にずらす
-            padding: EdgeInsets.only(top: kAppHeaderH + safePaddingTop), 
+            padding: EdgeInsets.only(top: totalHeaderHeight - safePaddingTop), 
             child: child,
           ),
-          
-          // 2. カスタムヘッダーエリアの構築 (L2: タイトル)
+
+          // ★★★ 修正2: Z-Index調整のため、ナビゲーターを最初に配置（最背面） ★★★
+          // ナビゲーターはカスタムヘッダーの下に潜り込む
+          // 2. AppShell のカスタムヘッダーエリア (L2: 固定タイトル)
           Positioned(
             left: 0,
             right: 0,
@@ -75,36 +86,42 @@ class AppShell extends StatelessWidget {
             child: Container(
               height: kAppHeaderH, 
               color: Colors.orange.shade700, 
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row( // Row を使ってナビゲーターとタイトルを分離する
+              padding: const EdgeInsets.symmetric(horizontal: 5.0),
+              child: Row(
                 children: [
-                   // (ナビゲーターが Positioned で上にあるため、スペース確保のために SizedBox を入れる)
-                   const SizedBox(width: 56.0 + 16.0), // ナビゲーターの幅(約56px) + 左側のマージン(16px) 
-                   
-                   // アプリ名 (L2) を中央に寄せるために Expanded でラップ
-                   Expanded(
-                     child: Text(
-                       '自己覚知日記', 
-                       textAlign: TextAlign.center, // テキストを中央寄せ
-                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                         color: Colors.white,
-                       ),
-                     ),
-                   ),
-                   const SizedBox(width: 56.0), // 右側にも同じ幅のスペースを確保
+                  SizedBox(width: navigatorWidth), 
+                  
+                  Expanded(
+                    child: Text(
+                      title!, 
+                      textAlign: TextAlign.center, 
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: navigatorWidth),
                 ],
               ),
             ),
           ),
-          
-          // 3. ナビゲーター (L3: 最前面) を左端に固定
-          Positioned(
-            left: 16.0, 
-            top: safePaddingTop + kFabMarginTop, 
-            child: ExtendedFabNavigator(
-              onNavigationSelected: (index) => _navigateToScreen(context, index),
+            
+          // 3. customHeader（ステップ表示） (AppShellヘッダーより後に配置され、Z-Indexが上)
+          if (customHeader != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: safePaddingTop + kAppHeaderH, // ナビゲーターと重ならないように調整
+              child: customHeader!,
             ),
-          ),
+          if (showNavigator)
+            Positioned(
+              left: 5.0, 
+              top: safePaddingTop + kFabMarginTop, 
+              child: ExtendedFabNavigator(
+                onNavigationSelected: (index) => _navigateToScreen(context, index),
+              ),
+            ),
         ],
       ),
       

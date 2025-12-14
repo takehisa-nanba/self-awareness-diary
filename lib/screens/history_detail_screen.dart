@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/record.dart';
 import '../main.dart';
 import '../services/gemini_service.dart';
+import '../widgets/app_shell.dart';
 
 class HistoryDetailScreen extends StatefulWidget {
   final Record record;
@@ -98,139 +99,143 @@ class _HistoryDetailScreenState extends State<HistoryDetailScreen> {
       return Colors.red.shade600;
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('記録の詳細と内省'),
-        backgroundColor: scoreColor(),
-        actions: [
-          // 編集ボタン
-          if (!_isEditing)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                setState(() {
-                  _isEditing = true;
-                });
-              },
-            ),
-          // 保存ボタン
-          if (_isEditing)
-            IconButton(icon: const Icon(Icons.save), onPressed: _saveAnalysis),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- 記録概要 ---
-            ListTile(
-              leading: Icon(Icons.calendar_today, color: scoreColor()),
-              title: Text(
-                '${widget.record.recordDate.month}/${widget.record.recordDate.day} ${widget.record.recordDate.hour}:${widget.record.recordDate.minute}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+    return AppShell(
+      showNavigator: false, // ナビゲーター非表示
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('記録の詳細と内省'),
+          elevation: 1,
+          backgroundColor: scoreColor(),
+          actions: [
+            // 編集ボタン
+            if (!_isEditing)
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () {
+                  setState(() {
+                    _isEditing = true;
+                  });
+                },
               ),
-              subtitle: Text(
-                'スコア: ${widget.record.moodScore}/10 | タグ: ${widget.record.moodTags.join(', ')}',
+            // 保存ボタン
+            if (_isEditing)
+              IconButton(icon: const Icon(Icons.save), onPressed: _saveAnalysis),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- 記録概要 ---
+              ListTile(
+                leading: Icon(Icons.calendar_today, color: scoreColor()),
+                title: Text(
+                  '${widget.record.recordDate.month}/${widget.record.recordDate.day} ${widget.record.recordDate.hour}:${widget.record.recordDate.minute}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  'スコア: ${widget.record.moodScore}/10 | タグ: ${widget.record.moodTags.join(', ')}',
+                ),
               ),
-            ),
 
-            // --- 外部環境情報 (F-2) ---
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.location_on, size: 16),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      widget.record.location,
+              // --- 外部環境情報 (F-2) ---
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on, size: 16),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        widget.record.location,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Icon(Icons.cloud, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      widget.record.weather,
                       style: const TextStyle(fontSize: 12),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Icon(Icons.cloud, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    widget.record.weather,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(),
-
-            // --- 出来事 (クイック入力) ---
-            const Text(
-              '【出来事】',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(widget.record.eventText),
-            const SizedBox(height: 20),
-
-            // --- 自己分析 / 言語化 (F-6) ---
-            const Text(
-              '【自己分析/言語化】',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-
-            // AIアシストボタン (F-7)
-            if (!_isEditing)
-              OutlinedButton.icon(
-                onPressed: _isLoadingAi ? null : _generateAiQuestion,
-                icon: _isLoadingAi
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.psychology_alt),
-                label: Text(
-                  _isLoadingAi ? 'AIが質問を作成中...' : 'AI言語化アシストを依頼 (質問形式)',
+                  ],
                 ),
               ),
+              const Divider(),
 
-            // AIからの質問表示エリア
-            if (_aiQuestion != null)
-              Card(
-                margin: const EdgeInsets.only(top: 10, bottom: 10),
-                color: Colors.blue.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Text(
-                    'AIの質問: ${_aiQuestion!}',
-                    style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Colors.blue.shade900,
+              // --- 出来事 (クイック入力) ---
+              const Text(
+                '【出来事】',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Text(widget.record.eventText),
+              const SizedBox(height: 20),
+
+              // --- 自己分析 / 言語化 (F-6) ---
+              const Text(
+                '【自己分析/言語化】',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+
+              // AIアシストボタン (F-7)
+              if (!_isEditing)
+                OutlinedButton.icon(
+                  onPressed: _isLoadingAi ? null : _generateAiQuestion,
+                  icon: _isLoadingAi
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.psychology_alt),
+                  label: Text(
+                    _isLoadingAi ? 'AIが質問を作成中...' : 'AI言語化アシストを依頼 (質問形式)',
+                  ),
+                ),
+
+              // AIからの質問表示エリア
+              if (_aiQuestion != null)
+                Card(
+                  margin: const EdgeInsets.only(top: 10, bottom: 10),
+                  color: Colors.blue.shade50,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Text(
+                      'AIの質問: ${_aiQuestion!}',
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.blue.shade900,
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-            // 分析入力フィールド
-            TextField(
-              controller: _analysisController,
-              enabled: _isEditing,
-              maxLines: 8,
-              decoration: InputDecoration(
-                hintText: _isEditing
-                    ? 'なぜそう感じたか、感情のトリガー、自分の行動パターンなどを記述しましょう。'
-                    : '未入力',
-                border: _isEditing
-                    ? const OutlineInputBorder()
-                    : InputBorder.none,
-                fillColor: _isEditing
-                    ? Colors.grey.shade100
-                    : Colors.transparent,
-                filled: true,
+              // 分析入力フィールド
+              TextField(
+                controller: _analysisController,
+                enabled: _isEditing,
+                maxLines: 8,
+                decoration: InputDecoration(
+                  hintText: _isEditing
+                      ? 'なぜそう感じたか、感情のトリガー、自分の行動パターンなどを記述しましょう。'
+                      : '未入力',
+                  border: _isEditing
+                      ? const OutlineInputBorder()
+                      : InputBorder.none,
+                  fillColor: _isEditing
+                      ? Colors.grey.shade100
+                      : Colors.transparent,
+                  filled: true,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

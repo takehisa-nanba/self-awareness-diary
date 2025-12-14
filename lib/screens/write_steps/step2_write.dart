@@ -1,14 +1,14 @@
-// lib/screens/new_entry_steps/step2_score_event.dart (最新版)
+// lib/screens/write_steps/step2_write.dart (最新版)
 
 import 'package:flutter/material.dart';
 
-class Step2ScoreEventScreen extends StatelessWidget {
+class Step2WriteScreen extends StatelessWidget {
   final int moodScore;
   final TextEditingController eventController;
   final ValueChanged<int> onScoreChanged;
   final VoidCallback onContentChanged;
 
-  const Step2ScoreEventScreen({
+  const Step2WriteScreen({
     super.key,
     required this.moodScore,
     required this.eventController,
@@ -66,16 +66,16 @@ class Step2ScoreEventScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. 気分スコア表示エリア
+           // 気分スコア表示エリア
           Card(
             color: displayColor, // ★★★ 色をスコアと連動 ★★★
-            elevation: 4,
+            elevation: 2,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                vertical: 20.0,
+                vertical: 10.0,
                 horizontal: 16.0,
               ),
               child: Column(
@@ -109,9 +109,9 @@ class Step2ScoreEventScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 15),
 
-          // 2. スコア選択ボタンエリア
+         // 2. スコア選択ボタンエリア
           Wrap(
             spacing: 10.0,
             runSpacing: 10.0,
@@ -138,7 +138,7 @@ class Step2ScoreEventScreen extends StatelessWidget {
 
           const SizedBox(height: 30),
 
-          // 3. 出来事の入力エリア
+          // 出来事入力セクション
           const Text(
             '【出来事】何がトリガーでしたか？',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -147,12 +147,14 @@ class Step2ScoreEventScreen extends StatelessWidget {
           TextField(
             controller: eventController,
             onChanged: (text) => onContentChanged(),
-            maxLines: 4,
+            maxLines: 1,
             decoration: const InputDecoration(
               hintText: '例: プロジェクトの締め切りが近づいている。上司に褒められた。',
               border: OutlineInputBorder(),
             ),
           ),
+
+          // 3. 出来事の入力エリア
         ],
       ),
     );
