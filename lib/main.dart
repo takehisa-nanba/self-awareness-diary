@@ -1,18 +1,18 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 画面の向きを固定するために必要
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // ★★★ 追記 ★★★
-import 'package:isar/isar.dart'; // DBを使う
-import 'package:myapp/screens/write_screen.dart';
-import 'package:path_provider/path_provider.dart'; // 保存場所を探す
-import 'package:intl/date_symbol_data_local.dart'; // 日付のローカライズ用
-import 'models/record.dart'; // ★★★ 新しいモデルをインポート ★★★
+import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-import 'screens/history_screen.dart'; // ★★★ 追加 ★★★
-import 'screens/analysis_screen.dart'; // ★★★ 追加 ★★★
-import 'screens/settings_screen.dart'; // ★★★ 追加 ★★★
+import 'models/record.dart'; // ★★★ Recordモデルのインポート ★★★
 
+import 'screens/write_screen.dart'; // 記録画面
+import 'screens/history_screen.dart'; // 履歴画面
+import 'screens/analysis_screen.dart'; // 分析画面
+import 'screens/settings_screen.dart'; // 設定画面
 void main() async {
 // 1. Flutterエンジンの初期化を待つ
   WidgetsFlutterBinding.ensureInitialized(); 

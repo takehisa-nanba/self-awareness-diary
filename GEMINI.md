@@ -565,17 +565,17 @@ The AI will apply common architectural patterns to ensure a well-structured appl
 
 For effective debugging and monitoring, the AI will use the `dart:developer` library, which provides structured logging that integrates with Dart DevTools.
 
-* **Basic Logging**: For simple messages, the `log` function is used.
+* **Basic Logging**: For simple messages, the `print` function is used.
 
 ```
 import 'dart:developer' as developer;
 
-developer.log('This is a simple log message.');
+developer.print('This is a simple print message.');
 ```
 
-* **Structured Logging**: For more detailed logs, the `log` function accepts several optional parameters:
+* **Structured Logging**: For more detailed logs, the `print` function accepts several optional parameters:
 
-  * `name`: A `String` to categorize log messages (e.g., 'my\_app.network').
+  * `name`: A `String` to categorize print messages (e.g., 'my\_app.network').
   * `level`: An `int` for severity (e.g., `800` for `INFO`, `900` for `WARNING`, `1000` for `SEVERE`).
   * `error`: An `Object` for logging exceptions.
   * `stackTrace`: A `StackTrace` object.
@@ -589,7 +589,7 @@ import 'dart:developer' as developer;
 try {
   throw 'Something went wrong!';
 } catch (e, s) {
-  developer.log(
+  developer.print(
     'An error occurred',
     name: 'my_app.network',
     level: 900, // WARNING
@@ -599,7 +599,7 @@ try {
 }
 ```
 
-* **Viewing Logs**: Structured logs can be viewed in the "Debug Console" of the IDE or, for a more detailed analysis, in the "Logging" tab of Dart DevTools. This allows for filtering and inspecting log entries, making debugging more efficient.
+* **Viewing Logs**: Structured logs can be viewed in the "Debug Console" of the IDE or, for a more detailed analysis, in the "Logging" tab of Dart DevTools. This allows for filtering and inspecting print entries, making debugging more efficient.
 
 ## **Generative AI with Firebase**
 

@@ -31,9 +31,10 @@ dependencies:
   path_provider: ^2.1.2   # 保存場所を教えてくれる人
   table_calendar: ^3.1.0  # カレンダー表示
   intl: ^0.20.2            # 日付のフォーマットなどを助けてくれる人
-  geolocator: ^11.0.0     # 位置情報(GPS)
+  geolocator: ^11.1.0  # 位置情報取得
+  geocoding: ^2.1.1    # 位置情報関連
+  http: ^1.2.1         # HTTP通信
   uuid: ^4.3.3            # UUID生成
-  http: ^1.1.2            # HTTP:通信用
   fl_chart: ^0.68.0       # グラフ描画ライブラリ
   google_generative_ai: ^0.4.7 # ★★★ Gemini API公式ライブラリ ★★★
   flutter_dotenv: ^5.1.0 # ★★★ 環境変数管理ライブラリ ★★★
@@ -51,6 +52,7 @@ dev_dependencies:
   # 設定はルートディレクトリにある `analysis_options.yaml` ファイルで行います。
   flutter_lints: ^6.0.0
   
+  analyzer: ^5.13.0
   # ▼▼▼ ここから追加 ▼▼▼
   build_runner: ^2.4.8    # コード生成を実行する人
   isar_generator: ^3.1.0  # Isarのコードを作る職人
@@ -69,7 +71,7 @@ flutter:
   # アプリケーションに画像などのアセット（素材）を追加するには、
   # 以下のように assets セクションを追加します:
   assets: # ★★★ 追記/修正 ★★★
-    - .env
+    - .env # 環境変数ファイルを追加
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

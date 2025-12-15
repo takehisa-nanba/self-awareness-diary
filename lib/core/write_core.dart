@@ -1,8 +1,13 @@
-// lib/core/write_core.dart (修正版)
+// lib/core/write_core.dart (構造復元版)
 
 import 'package:flutter/material.dart';
-import 'dart:developer';
-import '../services/gemini_service.dart'; // ★★★ 追加 ★★★
+import 'package:uuid/uuid.dart'; 
+import '../services/location_weather_service.dart'; // 位置情報・天気サービス
+import '../services/gemini_service.dart'; // Gemini AIサービス
+import '../services/record_service.dart'; // DBサービス
+import '../models/record.dart'; // Recordモデル
+
+const _uuid = Uuid(); 
 
 class WriteCore extends ChangeNotifier {
   // ステップ管理
@@ -19,19 +24,26 @@ class WriteCore extends ChangeNotifier {
 
   // データフィールド
   Set<String> selectedMoodTags = {};
-  double moodScore = 5.0; // デフォルトは5
+  double moodScore = 5.0; 
   TextEditingController eventController = TextEditingController();
   TextEditingController detailController = TextEditingController();
 
-  // AIからの内省の質問を格納するフィールド ★★★ 追加 ★★★
+  // AIからの内省の質問を格納するフィールド
   String _reflectionQuestion = '';
   String get reflectionQuestion => _reflectionQuestion;
   bool _isGeneratingQuestion = false;
   bool get isGeneratingQuestion => _isGeneratingQuestion;
 
-  // 環境データ (ダミー値)
-  String locationName = '東京駅';
-  String weather = '晴れ';
+  // 環境データ (位置情報・天気)
+  String latitude = '0.0';
+  String longitude = '0.0';
+  String locationName = '場所不明';
+  String weather = '天気不明';
+  
+  // initCoreでリアルタイムデータをロード
+  WriteCore() {
+    loadLocationAndWeather(); // ★★★ 追記: コア初期化時に位置情報をロード ★★★
+  }
 
   // ------------------------------------
   // メソッド
@@ -56,7 +68,6 @@ class WriteCore extends ChangeNotifier {
   }
 
   bool isLocationAndWeatherReady() {
-    // 実際にはAPIからの取得完了をチェックする
     return locationName.isNotEmpty && weather.isNotEmpty;
   }
   
@@ -71,7 +82,6 @@ class WriteCore extends ChangeNotifier {
       case 2:
         return eventController.text.trim().isNotEmpty && moodScore >= 1;
       case 3:
-        // ステップ3では必須入力なし (保存はいつでも可能)
         return true; 
       default:
         return false;
@@ -82,8 +92,7 @@ class WriteCore extends ChangeNotifier {
     if (!isStepValid()) return;
 
     if (_currentStepIndex == 2) {
-      // ステップ2から3に遷移する際、AIに質問生成を依頼する
-      await generateQuestion(); // ★★★ AI呼び出し ★★★
+      await generateQuestion(); 
     }
 
     if (_currentStepIndex < stepTitles.length) {
@@ -100,15 +109,32 @@ class WriteCore extends ChangeNotifier {
   }
 
   // ------------------------------------
-  // AI連携メソッド ★★★ 追加 ★★★
+  // 位置情報・天気取得ロジック
+  // ------------------------------------
+  Future<void> loadLocationAndWeather() async {
+    print('--- F-2: 位置情報と天気情報の取得開始 ---');
+    try {
+      final data = await locationWeatherService.getLocationAndWeather();
+      
+      locationName = data['locationName'] ?? '場所不明';
+      weather = data['weather'] ?? '天気不明';
+
+      print('位置情報ロード完了: $locationName, $weather');
+      notifyListeners(); // UIの更新を通知
+    } catch (e) {
+      print('位置情報ロード中に予期せぬエラー: $e');
+    }
+  }
+
+  // ------------------------------------
+  // AI連携メソッド
   // ------------------------------------
   
   Future<void> generateQuestion() async {
-    // 出来事の入力がない場合は実行しない
     if (eventController.text.trim().isEmpty) return; 
 
     _isGeneratingQuestion = true;
-    _reflectionQuestion = 'AIコーチが質問を考えています...'; // 処理中のメッセージ
+    _reflectionQuestion = 'AIコーチが質問を考えています...'; 
     notifyListeners();
 
     try {
@@ -135,13 +161,32 @@ class WriteCore extends ChangeNotifier {
   // ------------------------------------
 
   Future<void> saveRecordOnly() async {
-    // F-8: ローカルDBへの保存ロジック (TODO: 後続タスクで実装)
-    log("--- 記録を保存 ---");
-    log("タグ: ${selectedMoodTags.join(', ')}");
-    log("スコア: $moodScore");
-    log("出来事: ${eventController.text}");
-    log("内省: ${detailController.text}");
-    log("質問: $_reflectionQuestion");
+    print("--- 記録のDB保存開始 ---"); 
+    
+    // 1. Recordオブジェクトの作成
+    final newRecord = Record(
+      recordId: _uuid.v4(), // 一意のIDを生成
+      recordDate: DateTime.now(), // 現在日時
+      moodTags: selectedMoodTags.toList(), // tagリスト
+      moodScore: moodScore.round(), // スコアを整数に変換
+      eventText: eventController.text.trim(), // 出来事テキスト
+      selfAnalysis: detailController.text.trim(), // 内省テキスト
+      location: locationName,     // 場所名
+      weather: weather,           // 天気情報
+    );
+
+    try {
+      // 2. データベースサービスを呼び出す
+      await recordService.saveRecord(newRecord); 
+      
+      print("データベースへの保存成功: ID=${newRecord.recordId}");
+      
+      // 3. 保存完了後、フォームをリセット
+      resetEntry();
+      
+    } catch (e) {
+      print("データベース保存エラー: $e");
+    }
   }
 
   void resetEntry() {
@@ -150,7 +195,7 @@ class WriteCore extends ChangeNotifier {
     moodScore = 5.0;
     eventController.clear();
     detailController.clear();
-    _reflectionQuestion = ''; // 質問もリセット
+    _reflectionQuestion = ''; 
     _isGeneratingQuestion = false;
     notifyListeners();
   }
