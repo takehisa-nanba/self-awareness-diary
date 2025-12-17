@@ -42,6 +42,7 @@ class WriteScreen extends StatelessWidget {
                     child: LocationStatusBar(
                       location: core.locationName,
                       weather: core.weather,
+                      onTap: core.retryLocationAndWeather, // ★ 追加: タップ時の再取得ロジックを渡す
                     ),
                   ),
                 ),
@@ -125,27 +126,48 @@ class WriteScreen extends StatelessWidget {
   Widget _buildFab(BuildContext context, WriteCore core) {
     final bool isValid = core.isStepValid();
 
-    IconData icon;
-    String label;
-    VoidCallback? onPressed;
+  IconData icon;
+  String label;
+  VoidCallback? onPressed;
 
-    if (core.currentStepIndex < 3) {
-      icon = Icons.arrow_forward;
-      label = '次へ';
-      onPressed = isValid ? core.nextStep : null;
-    } else {
-      icon = Icons.save;
-      label = '保存';
-      onPressed = isValid && core.isLocationAndWeatherReady()
-          ? () => _handleSaveEntry(context, core)
-          : null;
-    }
+  if (core.currentStepIndex < 3) {
+    icon = Icons.arrow_forward;
+    label = '次へ';
+    
+    // ★ 修正1: ステップ2の時だけ、AI解析を考慮した非同期処理にする
+    onPressed = isValid 
+        ? () async {
+            if (core.currentStepIndex == 2) {
+              // ステップ2から3へ行く時、ローディングを挟む
+              await core.nextStep(); 
+            } else {
+              core.nextStep();
+            }
+          }
+        : null;
+  } else {
+    icon = Icons.save;
+    label = '保存';
+    onPressed = isValid && core.isLocationAndWeatherReady()
+        ? () => _handleSaveEntry(context, core)
+        : null;
+  }
 
-    return FloatingActionButton.extended(
-      onPressed: onPressed,
-      label: Text(label),
-      icon: Icon(icon),
-      backgroundColor: onPressed != null ? Colors.orange.shade800 : Colors.grey,
+  return FloatingActionButton.extended(
+    onPressed: core.isLoadingAi ? null : onPressed, // ★ 修正2: ロード中は無効化
+    // ★ 修正3: ロード中は「次へ」の代わりにぐるぐるを表示
+    label: core.isLoadingAi 
+        ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
+            ),
+          )
+        : Text(label),
+    icon: core.isLoadingAi ? null : Icon(icon),
+    backgroundColor: onPressed != null ? Colors.orange.shade800 : Colors.grey,
     );
   }
 
@@ -183,6 +205,7 @@ class WriteContent extends StatelessWidget {
   final WriteCore core;
   
   const WriteContent({super.key, required this.core});
+  
   
   @override
   Widget build(BuildContext context) {

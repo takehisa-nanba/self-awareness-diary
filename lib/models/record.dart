@@ -1,68 +1,71 @@
-// lib/models/record.dart (isarId修正後の最終版)
+// lib/models/record.dart
 
 import 'package:isar/isar.dart';
-import 'package:flutter/foundation.dart';
 
 part 'record.g.dart';
 
-// 記録データモデル (最終確定版)
 @collection
-@immutable // 不変性を宣言
 class Record {
-  // ★★★ 修正箇所1: isarIdをfinalかつNullableにする ★★★
-  // DB保存時はnullで渡され、保存後にIsarが値を割り当てる
-  final Id? isarId;
+  Id? isarId; // Isar用の自動インクリメントID
 
-  @Index(unique: true)
-  final String recordId;
+  @Index(unique: true, replace: true)
+  late String recordId; // UUID
 
-  final DateTime recordDate;
-  final List<String> moodTags;
-  final int moodScore;
-  final String eventText;
+  late DateTime recordDate;
+  late List<String> moodTags;
+  late int moodScore;    // ユーザーの主観スコア (1-10)
+  late String eventText; // 出来事
+  String? selfAnalysis;  // 内省・詳細
 
-  // 外部データ
-  final String location;
-  final String weather;
+  // --- ★追加フィールド: AI客観分析用 ---
+  int? aiStabilityScore; // AIが算出した安定度 (0-100)
+  String? aiAnalysisReason; // AIが判断した短い根拠
 
-  // 事後言語化
-  final String selfAnalysis;
+  // --- 既存の環境データ ---
+  String? location;
+  String? weather;
 
-  // コンストラクタ (修正2: isarIdをコンストラクタに追加)
-  const Record({
-    this.isarId, // 修正2: 追加
+  // コンストラクタ
+  Record({
+    this.isarId,
     required this.recordId,
     required this.recordDate,
     required this.moodTags,
     required this.moodScore,
     required this.eventText,
-    required this.location,
-    required this.weather,
-    this.selfAnalysis = '',
+    this.selfAnalysis,
+    this.aiStabilityScore,
+    this.aiAnalysisReason,
+    this.location,
+    this.weather,
   });
 
-  // copyWithメソッド (修正3: isarIdをcopyの対象に追加)
+  // ★詳細画面での編集時に便利な copyWith メソッド
   Record copyWith({
-    Id? isarId, // 修正3: 追加
+    Id? isarId,
     String? recordId,
     DateTime? recordDate,
     List<String>? moodTags,
     int? moodScore,
     String? eventText,
+    String? selfAnalysis,
+    int? aiStabilityScore,
+    String? aiAnalysisReason,
     String? location,
     String? weather,
-    String? selfAnalysis,
   }) {
     return Record(
-      isarId: isarId ?? this.isarId, // 修正3: 追加
+      isarId: isarId ?? this.isarId,
       recordId: recordId ?? this.recordId,
       recordDate: recordDate ?? this.recordDate,
       moodTags: moodTags ?? this.moodTags,
       moodScore: moodScore ?? this.moodScore,
       eventText: eventText ?? this.eventText,
+      selfAnalysis: selfAnalysis ?? this.selfAnalysis,
+      aiStabilityScore: aiStabilityScore ?? this.aiStabilityScore,
+      aiAnalysisReason: aiAnalysisReason ?? this.aiAnalysisReason,
       location: location ?? this.location,
       weather: weather ?? this.weather,
-      selfAnalysis: selfAnalysis ?? this.selfAnalysis,
     );
   }
 }

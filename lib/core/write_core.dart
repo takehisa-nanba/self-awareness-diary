@@ -10,6 +10,8 @@ import '../models/record.dart'; // Recordモデル
 const _uuid = Uuid(); 
 
 class WriteCore extends ChangeNotifier {
+  bool _isLoadingAi = false;
+  bool get isLoadingAi => _isLoadingAi;
   // ステップ管理
   int _currentStepIndex = 1;
   int get currentStepIndex => _currentStepIndex;
@@ -88,18 +90,26 @@ class WriteCore extends ChangeNotifier {
     }
   }
 
-  void nextStep() async {
-    if (!isStepValid()) return;
+  Future<void> nextStep() async {
+      if (_currentStepIndex == 2) {
+        _isLoadingAi = true;
+        notifyListeners();
 
-    if (_currentStepIndex == 2) {
-      await generateQuestion(); 
+        try {
+          // ここで GeminiService などを呼び出しているはずです
+          // 例: await generateAiFeedback();
+          await generateQuestion();
+          // 解析が終わったら進む
+          _currentStepIndex++;
+        } finally {
+          _isLoadingAi = false;
+          notifyListeners();
+        }
+      } else if (_currentStepIndex < 3) {
+        _currentStepIndex++;
+        notifyListeners();
+      }
     }
-
-    if (_currentStepIndex < stepTitles.length) {
-      _currentStepIndex++;
-      notifyListeners();
-    }
-  }
 
   void previousStep() {
     if (_currentStepIndex > 1) {
@@ -111,8 +121,7 @@ class WriteCore extends ChangeNotifier {
   // ------------------------------------
   // 位置情報・天気取得ロジック
   // ------------------------------------
-  Future<void> loadLocationAndWeather() async {
-    print('--- F-2: 位置情報と天気情報の取得開始 ---');
+  Future<void> _internalFetchLocationAndWeather() async {
     try {
       final data = await locationWeatherService.getLocationAndWeather();
       
@@ -120,10 +129,30 @@ class WriteCore extends ChangeNotifier {
       weather = data['weather'] ?? '天気不明';
 
       print('位置情報ロード完了: $locationName, $weather');
-      notifyListeners(); // UIの更新を通知
     } catch (e) {
-      print('位置情報ロード中に予期せぬエラー: $e');
+      locationName = '取得失敗 (タップして再試行)';
+      weather = 'エラー';
+      print('位置情報取得エラー: $e');
+    } finally {
+      notifyListeners();
     }
+  }
+
+  // 初回ロード用
+  Future<void> loadLocationAndWeather() async {
+    print('--- F-2: 位置情報と天気情報の取得開始 ---');
+    await _internalFetchLocationAndWeather();
+  }
+  
+  // ★★★ タップ時の再取得ロジック ★★★
+  Future<void> retryLocationAndWeather() async {
+    // 状態をリセット
+    locationName = "場所特定中...";
+    weather = "...";
+    notifyListeners();
+
+    // 取得処理を実行
+    await _internalFetchLocationAndWeather();
   }
 
   // ------------------------------------
@@ -161,29 +190,45 @@ class WriteCore extends ChangeNotifier {
   // ------------------------------------
 
   Future<void> saveRecordOnly() async {
-    print("--- 記録のDB保存開始 ---"); 
-    
-    // 1. Recordオブジェクトの作成
+    print("--- 記録のDB保存開始 ---");
+
+    // 1. AIによる安定度診断を実行
+    // 詳細(detailController)があればそれを、なければ出来事(eventController)を対象にする
+    String textToAnalyze = detailController.text.trim().isNotEmpty 
+        ? detailController.text.trim() 
+        : eventController.text.trim();
+
+    int aiScore = 50; // デフォルト値
+    String aiReason = "分析未実施";
+
+    try {
+      final analysis = await geminiService.analyzeStability(textToAnalyze);
+      aiScore = analysis['score'] ?? 50;
+      aiReason = analysis['reason'] ?? "分析に失敗しました";
+      print("AI診断完了: スコア $aiScore / 理由: $aiReason");
+    } catch (e) {
+      print("保存時のAI診断エラー: $e");
+    }
+
+    // 2. Recordオブジェクトの作成（AIスコアを反映）
     final newRecord = Record(
-      recordId: _uuid.v4(), // 一意のIDを生成
-      recordDate: DateTime.now(), // 現在日時
-      moodTags: selectedMoodTags.toList(), // tagリスト
-      moodScore: moodScore.round(), // スコアを整数に変換
-      eventText: eventController.text.trim(), // 出来事テキスト
-      selfAnalysis: detailController.text.trim(), // 内省テキスト
-      location: locationName,     // 場所名
-      weather: weather,           // 天気情報
+      recordId: _uuid.v4(),
+      recordDate: DateTime.now(),
+      moodTags: selectedMoodTags.toList(),
+      moodScore: moodScore.round(),
+      eventText: eventController.text.trim(),
+      selfAnalysis: detailController.text.trim(),
+      // ★ 追加したフィールドにAIの解析結果を入れる
+      aiStabilityScore: aiScore,
+      aiAnalysisReason: aiReason,
+      location: locationName,
+      weather: weather,
     );
 
     try {
-      // 2. データベースサービスを呼び出す
-      await recordService.saveRecord(newRecord); 
-      
-      print("データベースへの保存成功: ID=${newRecord.recordId}");
-      
-      // 3. 保存完了後、フォームをリセット
+      await recordService.saveRecord(newRecord);
+      print("データベースへの保存成功: ID=${newRecord.recordId} (AI安定度: $aiScore)");
       resetEntry();
-      
     } catch (e) {
       print("データベース保存エラー: $e");
     }

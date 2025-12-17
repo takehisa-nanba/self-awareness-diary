@@ -17,43 +17,53 @@ const RecordSchema = CollectionSchema(
   name: r'Record',
   id: -5560585825827271694,
   properties: {
-    r'eventText': PropertySchema(
+    r'aiAnalysisReason': PropertySchema(
       id: 0,
+      name: r'aiAnalysisReason',
+      type: IsarType.string,
+    ),
+    r'aiStabilityScore': PropertySchema(
+      id: 1,
+      name: r'aiStabilityScore',
+      type: IsarType.long,
+    ),
+    r'eventText': PropertySchema(
+      id: 2,
       name: r'eventText',
       type: IsarType.string,
     ),
     r'location': PropertySchema(
-      id: 1,
+      id: 3,
       name: r'location',
       type: IsarType.string,
     ),
     r'moodScore': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'moodScore',
       type: IsarType.long,
     ),
     r'moodTags': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'moodTags',
       type: IsarType.stringList,
     ),
     r'recordDate': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'recordDate',
       type: IsarType.dateTime,
     ),
     r'recordId': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'recordId',
       type: IsarType.string,
     ),
     r'selfAnalysis': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'selfAnalysis',
       type: IsarType.string,
     ),
     r'weather': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'weather',
       type: IsarType.string,
     )
@@ -68,7 +78,7 @@ const RecordSchema = CollectionSchema(
       id: 907839981883940929,
       name: r'recordId',
       unique: true,
-      replace: false,
+      replace: true,
       properties: [
         IndexPropertySchema(
           name: r'recordId',
@@ -92,8 +102,19 @@ int _recordEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.aiAnalysisReason;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.eventText.length * 3;
-  bytesCount += 3 + object.location.length * 3;
+  {
+    final value = object.location;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.moodTags.length * 3;
   {
     for (var i = 0; i < object.moodTags.length; i++) {
@@ -102,8 +123,18 @@ int _recordEstimateSize(
     }
   }
   bytesCount += 3 + object.recordId.length * 3;
-  bytesCount += 3 + object.selfAnalysis.length * 3;
-  bytesCount += 3 + object.weather.length * 3;
+  {
+    final value = object.selfAnalysis;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.weather;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -113,14 +144,16 @@ void _recordSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.eventText);
-  writer.writeString(offsets[1], object.location);
-  writer.writeLong(offsets[2], object.moodScore);
-  writer.writeStringList(offsets[3], object.moodTags);
-  writer.writeDateTime(offsets[4], object.recordDate);
-  writer.writeString(offsets[5], object.recordId);
-  writer.writeString(offsets[6], object.selfAnalysis);
-  writer.writeString(offsets[7], object.weather);
+  writer.writeString(offsets[0], object.aiAnalysisReason);
+  writer.writeLong(offsets[1], object.aiStabilityScore);
+  writer.writeString(offsets[2], object.eventText);
+  writer.writeString(offsets[3], object.location);
+  writer.writeLong(offsets[4], object.moodScore);
+  writer.writeStringList(offsets[5], object.moodTags);
+  writer.writeDateTime(offsets[6], object.recordDate);
+  writer.writeString(offsets[7], object.recordId);
+  writer.writeString(offsets[8], object.selfAnalysis);
+  writer.writeString(offsets[9], object.weather);
 }
 
 Record _recordDeserialize(
@@ -130,15 +163,17 @@ Record _recordDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Record(
-    eventText: reader.readString(offsets[0]),
+    aiAnalysisReason: reader.readStringOrNull(offsets[0]),
+    aiStabilityScore: reader.readLongOrNull(offsets[1]),
+    eventText: reader.readString(offsets[2]),
     isarId: id,
-    location: reader.readString(offsets[1]),
-    moodScore: reader.readLong(offsets[2]),
-    moodTags: reader.readStringList(offsets[3]) ?? [],
-    recordDate: reader.readDateTime(offsets[4]),
-    recordId: reader.readString(offsets[5]),
-    selfAnalysis: reader.readStringOrNull(offsets[6]) ?? '',
-    weather: reader.readString(offsets[7]),
+    location: reader.readStringOrNull(offsets[3]),
+    moodScore: reader.readLong(offsets[4]),
+    moodTags: reader.readStringList(offsets[5]) ?? [],
+    recordDate: reader.readDateTime(offsets[6]),
+    recordId: reader.readString(offsets[7]),
+    selfAnalysis: reader.readStringOrNull(offsets[8]),
+    weather: reader.readStringOrNull(offsets[9]),
   );
   return object;
 }
@@ -151,21 +186,25 @@ P _recordDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 2:
-      return (reader.readLong(offset)) as P;
-    case 3:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 4:
-      return (reader.readDateTime(offset)) as P;
-    case 5:
       return (reader.readString(offset)) as P;
+    case 3:
+      return (reader.readStringOrNull(offset)) as P;
+    case 4:
+      return (reader.readLong(offset)) as P;
+    case 5:
+      return (reader.readStringList(offset) ?? []) as P;
     case 6:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readDateTime(offset)) as P;
     case 7:
       return (reader.readString(offset)) as P;
+    case 8:
+      return (reader.readStringOrNull(offset)) as P;
+    case 9:
+      return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -179,7 +218,9 @@ List<IsarLinkBase<dynamic>> _recordGetLinks(Record object) {
   return [];
 }
 
-void _recordAttach(IsarCollection<dynamic> col, Id id, Record object) {}
+void _recordAttach(IsarCollection<dynamic> col, Id id, Record object) {
+  object.isarId = id;
+}
 
 extension RecordByIndex on IsarCollection<Record> {
   Future<Record?> getByRecordId(String recordId) {
@@ -356,6 +397,228 @@ extension RecordQueryWhere on QueryBuilder<Record, Record, QWhereClause> {
 }
 
 extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiAnalysisReasonIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'aiAnalysisReason',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition>
+      aiAnalysisReasonIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'aiAnalysisReason',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiAnalysisReasonEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'aiAnalysisReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition>
+      aiAnalysisReasonGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'aiAnalysisReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiAnalysisReasonLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'aiAnalysisReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiAnalysisReasonBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'aiAnalysisReason',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition>
+      aiAnalysisReasonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'aiAnalysisReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiAnalysisReasonEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'aiAnalysisReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiAnalysisReasonContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'aiAnalysisReason',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiAnalysisReasonMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'aiAnalysisReason',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition>
+      aiAnalysisReasonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'aiAnalysisReason',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition>
+      aiAnalysisReasonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'aiAnalysisReason',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiStabilityScoreIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'aiStabilityScore',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition>
+      aiStabilityScoreIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'aiStabilityScore',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiStabilityScoreEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'aiStabilityScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition>
+      aiStabilityScoreGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'aiStabilityScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiStabilityScoreLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'aiStabilityScore',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> aiStabilityScoreBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'aiStabilityScore',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Record, Record, QAfterFilterCondition> eventTextEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -554,8 +817,24 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Record, Record, QAfterFilterCondition> locationIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'location',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> locationIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'location',
+      ));
+    });
+  }
+
   QueryBuilder<Record, Record, QAfterFilterCondition> locationEqualTo(
-    String value, {
+    String? value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -568,7 +847,7 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> locationGreaterThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -583,7 +862,7 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> locationLessThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -598,8 +877,8 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> locationBetween(
-    String lower,
-    String upper, {
+    String? lower,
+    String? upper, {
     bool includeLower = true,
     bool includeUpper = true,
     bool caseSensitive = true,
@@ -1136,8 +1415,24 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Record, Record, QAfterFilterCondition> selfAnalysisIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'selfAnalysis',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> selfAnalysisIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'selfAnalysis',
+      ));
+    });
+  }
+
   QueryBuilder<Record, Record, QAfterFilterCondition> selfAnalysisEqualTo(
-    String value, {
+    String? value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -1150,7 +1445,7 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> selfAnalysisGreaterThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -1165,7 +1460,7 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> selfAnalysisLessThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -1180,8 +1475,8 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> selfAnalysisBetween(
-    String lower,
-    String upper, {
+    String? lower,
+    String? upper, {
     bool includeLower = true,
     bool includeUpper = true,
     bool caseSensitive = true,
@@ -1266,8 +1561,24 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Record, Record, QAfterFilterCondition> weatherIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'weather',
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterFilterCondition> weatherIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'weather',
+      ));
+    });
+  }
+
   QueryBuilder<Record, Record, QAfterFilterCondition> weatherEqualTo(
-    String value, {
+    String? value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -1280,7 +1591,7 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> weatherGreaterThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -1295,7 +1606,7 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> weatherLessThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -1310,8 +1621,8 @@ extension RecordQueryFilter on QueryBuilder<Record, Record, QFilterCondition> {
   }
 
   QueryBuilder<Record, Record, QAfterFilterCondition> weatherBetween(
-    String lower,
-    String upper, {
+    String? lower,
+    String? upper, {
     bool includeLower = true,
     bool includeUpper = true,
     bool caseSensitive = true,
@@ -1402,6 +1713,30 @@ extension RecordQueryObject on QueryBuilder<Record, Record, QFilterCondition> {}
 extension RecordQueryLinks on QueryBuilder<Record, Record, QFilterCondition> {}
 
 extension RecordQuerySortBy on QueryBuilder<Record, Record, QSortBy> {
+  QueryBuilder<Record, Record, QAfterSortBy> sortByAiAnalysisReason() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'aiAnalysisReason', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterSortBy> sortByAiAnalysisReasonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'aiAnalysisReason', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterSortBy> sortByAiStabilityScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'aiStabilityScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterSortBy> sortByAiStabilityScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'aiStabilityScore', Sort.desc);
+    });
+  }
+
   QueryBuilder<Record, Record, QAfterSortBy> sortByEventText() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'eventText', Sort.asc);
@@ -1488,6 +1823,30 @@ extension RecordQuerySortBy on QueryBuilder<Record, Record, QSortBy> {
 }
 
 extension RecordQuerySortThenBy on QueryBuilder<Record, Record, QSortThenBy> {
+  QueryBuilder<Record, Record, QAfterSortBy> thenByAiAnalysisReason() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'aiAnalysisReason', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterSortBy> thenByAiAnalysisReasonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'aiAnalysisReason', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterSortBy> thenByAiStabilityScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'aiStabilityScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterSortBy> thenByAiStabilityScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'aiStabilityScore', Sort.desc);
+    });
+  }
+
   QueryBuilder<Record, Record, QAfterSortBy> thenByEventText() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'eventText', Sort.asc);
@@ -1586,6 +1945,20 @@ extension RecordQuerySortThenBy on QueryBuilder<Record, Record, QSortThenBy> {
 }
 
 extension RecordQueryWhereDistinct on QueryBuilder<Record, Record, QDistinct> {
+  QueryBuilder<Record, Record, QDistinct> distinctByAiAnalysisReason(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'aiAnalysisReason',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Record, Record, QDistinct> distinctByAiStabilityScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'aiStabilityScore');
+    });
+  }
+
   QueryBuilder<Record, Record, QDistinct> distinctByEventText(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1647,13 +2020,25 @@ extension RecordQueryProperty on QueryBuilder<Record, Record, QQueryProperty> {
     });
   }
 
+  QueryBuilder<Record, String?, QQueryOperations> aiAnalysisReasonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'aiAnalysisReason');
+    });
+  }
+
+  QueryBuilder<Record, int?, QQueryOperations> aiStabilityScoreProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'aiStabilityScore');
+    });
+  }
+
   QueryBuilder<Record, String, QQueryOperations> eventTextProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'eventText');
     });
   }
 
-  QueryBuilder<Record, String, QQueryOperations> locationProperty() {
+  QueryBuilder<Record, String?, QQueryOperations> locationProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'location');
     });
@@ -1683,13 +2068,13 @@ extension RecordQueryProperty on QueryBuilder<Record, Record, QQueryProperty> {
     });
   }
 
-  QueryBuilder<Record, String, QQueryOperations> selfAnalysisProperty() {
+  QueryBuilder<Record, String?, QQueryOperations> selfAnalysisProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'selfAnalysis');
     });
   }
 
-  QueryBuilder<Record, String, QQueryOperations> weatherProperty() {
+  QueryBuilder<Record, String?, QQueryOperations> weatherProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'weather');
     });

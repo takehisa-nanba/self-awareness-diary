@@ -81,8 +81,8 @@ class HistoryDetailCore with ChangeNotifier {
         moodTags: _record.moodTags.join(', '),
         eventText: _record.eventText,
         moodScore: _record.moodScore,
-        location: _record.location,
-        weather: _record.weather,
+        location: _record.location ?? '',
+        weather: _record.weather ?? '',
       );
       
       _aiQuestion = question;

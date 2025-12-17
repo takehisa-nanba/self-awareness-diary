@@ -1,10 +1,9 @@
-// lib/screens/history_detail_screen.dart (新規作成)
+// lib/screens/history_detail_screen.dart
 
 import 'package:flutter/material.dart';
 import '../models/record.dart';
-import '../main.dart';
+import '../main.dart'; // isarインスタンス取得用
 import '../services/gemini_service.dart';
-import '../widgets/app_shell.dart';
 
 class HistoryDetailScreen extends StatefulWidget {
   final Record record;
@@ -17,226 +16,192 @@ class HistoryDetailScreen extends StatefulWidget {
 class _HistoryDetailScreenState extends State<HistoryDetailScreen> {
   late TextEditingController _analysisController;
   bool _isEditing = false;
-  bool _isLoadingAi = false;
-  String? _aiQuestion; // AIが提示する質問
 
   @override
   void initState() {
     super.initState();
-    // 既存の自己分析データでコントローラーを初期化
-    _analysisController = TextEditingController(
-      text: widget.record.selfAnalysis,
-    );
+    _analysisController = TextEditingController(text: widget.record.selfAnalysis);
   }
 
   @override
   void dispose() {
     _analysisController.dispose();
-    super.dispose();
+    super.initState();
+    super.dispose(); // 忘れずに親のdisposeも呼ぶ
   }
 
-  // ★★★ F-6: 記録の更新 (事後言語化の保存) ★★★
+  // 保存処理
   Future<void> _saveAnalysis() async {
-    final updatedRecord = widget.record.copyWith(
-      selfAnalysis: _analysisController.text,
+    // 1. ローディング表示（AI解析中）
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('AIが再分析しています...'), duration: Duration(seconds: 1)),
     );
 
+    // 2. 書き換えた文章で AI 安定度を再測定
+    final analysisResult = await geminiService.analyzeStability(_analysisController.text);
+
+    // 3. レコードを更新
+    final updatedRecord = widget.record.copyWith(
+      selfAnalysis: _analysisController.text,
+      aiStabilityScore: analysisResult['score'] ?? 50, // ★ AIスコアを更新
+      aiAnalysisReason: analysisResult['reason'] ?? "再分析に失敗しました", // ★ 理由を更新
+    );
+
+    // 4. 保存
     await isar.writeTxn(() async {
-      // IsarIdを使って、既存のレコードを更新 (putメソッドは既存IDがあれば更新)
       await isar.records.put(updatedRecord);
     });
 
-    setState(() {
-      _isEditing = false;
-      // 画面上のrecordオブジェクトを更新（重要）
-      // widget.record.selfAnalysis = _analysisController.text; // (finalなので不可)
-    });
-
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('自己分析を更新しました。')));
-    }
-  }
-
-  // ★★★ F-7: AI言語化アシストのロジック (ダミー) ★★★
-  Future<void> _generateAiQuestion() async {
-    setState(() {
-      _isLoadingAi = true;
-      _aiQuestion = null;
-    });
-
-    try {
-      // サービスを呼び出し、必要な記録データを渡す
-      final question = await geminiService.generateReflectionQuestion(
-        moodTags: widget.record.moodTags.join(', '),
-        eventText: widget.record.eventText,
-        moodScore: widget.record.moodScore,
-        location: widget.record.location,
-        weather: widget.record.weather,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('内省とAIスコアを更新しました')),
       );
-      
-      setState(() {
-        _aiQuestion = question;
-        _isLoadingAi = false;
-      });
-
-    } catch (e) {
-      setState(() {
-        _aiQuestion = "エラー: AIサービスの起動に失敗しました。";
-        _isLoadingAi = false;
-      });
-      debugPrint("AI Question Generation Failed: $e");
+      setState(() => _isEditing = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
-    // スコアの色を取得するHelper (ここでは仮に簡易的なロジックを使用)
-    Color scoreColor() {
-      if (widget.record.moodScore >= 8) return Colors.green.shade600;
-      if (widget.record.moodScore >= 5) return Colors.amber.shade600;
-      return Colors.red.shade600;
-    }
+    // ズレの計算
+    final int userScore = widget.record.moodScore * 10;
+    final int aiScore = widget.record.aiStabilityScore ?? 0;
+    final int diff = (userScore - aiScore).abs();
+    final bool hasGap = widget.record.aiStabilityScore != null && diff >= 20;
 
-    return AppShell(
-      showNavigator: false, // ナビゲーター非表示
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('記録の詳細と内省'),
-          elevation: 1,
-          backgroundColor: scoreColor(),
-          actions: [
-            // 編集ボタン
-            if (!_isEditing)
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () {
-                  setState(() {
-                    _isEditing = true;
-                  });
-                },
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('記録の詳細'),
+        actions: [
+          IconButton(
+            icon: Icon(_isEditing ? Icons.check : Icons.edit),
+            onPressed: () {
+              if (_isEditing) {
+                _saveAnalysis();
+              } else {
+                setState(() => _isEditing = true);
+              }
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. メタ認知インサイト・カード（主観 vs 客観）
+            _buildInsightCard(userScore, aiScore, hasGap),
+
+            const SizedBox(height: 20),
+
+            // 2. 基本情報セクション
+            _buildSectionTitle(Icons.event, "基本情報"),
+            _buildInfoTile("日時", "${widget.record.recordDate.month}/${widget.record.recordDate.day} ${widget.record.recordDate.hour}:${widget.record.recordDate.minute}"),
+            _buildInfoTile("場所/天気", "${widget.record.location?.split(',').first ?? '不明'} / ${widget.record.weather?.split('/').first ?? '不明'}"),
+            _buildInfoTile("感情タグ", widget.record.moodTags.join(', ')),
+
+            const SizedBox(height: 20),
+
+            // 3. 出来事セクション
+            _buildSectionTitle(Icons.notes, "その時の出来事"),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+              child: Text(widget.record.eventText, style: const TextStyle(fontSize: 16)),
+            ),
+
+            const SizedBox(height: 20),
+
+            // 4. 内省・詳細セクション
+            _buildSectionTitle(Icons.psychology, "振り返り・自己分析"),
+            TextField(
+              controller: _analysisController,
+              enabled: _isEditing,
+              maxLines: null,
+              decoration: InputDecoration(
+                hintText: "ここをタップして、後から気づいたことを書き足せます...",
+                border: _isEditing ? const OutlineInputBorder() : InputBorder.none,
+                filled: _isEditing,
+                fillColor: Colors.blue.shade50.withValues(alpha: 0.5),
               ),
-            // 保存ボタン
-            if (_isEditing)
-              IconButton(icon: const Icon(Icons.save), onPressed: _saveAnalysis),
+            ),
           ],
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // --- 記録概要 ---
-              ListTile(
-                leading: Icon(Icons.calendar_today, color: scoreColor()),
-                title: Text(
-                  '${widget.record.recordDate.month}/${widget.record.recordDate.day} ${widget.record.recordDate.hour}:${widget.record.recordDate.minute}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  'スコア: ${widget.record.moodScore}/10 | タグ: ${widget.record.moodTags.join(', ')}',
-                ),
-              ),
+      ),
+    );
+  }
 
-              // --- 外部環境情報 (F-2) ---
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.location_on, size: 16),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        widget.record.location,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Icon(Icons.cloud, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      widget.record.weather,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(),
-
-              // --- 出来事 (クイック入力) ---
-              const Text(
-                '【出来事】',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Text(widget.record.eventText),
-              const SizedBox(height: 20),
-
-              // --- 自己分析 / 言語化 (F-6) ---
-              const Text(
-                '【自己分析/言語化】',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-
-              // AIアシストボタン (F-7)
-              if (!_isEditing)
-                OutlinedButton.icon(
-                  onPressed: _isLoadingAi ? null : _generateAiQuestion,
-                  icon: _isLoadingAi
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.psychology_alt),
-                  label: Text(
-                    _isLoadingAi ? 'AIが質問を作成中...' : 'AI言語化アシストを依頼 (質問形式)',
-                  ),
-                ),
-
-              // AIからの質問表示エリア
-              if (_aiQuestion != null)
-                Card(
-                  margin: const EdgeInsets.only(top: 10, bottom: 10),
-                  color: Colors.blue.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+  // インサイトカードの構築
+  Widget _buildInsightCard(int userScore, int aiScore, bool hasGap) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const Text("自己認識のズレ（メタ認知）", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)),
+            const SizedBox(height: 15),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildScoreIndicator("あなたの気分", userScore, Colors.orange),
+                Icon(hasGap ? Icons.compare_arrows : Icons.sync, color: hasGap ? Colors.red : Colors.green, size: 30),
+                _buildScoreIndicator("AIの安定度", aiScore, Colors.blue),
+              ],
+            ),
+            if (widget.record.aiAnalysisReason != null) ...[
+              const Divider(height: 30),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.tips_and_updates, size: 18, color: Colors.amber),
+                  const SizedBox(width: 8),
+                  Expanded(
                     child: Text(
-                      'AIの質問: ${_aiQuestion!}',
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        color: Colors.blue.shade900,
-                      ),
+                      widget.record.aiAnalysisReason!,
+                      style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.black87),
                     ),
                   ),
-                ),
-
-              // 分析入力フィールド
-              TextField(
-                controller: _analysisController,
-                enabled: _isEditing,
-                maxLines: 8,
-                decoration: InputDecoration(
-                  hintText: _isEditing
-                      ? 'なぜそう感じたか、感情のトリガー、自分の行動パターンなどを記述しましょう。'
-                      : '未入力',
-                  border: _isEditing
-                      ? const OutlineInputBorder()
-                      : InputBorder.none,
-                  fillColor: _isEditing
-                      ? Colors.grey.shade100
-                      : Colors.transparent,
-                  filled: true,
-                ),
+                ],
               ),
             ],
-          ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildScoreIndicator(String label, int score, Color color) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text("$score%", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(IconData icon, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.blueGrey),
+          const SizedBox(width: 8),
+          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoTile(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        children: [
+          SizedBox(width: 80, child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey))),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
+        ],
       ),
     );
   }
