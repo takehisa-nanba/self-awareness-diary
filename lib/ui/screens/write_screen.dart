@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/write_provider.dart';
 import '../widgets/app_shell.dart';
+import '../widgets/location_status_bar.dart'; // ★追加
 import 'write_steps/step1_write.dart';
 import 'write_steps/step2_write.dart';
 import 'write_steps/step3_write.dart';
@@ -19,6 +20,10 @@ class WriteScreen extends StatelessWidget {
         children: [
           // 進捗インジケータ
           LinearProgressIndicator(value: (provider.currentStep + 1) / 3),
+          
+          // ★ステータスバーをここに追加
+          const LocationStatusBar(), 
+          
           const SizedBox(height: 20),
           
           // 各ステップの表示
@@ -29,7 +34,7 @@ class WriteScreen extends StatelessWidget {
             ),
           ),
           
-          // 操作ボタンエリア
+          // 操作ボタンエリア（以下、変更なし）
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(

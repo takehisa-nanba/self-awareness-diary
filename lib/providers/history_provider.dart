@@ -15,6 +15,10 @@ class HistoryProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadRecords() async {
+    _records = await isarService.getAllRecords();
+    notifyListeners(); // 画面を更新！
+  } 
   Future<void> deleteRecord(int id) async {
     await isarService.deleteRecord(id);
     await fetchRecords();

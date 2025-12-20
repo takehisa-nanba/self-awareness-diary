@@ -3,6 +3,8 @@ import 'package:uuid/uuid.dart';
 import '../models/diary_record.dart';
 import '../services/isar_service.dart';
 import '../services/gemini_service.dart';
+import '../services/location_service.dart';
+import '../services/weather_service.dart';
 
 class WriteProvider with ChangeNotifier {
   int _currentStep = 0;
@@ -14,12 +16,29 @@ class WriteProvider with ChangeNotifier {
   String eventText = "";
   String selfAnalysisText = "";
   String reflectionQuestion = "";
+  String? tempLocation;
+  String? tempWeather;
   
   bool isGenerating = false;
   bool isSaving = false;
 
   // UI更新用
   void update() => notifyListeners();
+
+  Future<void> fetchEnvironmentData() async {
+    debugPrint("GPS取得開始..."); // ← ログを追加
+    final position = await locationService.getCurrentPosition();
+    
+    if (position != null) {
+      debugPrint("GPS成功: ${position.latitude}"); // ← ログを追加
+      tempLocation = "${position.latitude.toStringAsFixed(2)}, ${position.longitude.toStringAsFixed(2)}";
+      tempWeather = await weatherService.getWeather(position.latitude, position.longitude);
+    } else {
+      debugPrint("GPS失敗: positionがnullです"); // ← ログを追加
+      tempLocation = "位置情報取得失敗";
+    }
+    notifyListeners();
+  }
 
   // ステップ制御
   void nextStep() {
@@ -87,6 +106,8 @@ class WriteProvider with ChangeNotifier {
         selfAnalysis: selfAnalysisText,
         aiStabilityScore: aiScore,
         aiAnalysisReason: aiReason,
+        location: tempLocation,
+        weather: tempWeather,
       );
 
       // Isarに保存
@@ -99,6 +120,10 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
+  WriteProvider() {
+    fetchEnvironmentData();
+  }
+  
   void _reset() {
     _currentStep = 0;
     moodScore = 5;

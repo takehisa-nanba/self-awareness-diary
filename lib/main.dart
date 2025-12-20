@@ -9,6 +9,7 @@ import 'ui/screens/write_screen.dart';
 import 'ui/screens/history_screen.dart';
 import 'ui/screens/analysis_screen.dart';
 import 'ui/screens/settings_screen.dart';
+import 'services/weather_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +21,9 @@ void main() async {
   // dotenvからAPIキーを取得
   final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
   geminiService = GeminiService(apiKey); 
+
+  final weatherKey = dotenv.env['OPENWEATHER_API_KEY'] ?? '';
+  weatherService = WeatherService(weatherKey);
 
   runApp(
     MultiProvider(

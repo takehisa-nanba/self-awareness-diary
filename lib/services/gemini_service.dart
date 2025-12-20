@@ -2,6 +2,7 @@
 
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 late GeminiService geminiService;
 
@@ -31,7 +32,7 @@ class GeminiService {
       final jsonStr = response.text?.replaceAll('```json', '').replaceAll('```', '').trim();
       return jsonDecode(jsonStr ?? '{"score": 50, "reason": "分析失敗"}');
     } catch (e) {
-      print('AI分析エラー: $e');
+      debugPrint('AI分析エラー: $e');
       return {"score": 50, "reason": "AI通信エラー"};
     }
   }
@@ -47,7 +48,7 @@ class GeminiService {
       final response = await _model.generateContent([Content.text(prompt)]);
       return response.text ?? 'その時、どんな感覚がありましたか？';
     } catch (e) {
-      print('質問生成エラー: $e');
+      debugPrint('質問生成エラー: $e');
       return 'その出来事について、もっと詳しく教えてください。';
     }
   }
