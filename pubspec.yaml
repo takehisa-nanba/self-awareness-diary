@@ -33,7 +33,7 @@ dependencies:
   intl: ^0.20.2            # 日付のフォーマットなどを助けてくれる人
   geolocator: ^11.1.0  # 位置情報取得
   geocoding: ^2.1.1    # 位置情報関連
-  http: ^1.2.1         # HTTP通信
+  http: ^1.6.0         # HTTP通信
   uuid: ^4.3.3            # UUID生成
   fl_chart: ^0.68.0       # グラフ描画ライブラリ
   google_generative_ai: ^0.4.7 # ★★★ Gemini API公式ライブラリ ★★★

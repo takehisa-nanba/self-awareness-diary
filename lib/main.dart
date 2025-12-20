@@ -9,6 +9,7 @@ import 'ui/screens/write_screen.dart';
 import 'ui/screens/history_screen.dart';
 import 'ui/screens/analysis_screen.dart';
 import 'ui/screens/settings_screen.dart';
+import 'services/location_service.dart';
 import 'services/weather_service.dart';
 
 void main() async {
@@ -20,10 +21,13 @@ void main() async {
   
   // dotenvからAPIキーを取得
   final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-  geminiService = GeminiService(apiKey); 
+  final weatherKey = dotenv.env['OPEN_WEATHER_API_KEY'] ?? '';
+  final mapsKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? ''; // 追加
 
-  final weatherKey = dotenv.env['OPENWEATHER_API_KEY'] ?? '';
+  geminiService = GeminiService(apiKey); 
   weatherService = WeatherService(weatherKey);
+  locationService = LocationService(mapsKey); // 追加
+
 
   runApp(
     MultiProvider(

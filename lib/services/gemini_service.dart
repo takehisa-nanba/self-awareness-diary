@@ -11,7 +11,6 @@ class GeminiService {
 
   GeminiService(String apiKey)
       : _model = GenerativeModel(
-          // ★「2.5」ではなく「2.0-flash」を指定します
           model: 'gemini-2.0-flash', 
           apiKey: apiKey,
         );
@@ -28,6 +27,7 @@ class GeminiService {
     ''';
 
     try {
+      debugPrint('AI分析プロンプト: $prompt');
       final response = await _model.generateContent([Content.text(prompt)]);
       final jsonStr = response.text?.replaceAll('```json', '').replaceAll('```', '').trim();
       return jsonDecode(jsonStr ?? '{"score": 50, "reason": "分析失敗"}');

@@ -26,15 +26,27 @@ class WriteProvider with ChangeNotifier {
   void update() => notifyListeners();
 
   Future<void> fetchEnvironmentData() async {
-    debugPrint("GPS取得開始..."); // ← ログを追加
+    debugPrint("GPS取得開始...");
     final position = await locationService.getCurrentPosition();
     
     if (position != null) {
-      debugPrint("GPS成功: ${position.latitude}"); // ← ログを追加
-      tempLocation = "${position.latitude.toStringAsFixed(2)}, ${position.longitude.toStringAsFixed(2)}";
-      tempWeather = await weatherService.getWeather(position.latitude, position.longitude);
+      debugPrint("GPS成功: ${position.latitude}");
+      
+      // ★1. 座標を住所（地名）に変換
+      final address = await locationService.getAddressFromLatLng(
+        position.latitude, 
+        position.longitude
+      );
+      tempLocation = address; // ここで「浜松市...」が代入される
+
+      // ★2. 天気を取得
+      tempWeather = await weatherService.getWeather(
+        position.latitude, 
+        position.longitude
+      );
+      
     } else {
-      debugPrint("GPS失敗: positionがnullです"); // ← ログを追加
+      debugPrint("GPS失敗: positionがnullです");
       tempLocation = "位置情報取得失敗";
     }
     notifyListeners();
