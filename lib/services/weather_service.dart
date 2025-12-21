@@ -1,33 +1,41 @@
-import 'package:http/http.dart' as http;
+// lib/services/weather_service.dart
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart'; // debugPrintに必要です
 
 class WeatherService {
   final String apiKey;
+
   WeatherService(this.apiKey);
 
-  Future<String> getWeather(double lat, double lon) async {
-    if (apiKey.isEmpty) return "APIキー未設定";
-    
+  Future<String?> getWeather(double lat, double lon) async {
     try {
-      final url = 'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$apiKey&lang=ja&units=metric';
-      final response = await http.get(Uri.parse(url));
+      // ★ ここが「堂々とした」報告です
+      debugPrint("天気スタッフ：座標($lat, $lon)の天気を問い合わせます...");
 
-      debugPrint("Weather API Status: ${response.statusCode}");
+      debugPrint("天気スタッフ：OpenWeatherMap API に接続中...");
+      final url = Uri.parse(
+        'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=ja'
+      );
+
+      final response = await http.get(url);
+      debugPrint("天気スタッフ：API からの応答を受信しました。ステータスコード: ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = json.decode(response.body);
         final description = data['weather'][0]['description'];
-        final temp = data['main']['temp'].round();
-        return "$description ($temp°C)";
+        final temp = data['main']['temp'];
+        
+        final result = "$description (${temp.toStringAsFixed(1)}°C)";
+        debugPrint("天気スタッフ：取得完了！ $result");
+        return result;
       } else {
-        // ここで詳細なエラーをログに出す
-        debugPrint("Weather API Error Body: ${response.body}");
-        return "取得エラー(${response.statusCode})";
+        debugPrint("天気スタッフ：通信エラー (${response.statusCode})");
+        return null;
       }
     } catch (e) {
-      debugPrint("Weather Service Exception: $e");
-      return "通信エラー";
+      debugPrint("天気スタッフ：予期せぬエラー: $e");
+      return null;
     }
   }
 }

@@ -1,3 +1,5 @@
+// lib/models/mood_tag.dart
+
 import 'package:flutter/material.dart';
 
 class MoodTag {

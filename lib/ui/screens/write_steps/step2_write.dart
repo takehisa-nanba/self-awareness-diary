@@ -1,3 +1,5 @@
+// lib/ui/screens/write_steps/step2_write.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/write_provider.dart';

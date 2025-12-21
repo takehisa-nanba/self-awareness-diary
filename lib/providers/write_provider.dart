@@ -1,10 +1,10 @@
+// lib/providers/write_provider.dart
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/diary_record.dart';
+import '../services/environment_coordinator.dart';
 import '../services/isar_service.dart';
 import '../services/gemini_service.dart';
-import '../services/location_service.dart';
-import '../services/weather_service.dart';
 
 class WriteProvider with ChangeNotifier {
   int _currentStep = 0;
@@ -26,30 +26,25 @@ class WriteProvider with ChangeNotifier {
   void update() => notifyListeners();
 
   Future<void> fetchEnvironmentData() async {
-    debugPrint("GPS取得開始...");
-    final position = await locationService.getCurrentPosition();
-    
-    if (position != null) {
-      debugPrint("GPS成功: ${position.latitude}");
-      
-      // ★1. 座標を住所（地名）に変換
-      final address = await locationService.getAddressFromLatLng(
-        position.latitude, 
-        position.longitude
-      );
-      tempLocation = address; // ここで「浜松市...」が代入される
+    // すでに取得済みなら何もしない
+    if (tempLocation != null && tempLocation != "位置情報取得中...") return;
 
-      // ★2. 天気を取得
-      tempWeather = await weatherService.getWeather(
-        position.latitude, 
-        position.longitude
-      );
+    try {
+      tempLocation = "位置情報取得中...";
+      notifyListeners();
+
+      // 店長に一括依頼（待ち処理は店長が中でやってくれる）
+      final data = await environmentCoordinator.fetchFullData();
       
-    } else {
-      debugPrint("GPS失敗: positionがnullです");
+      tempLocation = data.location;
+      tempWeather = data.weather;
+      
+    } catch (e) {
+      debugPrint("識別依頼エラー: $e");
       tempLocation = "位置情報取得失敗";
+    } finally {
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   // ステップ制御
@@ -130,10 +125,6 @@ class WriteProvider with ChangeNotifier {
       isSaving = false;
       notifyListeners();
     }
-  }
-
-  WriteProvider() {
-    fetchEnvironmentData();
   }
   
   void _reset() {

@@ -1,13 +1,19 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // 追加
 import 'package:provider/provider.dart';
+import 'services/environment_coordinator.dart';
 import 'services/isar_service.dart';
 import 'services/gemini_service.dart';
 import 'providers/write_provider.dart';
 import 'providers/history_provider.dart';
+import 'providers/app_state_provider.dart';
+import 'providers/settings_provider.dart';
 import 'ui/screens/write_screen.dart';
 import 'ui/screens/history_screen.dart';
 import 'ui/screens/analysis_screen.dart';
+import 'ui/screens/root_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'services/location_service.dart';
 import 'services/weather_service.dart';
@@ -15,23 +21,34 @@ import 'services/weather_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. 各種サービスの初期化
-  await dotenv.load(fileName: ".env"); // .envを読み込み
-  await IsarService.init();
-  
-  // dotenvからAPIキーを取得
-  final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+  // 1. 各種設定の読み込み
+  await dotenv.load(fileName: ".env");
+  final mapsKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
   final weatherKey = dotenv.env['OPEN_WEATHER_API_KEY'] ?? '';
-  final mapsKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? ''; // 追加
+  final geminiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
 
-  geminiService = GeminiService(apiKey); 
+  // 2. 実働スタッフ（サービス）の準備
+  // ★重要: インスタンスを作成し、その「同じインスタンス」を初期化する
+  isarService = IsarService(); 
+  await isarService.init(); // staticなIsarService.init()ではなく、インスタンスのinitを呼ぶ
+
+  locationService = LocationService(mapsKey);
   weatherService = WeatherService(weatherKey);
-  locationService = LocationService(mapsKey); // 追加
+  geminiService = GeminiService(geminiKey);
 
+  // 3. 店長（コーディネーター）を任命
+  // ★重要: 初期化済みの isarService を渡す
+  environmentCoordinator = EnvironmentCoordinator(
+    locationService, 
+    weatherService, 
+    isarService,
+  );
 
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AppStateProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => WriteProvider()),
         ChangeNotifierProvider(create: (_) => HistoryProvider()),
       ],
@@ -54,11 +71,12 @@ class MyApp extends StatelessWidget {
       // ルーティング設定
       initialRoute: '/',
       routes: {
-        '/': (context) => const WriteScreen(),
+        // 2. '/' を WriteScreen から RootScreen に変更
+        '/': (context) => const RootScreen(), 
+        '/write': (context) => const WriteScreen(), // 必要なら個別ルートも残す
         '/history': (context) => const HistoryScreen(),
         '/analysis': (context) => const AnalysisScreen(),
-        '/settings': (context) => const SettingsScreen(),
-      },
+        '/settings': (context) => const SettingsScreen(),      },
     );
   }
 }
