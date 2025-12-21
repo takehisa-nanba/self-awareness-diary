@@ -19,6 +19,12 @@ import 'services/location_service.dart';
 import 'services/weather_service.dart';
 
 void main() async {
+  // これを一番上に追加（通信系のエラーでデバッガーが落ちるのを防ぐ）
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    debugPrint("【エラー捕捉】: ${details.exception}");
+  };
+
   WidgetsFlutterBinding.ensureInitialized();
 
   // 1. 各種設定の読み込み

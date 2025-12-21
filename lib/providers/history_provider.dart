@@ -4,7 +4,7 @@ import '../../models/diary_record.dart';
 import '../../services/isar_service.dart'; // Isar等のDBサービス
 
 class HistoryProvider with ChangeNotifier {
-  final IsarService _isarService = IsarService();
+  final IsarService isarService = IsarService();
   
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay = DateTime.now();
@@ -17,22 +17,31 @@ class HistoryProvider with ChangeNotifier {
 
   HistoryProvider() {
     loadAllRecords(); // 画面が開く準備ができたらすぐに読み込む
+    // コンストラクタで直接呼ばず、初期化完了を待つメソッドを呼ぶ
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    // main.dart の init() が終わるのを待つための安全策
+    // もし isarService.isar が未初期化なら、一瞬待機する
+    try {
+      await isarService.init(); 
+      await loadAllRecords();
+    } catch (e) {
+      debugPrint("HistoryProvider初期化エラー: $e");
+    }
   }
 
   // 初期読み込み
   Future<void> loadAllRecords() async {
-    _allRecords = await _isarService.getAllRecords(); 
+    // DBから全件取得
+    _allRecords = await isarService.getAllRecords(); 
     
-    // ★ここを追加！ そもそも何件DBにあるか確認
     debugPrint("=== DB全件チェック: ${_allRecords.length}件 ===");
-    if (_allRecords.isNotEmpty) {
-      debugPrint("最新レコードの日付: ${_allRecords.last.recordDate.toLocal()}");
-    }
     
     _filterRecords();
     notifyListeners();
   }
-
   // 日付が選択された時のロジック
   void onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     _selectedDay = selectedDay;

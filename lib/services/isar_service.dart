@@ -30,9 +30,25 @@ class IsarService {
     });
   }
 
-  // 記録の取得（全件）
+  // すべてのメソッドの冒頭にこれを入れると、より安全です
+  Future<void> ensureInit() async {
+    if (Isar.instanceNames.isEmpty) {
+      await init();
+    } else {
+      isar = Isar.getInstance()!;
+    }
+  }
+
+  // 例：全件取得を安全にする
   Future<List<DiaryRecord>> getAllRecords() async {
-    return await isar.diaryRecords.where().sortByRecordDateDesc().findAll();
+    // isar が late 初期化されているかチェック。未完了なら init を呼ぶ
+    try {
+      return await isar.diaryRecords.where().sortByRecordDateDesc().findAll();
+    } catch (e) {
+      debugPrint("IsarService: 未初期化のため init を実行します");
+      await init();
+      return await isar.diaryRecords.where().sortByRecordDateDesc().findAll();
+    }
   }
 
   // 特定の日の記録を取得
@@ -68,5 +84,5 @@ class IsarService {
   }
 }
 
-// グローバルインスタンス
+// late を外し、即座にインスタンス化する（中身のisarはinitで初期化される）
 late IsarService isarService;
