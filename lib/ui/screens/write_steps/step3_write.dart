@@ -12,17 +12,47 @@ class Step3Write extends StatelessWidget {
     final provider = context.watch<WriteProvider>();
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start, // 左寄せにして読みやすく
       children: [
-        if (provider.isGenerating) const CircularProgressIndicator()
-        else Container(
-          padding: const EdgeInsets.all(16),
-          color: Colors.indigo.shade50,
-          child: Text(provider.reflectionQuestion, style: const TextStyle(fontStyle: FontStyle.italic)),
+        // AIからの問いかけ部分
+        if (provider.isGenerating) 
+          const Center(child: CircularProgressIndicator())
+        else 
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.indigo.shade50,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              provider.reflectionQuestion.isEmpty 
+                  ? "今の自分を、ゆっくり眺めてみましょう。" 
+                  : provider.reflectionQuestion, 
+              style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.indigo)
+            ),
+          ),
+        
+        const SizedBox(height: 12),
+
+        // 案内メッセージ
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            "※忙しい時は空欄のまま保存しても大丈夫です。\n後ほど「履歴」からゆっくりと書き足せます。",
+            style: TextStyle(fontSize: 12, color: Colors.blueGrey, height: 1.5),
+          ),
         ),
-        const SizedBox(height: 20),
+
+        const SizedBox(height: 12),
+
         TextField(
-          maxLines: 5,
-          decoration: const InputDecoration(border: OutlineInputBorder(), hintText: '自分の答え...'),
+          maxLines: 8, // 少し広めにして、書く時の没頭感を確保
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(), 
+            hintText: '今の気持ちや、気づいたこと（任意）',
+            alignLabelWithHint: true,
+          ),
           onChanged: (v) => provider.selfAnalysisText = v,
         ),
       ],

@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter/foundation.dart';
 import '../models/diary_record.dart';
 import '../models/location_setting.dart';
@@ -82,6 +83,27 @@ class IsarService {
       await isar.locationSettings.delete(id);
     });
   }
+
+  // 近くの記録を探す
+  Future<List<DiaryRecord>> findNearbyRecords(double lat, double lng) async {
+  final allRecords = await isar.diaryRecords.where().findAll();
+    return allRecords.where((record) {
+      if (record.latitude == null || record.longitude == null) return false;
+      double distance = Geolocator.distanceBetween(lat, lng, record.latitude!, record.longitude!);
+      return distance <= 30.0;
+    }).toList();
+  }
+
+  // 複数の記録の位置情報を一括更新
+  Future<void> updateRecordsLocation(List<DiaryRecord> records, String newLabel) async {
+    await isar.writeTxn(() async {
+      for (var record in records) {
+        record.location = newLabel;
+        await isar.diaryRecords.put(record);
+      }
+    });
+  }
+
 }
 
 // late を外し、即座にインスタンス化する（中身のisarはinitで初期化される）

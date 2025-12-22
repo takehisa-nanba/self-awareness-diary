@@ -55,8 +55,12 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => WriteProvider()),
         ChangeNotifierProvider(create: (_) => HistoryProvider()),
+        // HistoryProvider に依存する WriteProvider を作成
+        ChangeNotifierProxyProvider<HistoryProvider, WriteProvider>(
+          create: (_) => WriteProvider(),
+          update: (_, history, write) => write!..update(history),
+        ),
       ],
       child: const MyApp(),
     ),

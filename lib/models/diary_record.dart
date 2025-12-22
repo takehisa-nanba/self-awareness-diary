@@ -16,6 +16,8 @@ class DiaryRecord {
   String? aiAnalysisReason; 
   String? location;
   String? weather;
+  double? latitude;
+  double? longitude;
 
   DiaryRecord({
     this.isarId,
@@ -29,6 +31,8 @@ class DiaryRecord {
     this.aiAnalysisReason,
     this.location,
     this.weather,
+    this.latitude,
+    this.longitude,
   });
 
   bool get isGapLarge {

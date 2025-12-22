@@ -42,6 +42,7 @@ class HistoryProvider with ChangeNotifier {
     _filterRecords();
     notifyListeners();
   }
+
   // 日付が選択された時のロジック
   void onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     _selectedDay = selectedDay;
@@ -72,4 +73,11 @@ class HistoryProvider with ChangeNotifier {
     debugPrint("【判定終了】選択日(Local): ${_selectedDay?.toLocal()} / 表示対象: ${_selectedDayRecords.length}件");
   }
 
+  Future<void> refreshHistory() async {
+  // Isarから最新のデータを取ってきて、リストを更新する
+  _allRecords = await isarService.getAllRecords(); 
+  _filterRecords();
+  notifyListeners(); // ← これが「画面を書き換えろ！」という合図です
+  }
+  
 }

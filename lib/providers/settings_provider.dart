@@ -6,6 +6,16 @@ import '../services/isar_service.dart';
 import '../services/location_service.dart';
 
 class SettingsProvider extends ChangeNotifier {
+  // --- 追加：サブスクリプション状態 ---
+  bool _isPremium = false; // 初期値は無料ユーザー
+  bool get isPremium => _isPremium;
+
+  // テスト用：サブスク状態を切り替えるメソッド（デバッグ時や設定画面で使用）
+  void setPremium(bool value) {
+    _isPremium = value;
+    notifyListeners();
+  }
+  // ------------------------------
   List<LocationSetting> _locations = [];
   List<LocationSetting> get locations => _locations;
 

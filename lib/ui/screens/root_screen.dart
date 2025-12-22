@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state_provider.dart';
+import '../../providers/write_provider.dart';
 import '../widgets/app_shell.dart';
 import 'write_screen.dart';
 import 'history_screen.dart';
@@ -14,12 +15,31 @@ class RootScreen extends StatefulWidget {
   State<RootScreen> createState() => _RootScreenState();
 }
 
-class _RootScreenState extends State<RootScreen> {
+// 1. WidgetsBindingObserver をミックスインに追加
+class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
+  
   @override
   void initState() {
     super.initState();
-    // 起動時の自動実行は削除。
-    // 各画面（WriteScreenなど）が必要な時に店長を呼び出す形にします。
+    // 2. ライフサイクルの監視を開始
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    // 3. 監視を終了（メモリリーク防止）
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // 4. アプリの状態変化を検知するメソッドを追加
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint("【生体反応検知】アプリが再開されました。店長、データを更新してください。");
+      // ここで最新の場所と天気を取得し直す
+      context.read<WriteProvider>().fetchEnvironmentData(); 
+    }
   }
 
   @override

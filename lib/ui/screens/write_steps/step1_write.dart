@@ -18,7 +18,7 @@ class Step1Write extends StatelessWidget {
         Slider(
           value: provider.moodScore.toDouble(),
           min: 1, max: 10, divisions: 9,
-          onChanged: (v) { provider.moodScore = v.round(); provider.update(); },
+          onChanged: (v) { provider.moodScore = v.round(); provider.notify(); },
         ),
         const SizedBox(height: 20),
         Wrap(
@@ -32,7 +32,7 @@ class Step1Write extends StatelessWidget {
               selectedColor: tag.color.withValues(alpha: 0.3),
               onSelected: (val) {
                 val ? provider.selectedTags.add(tag.label) : provider.selectedTags.remove(tag.label);
-                provider.update();
+                provider.notify();
               },
             );
           }).toList(),
