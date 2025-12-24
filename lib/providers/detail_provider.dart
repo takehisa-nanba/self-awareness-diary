@@ -1,9 +1,8 @@
-// lib/providers/detail_provider.dart
-
 import 'package:flutter/material.dart';
 import '../../models/diary_record.dart';
-import '../../services/isar_service.dart'; // 追加
-import '../../providers/settings_provider.dart'; // 追加
+import '../../services/isar_service.dart';
+import '../../providers/settings_provider.dart';
+import '../../core/utils/color_helpers.dart'; // color_helpersをインポート
 
 class DetailProvider with ChangeNotifier {
   final DiaryRecord record;
@@ -51,10 +50,7 @@ class DetailProvider with ChangeNotifier {
 
   // --- 既存の表示ロジック ---
   Color get scoreColor {
-    final score = record.aiStabilityScore ?? 0;
-    if (score >= 80) return Colors.green;
-    if (score >= 40) return Colors.blue;
-    return Colors.orange;
+    return getAiScoreColor(record.aiStabilityScore); // 共通関数を呼び出す
   }
 
   String get environmentInfo => 

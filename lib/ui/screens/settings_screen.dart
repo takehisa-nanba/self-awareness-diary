@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
+import 'location_edit_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,21 +20,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<SettingsProvider>();
 
-    // ★ Scaffold を削除し、直接ウィジェットを返す
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('よく行く場所の登録', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const Text('登録した住所が自動的にラベル（自宅など）に変換されます。', 
-            style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const Text('一般設定', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          
-          // 入力エリア (Card)
           Card(
             elevation: 0,
-            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(80),
+            child: SwitchListTile(
+              title: const Text('「出来事」から書き始める'),
+              subtitle: const Text('オンにすると、日記を書き始める画面が「出来事の入力」からになります。'),
+              value: provider.startFromStep2,
+              onChanged: (value) {
+                provider.setStartFromStep2(value);
+              },
+              secondary: const Icon(Icons.edit_note),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          const Text('よく行く場所の登録', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('登録した住所が自動的にラベル（自宅など）に変換されます。',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+          const SizedBox(height: 16),
+          
+          Card(
+            elevation: 0,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(80),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -59,7 +76,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // 現在地取得ボタン
                       IconButton.filledTonal(
                         onPressed: provider.isLoading ? null : () async {
                           final addr = await provider.getCurrentLocationAddress();
@@ -80,14 +96,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        if (_labelController.text.isNotEmpty && _addressController.text.isNotEmpty) {
-                          await provider.addLocation(_labelController.text, _addressController.text);
-                          _labelController.clear();
-                          _addressController.clear();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('登録しました')));
-                          }
+                        if (_labelController.text.isEmpty || _addressController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('ラベルと住所の両方を入力してください。'))
+                          );
+                          return;
                         }
+
+                        // contextを非同期ギャップを越えて使用しないように、先に取得しておく
+                        final scaffoldMessenger = ScaffoldMessenger.of(context);
+                        final navigator = Navigator.of(context);
+                        final label = _labelController.text;
+                        final address = _addressController.text;
+                        
+                        final count = await provider.addLocation(label, address);
+                        if (!context.mounted) return;
+
+                        if (count > 0) {
+                          final bool? confirmed = await showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('過去の日記の更新'),
+                              content: Text('近くに$count件の日記が見つかりました。場所を「$label」に更新しますか？'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => navigator.pop(false),
+                                  child: const Text('キャンセル'),
+                                ),
+                                TextButton(
+                                  onPressed: () => navigator.pop(true),
+                                  child: const Text('更新する'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (!context.mounted) return;
+
+                          if (confirmed == true && provider.lastLat != null && provider.lastLng != null) {
+                            await provider.updatePastRecords(label, provider.lastLat!, provider.lastLng!);
+                            if (!context.mounted) return;
+                            scaffoldMessenger.showSnackBar(
+                              SnackBar(content: Text('$count件の日記の場所を「$label」に更新しました。'))
+                            );
+                          } else {
+                            scaffoldMessenger.showSnackBar(
+                              const SnackBar(content: Text('場所を登録しました。（過去の日記は更新されませんでした）'))
+                            );
+                          }
+                        } else {
+                          scaffoldMessenger.showSnackBar(
+                            const SnackBar(content: Text('場所を登録しました。'))
+                          );
+                        }
+                        _labelController.clear();
+                        _addressController.clear();
                       },
                       icon: const Icon(Icons.add),
                       label: const Text('登録する'),
@@ -102,11 +164,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Text('登録済み一覧', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const Divider(),
           
-          // 一覧エリア
           provider.locations.isEmpty 
-            ? const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: Text('登録された場所はありません', style: TextStyle(color: Colors.grey))),
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(child: Text('登録された場所はありません', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
               )
             : ListView.builder(
                 shrinkWrap: true,
@@ -118,10 +179,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     leading: const CircleAvatar(child: Icon(Icons.place, size: 20)),
                     title: Text(loc.label),
                     subtitle: Text(loc.address, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                      onPressed: () => provider.deleteLocation(loc.id),
-                    ),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => LocationEditScreen(location: loc),
+                        ),
+                      );
+                    },
                   );
                 },
               ),

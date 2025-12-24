@@ -22,25 +22,29 @@ class Step3Write extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.indigo.shade50,
+              color: Theme.of(context).colorScheme.secondaryContainer,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               provider.reflectionQuestion.isEmpty 
                   ? "今の自分を、ゆっくり眺めてみましょう。" 
                   : provider.reflectionQuestion, 
-              style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.indigo)
+              style: TextStyle(
+            fontStyle: FontStyle.italic,
+            color: Theme.of(context).colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
             ),
           ),
         
         const SizedBox(height: 12),
 
         // 案内メッセージ
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
             "※忙しい時は空欄のまま保存しても大丈夫です。\n後ほど「履歴」からゆっくりと書き足せます。",
-            style: TextStyle(fontSize: 12, color: Colors.blueGrey, height: 1.5),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.5),
           ),
         ),
 

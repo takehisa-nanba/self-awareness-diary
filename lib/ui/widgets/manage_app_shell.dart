@@ -28,7 +28,7 @@ class ManageAppShell extends StatelessWidget {
             top: safePaddingTop,
             left: 0,
             right: 0,
-            child: _buildHeader(title),
+            child: _buildHeader(context, title),
           ),
           // ナビゲーター
           Positioned(
@@ -41,8 +41,8 @@ class ManageAppShell extends StatelessWidget {
       // 記録画面以外にいる時だけ表示される「記録開始」ボタン
       floatingActionButton: FloatingActionButton(
         onPressed: () => appState.setTab(AppTab.write),
-        backgroundColor: Colors.indigo.shade700,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
       // 管理画面切り替え用のフッター
       bottomNavigationBar: NavigationBar(
@@ -67,14 +67,17 @@ class ManageAppShell extends StatelessWidget {
     return 0;
   }
 
-  Widget _buildHeader(String title) {
+  Widget _buildHeader(BuildContext context, String title) {
     return Container(
       height: 66.0,
-      color: Colors.indigo.shade700,
+      color: Theme.of(context).colorScheme.primaryContainer,
       alignment: Alignment.center,
       child: Text(
         title,
-        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

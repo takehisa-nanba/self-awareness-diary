@@ -35,15 +35,18 @@ class _DetailBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. 環境情報 ＆ 場所登録ボタン
           Consumer<SettingsProvider>(
             builder: (context, settings, _) {
               final isUnregistered = provider.isLocationUnregistered(settings);
               return Row(
                 children: [
                   Expanded(
-                    child: Text(provider.environmentInfo, 
-                        style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                    child: Text(
+                      provider.environmentInfo,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
                   ),
                   if (isUnregistered)
                     TextButton.icon(
@@ -63,7 +66,6 @@ class _DetailBody extends StatelessWidget {
           
           const SizedBox(height: 32),
 
-          // 2. 振り返りセクション（編集可能）
           const _SectionTitle("振り返り（セルフアナリシス）"),
           const SizedBox(height: 8),
           if (provider.isEditing)
@@ -73,7 +75,6 @@ class _DetailBody extends StatelessWidget {
 
           const SizedBox(height: 32),
           
-          // 3. AI分析結果
           const _SectionTitle("AI分析結果"),
           const SizedBox(height: 12),
           _AIAnalysisCard(provider: provider),
@@ -82,14 +83,13 @@ class _DetailBody extends StatelessWidget {
     );
   }
 
-// 場所登録ダイアログ（UIの表示はScreenの役目）
   void _showLocationDialog(BuildContext context, DetailProvider provider) {
     final controller = TextEditingController();
-    bool updatePast = false; // 過去も書き換えるかのフラグ
+    bool updatePast = false;
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder( // チェックボックスの動的更新に必要
+      builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text("この場所を登録"),
           content: Column(
@@ -120,14 +120,10 @@ class _DetailBody extends StatelessWidget {
                 final lat = provider.record.latitude;
                 final lng = provider.record.longitude;
 
-                // 1. 過去分の一括更新チェック
                 if (updatePast && lat != null && lng != null) {
-                  // 30m圏内の記録を点呼
                   final nearbyRecords = await isarService.findNearbyRecords(lat, lng);
                   
-                  if (nearbyRecords.isNotEmpty) {
-                    // 二段目の確認（context.mountedをチェックして呼び出し）
-                    if (!context.mounted) return;
+                  if (context.mounted && nearbyRecords.isNotEmpty) {
                     final bool? confirm = await _showConfirmDialog(context, nearbyRecords.length, label);
                     
                     if (confirm == true) {
@@ -136,14 +132,11 @@ class _DetailBody extends StatelessWidget {
                   }
                 }
 
-                // 2. SettingsProviderへの登録
                 if (!context.mounted) return;
                 await context.read<SettingsProvider>().addLocation(
                   label,
                   provider.record.location!,
                 );
-
-                // 3. 今回のレコード自体の表示名も更新
                 await provider.updateLocationName(label);
                 
                 if (context.mounted) {
@@ -162,7 +155,6 @@ class _DetailBody extends StatelessWidget {
     );
   }
 
-  // 二段目の確認ダイアログ
   Future<bool?> _showConfirmDialog(BuildContext context, int count, String label) {
     return showDialog<bool>(
       context: context,
@@ -181,7 +173,6 @@ class _DetailBody extends StatelessWidget {
   }
 }
 
-// --- 内部部品：振り返り表示 ---
 class _AnalysisDisplay extends StatelessWidget {
   final DetailProvider provider;
   const _AnalysisDisplay({required this.provider});
@@ -195,15 +186,15 @@ class _AnalysisDisplay extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
+          color: Theme.of(context).colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Text(
           text.isEmpty ? "タップして今の気持ちを書き留める" : text,
           style: TextStyle(
             fontSize: 16,
-            color: text.isEmpty ? Colors.grey : Colors.black87,
+            color: text.isEmpty ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.onSurface,
             height: 1.5,
           ),
         ),
@@ -212,7 +203,6 @@ class _AnalysisDisplay extends StatelessWidget {
   }
 }
 
-// --- 内部部品：振り返り編集 ---
 class _AnalysisEditor extends StatefulWidget {
   final DetailProvider provider;
   const _AnalysisEditor({required this.provider});
@@ -246,16 +236,9 @@ class _AnalysisEditorState extends State<_AnalysisEditor> {
             TextButton(onPressed: () => widget.provider.toggleEdit(), child: const Text("キャンセル")),
             ElevatedButton(
               onPressed: () async {
-              // 1. await の前に必要な Provider を取得しておく（推奨）
                 final historyProvider = context.read<HistoryProvider>();
-                
-                // 2. 非同期処理（保存）を実行
                 await widget.provider.updateSelfAnalysis(_controller.text);
-                
-                // 3. 画面がまだ存在するか確認（StatefulWidget なら mounted でOK）
                 if (!mounted) return;
-
-                // 4. すでに取得済みの Provider を使ってリフレッシュ
                 historyProvider.refreshHistory();
               },
               child: const Text("更新"),
@@ -267,17 +250,18 @@ class _AnalysisEditorState extends State<_AnalysisEditor> {
   }
 }
 
-// --- 内部部品：セクションタイトル（共通） ---
 class _SectionTitle extends StatelessWidget {
   final String title;
   const _SectionTitle(this.title);
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey));
+    return Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(
+      fontWeight: FontWeight.bold,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    ));
   }
 }
 
-// --- 内部部品：AI分析カード ---
 class _AIAnalysisCard extends StatelessWidget {
   final DetailProvider provider;
   const _AIAnalysisCard({required this.provider});
@@ -290,9 +274,9 @@ class _AIAnalysisCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.1), // withValuesを推奨
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)), // withValuesを推奨
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

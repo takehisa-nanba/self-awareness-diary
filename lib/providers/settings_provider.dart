@@ -4,18 +4,17 @@ import 'package:flutter/material.dart';
 import '../models/location_setting.dart';
 import '../services/isar_service.dart';
 import '../services/location_service.dart';
+import 'history_provider.dart';
 
 class SettingsProvider extends ChangeNotifier {
-  // --- 追加：サブスクリプション状態 ---
-  bool _isPremium = false; // 初期値は無料ユーザー
+  HistoryProvider? _historyProvider;
+
+  bool _startFromStep2 = false;
+  bool get startFromStep2 => _startFromStep2;
+
+  bool _isPremium = false;
   bool get isPremium => _isPremium;
 
-  // テスト用：サブスク状態を切り替えるメソッド（デバッグ時や設定画面で使用）
-  void setPremium(bool value) {
-    _isPremium = value;
-    notifyListeners();
-  }
-  // ------------------------------
   List<LocationSetting> _locations = [];
   List<LocationSetting> get locations => _locations;
 
@@ -25,16 +24,33 @@ class SettingsProvider extends ChangeNotifier {
   SettingsProvider() {
     _loadSettings();
   }
+  
+  void setHistoryProvider(HistoryProvider historyProvider) {
+    _historyProvider = historyProvider;
+  }
 
-  // 設定の読み込み
   Future<void> _loadSettings() async {
+    final savedStepSetting = await isarService.getSetting('startFromStep2');
+    _startFromStep2 = savedStepSetting == 'true';
     _locations = await isarService.getLocations();
     notifyListeners();
   }
 
-  // 保存用の座標を保持する変数
+  Future<void> setStartFromStep2(bool value) async {
+    _startFromStep2 = value;
+    await isarService.saveSetting('startFromStep2', value.toString());
+    notifyListeners();
+  }
+
+  void setPremium(bool value) {
+    _isPremium = value;
+    notifyListeners();
+  }
+
   double? _lastLat;
+  double? get lastLat => _lastLat;
   double? _lastLng;
+  double? get lastLng => _lastLng;
 
   Future<String?> getCurrentLocationAddress() async {
     _isLoading = true;
@@ -55,20 +71,55 @@ class SettingsProvider extends ChangeNotifier {
     return null;
   }
 
-  Future<void> addLocation(String label, String address) async {
+  // 場所の追加と、近くの日記の件数を返す
+  Future<int> addLocation(String label, String address) async {
     final setting = LocationSetting()
       ..label = label
       ..address = address
-      ..latitude = _lastLat    // 保持していた座標を保存
+      ..latitude = _lastLat
       ..longitude = _lastLng;
     
     await isarService.saveLocation(setting);
     await _loadSettings();
+
+    if (_lastLat != null && _lastLng != null) {
+      final nearbyRecords = await isarService.findNearbyRecords(_lastLat!, _lastLng!);
+      return nearbyRecords.length;
+    }
+    return 0;
   }
 
-  // 場所の削除
-  Future<void> deleteLocation(int id) async {
-    await isarService.deleteLocation(id);
-    await _loadSettings();
+  // 過去の日記を更新する
+  Future<void> updatePastRecords(String label, double lat, double lng) async {
+    final nearbyRecords = await isarService.findNearbyRecords(lat, lng);
+    if (nearbyRecords.isNotEmpty) {
+      await isarService.updateRecordsLocation(nearbyRecords, label);
+      _historyProvider?.refreshHistory();
+    }
   }
-}
+
+    Future<void> deleteLocation(int id) async {
+
+      await isarService.deleteLocation(id);
+
+      await _loadSettings();
+
+    }
+
+  
+
+    // 場所のラベルを更新する
+
+    Future<void> updateLocation(LocationSetting location, String newLabel) async {
+
+      location.label = newLabel;
+
+      await isarService.updateLocation(location);
+
+      await _loadSettings();
+
+    }
+
+  }
+
+  

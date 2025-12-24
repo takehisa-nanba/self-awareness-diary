@@ -17,6 +17,7 @@ import 'ui/screens/root_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'services/location_service.dart';
 import 'services/weather_service.dart';
+import 'core/constants/app_theme.dart'; // app_theme.dartをインポート
 
 void main() async {
   // これを一番上に追加（通信系のエラーでデバッガーが落ちるのを防ぐ）
@@ -54,9 +55,13 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => HistoryProvider()),
-        // HistoryProvider に依存する WriteProvider を作成
+        // SettingsProvider に HistoryProvider を渡す
+        ChangeNotifierProxyProvider<HistoryProvider, SettingsProvider>(
+          create: (_) => SettingsProvider(),
+          update: (_, history, settings) => settings!..setHistoryProvider(history),
+        ),
+        // WriteProvider に HistoryProvider を渡す
         ChangeNotifierProxyProvider<HistoryProvider, WriteProvider>(
           create: (_) => WriteProvider(),
           update: (_, history, write) => write!..update(history),
@@ -74,16 +79,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '自己覚知日記',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
-      ),
+      theme: lightTheme, // app_theme.dartで定義したlightThemeを使用
       // ルーティング設定
       initialRoute: '/',
       routes: {
-        // 2. '/' を WriteScreen から RootScreen に変更
         '/': (context) => const RootScreen(), 
-        '/write': (context) => const WriteScreen(), // 必要なら個別ルートも残す
+        '/write': (context) => const WriteScreen(),
         '/history': (context) => const HistoryScreen(),
         '/analysis': (context) => const AnalysisScreen(),
         '/settings': (context) => const SettingsScreen(),      },

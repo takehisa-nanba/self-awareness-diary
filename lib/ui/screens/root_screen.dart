@@ -48,11 +48,18 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
     final currentTab = appState.currentTab;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: AppShell(
         title: _getTitle(currentTab),
         child: _getScreen(currentTab),
       ),
+      // 「記録」ページ以外の時にFABを表示
+      floatingActionButton: currentTab == AppTab.write
+          ? null
+          : FloatingActionButton(
+              onPressed: () => appState.setTab(AppTab.write),
+              child: const Icon(Icons.add),
+            ),
       bottomNavigationBar: currentTab == AppTab.write 
           ? null 
           : NavigationBar(
@@ -87,7 +94,7 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
 
   String _getTitle(AppTab tab) {
     switch (tab) {
-      case AppTab.write: return "今を刻む";
+      case AppTab.write: return "記録";
       case AppTab.history: return "履歴";
       case AppTab.analysis: return "分析";
       case AppTab.settings: return "設定";

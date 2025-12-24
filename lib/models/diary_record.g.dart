@@ -37,43 +37,53 @@ const DiaryRecordSchema = CollectionSchema(
       name: r'isGapLarge',
       type: IsarType.bool,
     ),
-    r'location': PropertySchema(
+    r'latitude': PropertySchema(
       id: 4,
+      name: r'latitude',
+      type: IsarType.double,
+    ),
+    r'location': PropertySchema(
+      id: 5,
       name: r'location',
       type: IsarType.string,
     ),
+    r'longitude': PropertySchema(
+      id: 6,
+      name: r'longitude',
+      type: IsarType.double,
+    ),
     r'moodScore': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'moodScore',
       type: IsarType.long,
     ),
     r'moodTags': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'moodTags',
       type: IsarType.stringList,
     ),
     r'recordDate': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'recordDate',
       type: IsarType.dateTime,
     ),
     r'recordId': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'recordId',
       type: IsarType.string,
     ),
     r'selfAnalysis': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'selfAnalysis',
       type: IsarType.string,
     ),
     r'timeString': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'timeString',
       type: IsarType.string,
     ),
     r'weather': PropertySchema(
-      id: 11,
+      id: 13,
       name: r'weather',
       type: IsarType.string,
     )
@@ -159,14 +169,16 @@ void _diaryRecordSerialize(
   writer.writeLong(offsets[1], object.aiStabilityScore);
   writer.writeString(offsets[2], object.eventText);
   writer.writeBool(offsets[3], object.isGapLarge);
-  writer.writeString(offsets[4], object.location);
-  writer.writeLong(offsets[5], object.moodScore);
-  writer.writeStringList(offsets[6], object.moodTags);
-  writer.writeDateTime(offsets[7], object.recordDate);
-  writer.writeString(offsets[8], object.recordId);
-  writer.writeString(offsets[9], object.selfAnalysis);
-  writer.writeString(offsets[10], object.timeString);
-  writer.writeString(offsets[11], object.weather);
+  writer.writeDouble(offsets[4], object.latitude);
+  writer.writeString(offsets[5], object.location);
+  writer.writeDouble(offsets[6], object.longitude);
+  writer.writeLong(offsets[7], object.moodScore);
+  writer.writeStringList(offsets[8], object.moodTags);
+  writer.writeDateTime(offsets[9], object.recordDate);
+  writer.writeString(offsets[10], object.recordId);
+  writer.writeString(offsets[11], object.selfAnalysis);
+  writer.writeString(offsets[12], object.timeString);
+  writer.writeString(offsets[13], object.weather);
 }
 
 DiaryRecord _diaryRecordDeserialize(
@@ -180,13 +192,15 @@ DiaryRecord _diaryRecordDeserialize(
     aiStabilityScore: reader.readLongOrNull(offsets[1]),
     eventText: reader.readString(offsets[2]),
     isarId: id,
-    location: reader.readStringOrNull(offsets[4]),
-    moodScore: reader.readLong(offsets[5]),
-    moodTags: reader.readStringList(offsets[6]) ?? [],
-    recordDate: reader.readDateTime(offsets[7]),
-    recordId: reader.readString(offsets[8]),
-    selfAnalysis: reader.readStringOrNull(offsets[9]),
-    weather: reader.readStringOrNull(offsets[11]),
+    latitude: reader.readDoubleOrNull(offsets[4]),
+    location: reader.readStringOrNull(offsets[5]),
+    longitude: reader.readDoubleOrNull(offsets[6]),
+    moodScore: reader.readLong(offsets[7]),
+    moodTags: reader.readStringList(offsets[8]) ?? [],
+    recordDate: reader.readDateTime(offsets[9]),
+    recordId: reader.readString(offsets[10]),
+    selfAnalysis: reader.readStringOrNull(offsets[11]),
+    weather: reader.readStringOrNull(offsets[13]),
   );
   return object;
 }
@@ -207,20 +221,24 @@ P _diaryRecordDeserializeProp<P>(
     case 3:
       return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 5:
-      return (reader.readLong(offset)) as P;
-    case 6:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 7:
-      return (reader.readDateTime(offset)) as P;
-    case 8:
-      return (reader.readString(offset)) as P;
-    case 9:
       return (reader.readStringOrNull(offset)) as P;
+    case 6:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 7:
+      return (reader.readLong(offset)) as P;
+    case 8:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 9:
+      return (reader.readDateTime(offset)) as P;
     case 10:
       return (reader.readString(offset)) as P;
     case 11:
+      return (reader.readStringOrNull(offset)) as P;
+    case 12:
+      return (reader.readString(offset)) as P;
+    case 13:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -869,6 +887,88 @@ extension DiaryRecordQueryFilter
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+      latitudeIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'latitude',
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+      latitudeIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'latitude',
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition> latitudeEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'latitude',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+      latitudeGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'latitude',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+      latitudeLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'latitude',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition> latitudeBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'latitude',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
       locationIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -1017,6 +1117,90 @@ extension DiaryRecordQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'location',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+      longitudeIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'longitude',
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+      longitudeIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'longitude',
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+      longitudeEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'longitude',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+      longitudeGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'longitude',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+      longitudeLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'longitude',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+      longitudeBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'longitude',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
       ));
     });
   }
@@ -1996,6 +2180,18 @@ extension DiaryRecordQuerySortBy
     });
   }
 
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> sortByLatitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'latitude', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> sortByLatitudeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'latitude', Sort.desc);
+    });
+  }
+
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> sortByLocation() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'location', Sort.asc);
@@ -2005,6 +2201,18 @@ extension DiaryRecordQuerySortBy
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> sortByLocationDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'location', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> sortByLongitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'longitude', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> sortByLongitudeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'longitude', Sort.desc);
     });
   }
 
@@ -2148,6 +2356,18 @@ extension DiaryRecordQuerySortThenBy
     });
   }
 
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> thenByLatitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'latitude', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> thenByLatitudeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'latitude', Sort.desc);
+    });
+  }
+
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> thenByLocation() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'location', Sort.asc);
@@ -2157,6 +2377,18 @@ extension DiaryRecordQuerySortThenBy
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> thenByLocationDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'location', Sort.desc);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> thenByLongitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'longitude', Sort.asc);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy> thenByLongitudeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'longitude', Sort.desc);
     });
   }
 
@@ -2264,10 +2496,22 @@ extension DiaryRecordQueryWhereDistinct
     });
   }
 
+  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByLatitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'latitude');
+    });
+  }
+
   QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByLocation(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'location', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByLongitude() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'longitude');
     });
   }
 
@@ -2351,9 +2595,21 @@ extension DiaryRecordQueryProperty
     });
   }
 
+  QueryBuilder<DiaryRecord, double?, QQueryOperations> latitudeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'latitude');
+    });
+  }
+
   QueryBuilder<DiaryRecord, String?, QQueryOperations> locationProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'location');
+    });
+  }
+
+  QueryBuilder<DiaryRecord, double?, QQueryOperations> longitudeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'longitude');
     });
   }
 

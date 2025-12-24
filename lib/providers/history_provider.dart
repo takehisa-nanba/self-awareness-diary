@@ -4,7 +4,6 @@ import '../../models/diary_record.dart';
 import '../../services/isar_service.dart'; // Isar等のDBサービス
 
 class HistoryProvider with ChangeNotifier {
-  final IsarService isarService = IsarService();
   
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay = DateTime.now();
@@ -16,7 +15,6 @@ class HistoryProvider with ChangeNotifier {
   List<DiaryRecord> get selectedDayRecords => _selectedDayRecords;
 
   HistoryProvider() {
-    loadAllRecords(); // 画面が開く準備ができたらすぐに読み込む
     // コンストラクタで直接呼ばず、初期化完了を待つメソッドを呼ぶ
     _initialize();
   }

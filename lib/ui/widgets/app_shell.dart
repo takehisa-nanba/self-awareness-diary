@@ -29,16 +29,21 @@ class AppShell extends StatelessWidget {
           right: 0,
           child: Container(
             height: 66.0,
-            color: Colors.indigo.shade700,
+            color: Theme.of(context).colorScheme.primaryContainer, // より明るい緑色を使用
             alignment: Alignment.center,
-            child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            child: Text(
+              title,
+              style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
+                color: Theme.of(context).colorScheme.onPrimaryContainer, // primaryContainerの上の文字色
+              ),
+            ),
           ),
         ),
 
         // 左上のナビゲーター（最前面）
         Positioned(
           left: 16,
-          top: safePaddingTop + 8,
+          top: safePaddingTop + 5, // 中央に配置するための調整
           child: const ExtendedFabNavigator(),
         ),
       ],

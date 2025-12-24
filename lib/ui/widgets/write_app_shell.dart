@@ -24,7 +24,7 @@ class WriteAppShell extends StatelessWidget {
             top: safePaddingTop,
             left: 0,
             right: 0,
-            child: _buildHeader("今を刻む"),
+            child: _buildHeader(context),
           ),
           // ナビゲーター（左上固定）
           Positioned(
@@ -37,14 +37,17 @@ class WriteAppShell extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(String title) {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       height: 66.0,
-      color: Colors.indigo.shade700,
+      color: Theme.of(context).colorScheme.primaryContainer,
       alignment: Alignment.center,
       child: Text(
-        title,
-        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+        "記録", // タイトルを「記録」に更新
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
