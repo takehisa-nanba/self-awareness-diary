@@ -189,6 +189,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                 },
               ),
+          
+          const SizedBox(height: 32),
+          const Text('開発者向けオプション', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Divider(),
+          Card(
+            elevation: 0,
+            color: Theme.of(context).colorScheme.errorContainer.withAlpha(80),
+            child: ListTile(
+              leading: const Icon(Icons.bug_report_outlined),
+              title: const Text('テストデータを生成'),
+              subtitle: provider.isLoading
+                  ? LinearProgressIndicator(
+                      value: provider.totalTestRecordCount > 0
+                          ? provider.currentTestRecordCount / provider.totalTestRecordCount
+                          : 0,
+                      semanticsLabel: 'テストデータ生成中',
+                    )
+                  : const Text('過去50日間に約500件のランダムな日記を生成します。'),
+              onTap: provider.isLoading ? null : () async {
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                await provider.addTestRecords();
+                if (!context.mounted) return;
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('テストデータの生成が完了しました。'))
+                );
+              },
+              trailing: provider.isLoading
+                  ? Text('${provider.currentTestRecordCount}/${provider.totalTestRecordCount}', style: Theme.of(context).textTheme.bodySmall)
+                  : const Icon(Icons.add_circle_outline),
+            ),
+          ),
+          const SizedBox(height: 80), // FABとの重なりを避けるための余白
         ],
       ),
     );

@@ -1,7 +1,7 @@
 // lib/data/mood_tag_list.dart
 
 import 'package:flutter/material.dart';
-import '../models/mood_tag.dart';
+import '../domain/models/mood_tag.dart';
 
 const List<MoodTag> moodTagList = [
   MoodTag(label: '幸せ', icon: Icons.sentiment_very_satisfied, color: Colors.orange),

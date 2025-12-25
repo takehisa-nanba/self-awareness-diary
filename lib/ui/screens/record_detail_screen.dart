@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/diary_record.dart';
+import '../../domain/models/diary_record.dart';
 import '../../providers/detail_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/history_provider.dart';

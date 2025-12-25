@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/diary_record.dart';
+import '../../domain/models/diary_record.dart';
 import '../../services/isar_service.dart';
 import '../../providers/settings_provider.dart';
 import '../../core/utils/color_helpers.dart'; // color_helpersをインポート

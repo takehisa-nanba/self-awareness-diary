@@ -71,10 +71,18 @@ class HistoryScreen extends StatelessWidget {
                   itemCount: provider.selectedDayRecords.length,
                   itemBuilder: (context, index) {
                     final record = provider.selectedDayRecords[index];
+                    final bool isSelfAnalysisEmpty = record.selfAnalysis?.isEmpty ?? true;
+
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: isSelfAnalysisEmpty ? 1 : 2,
+                      color: isSelfAnalysisEmpty ? Theme.of(context).colorScheme.surfaceContainerHighest : null,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: isSelfAnalysisEmpty 
+                            ? BorderSide(color: Theme.of(context).colorScheme.outlineVariant, width: 1) 
+                            : BorderSide.none,
+                      ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () {

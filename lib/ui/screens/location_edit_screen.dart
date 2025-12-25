@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/location_setting.dart';
+import '../../domain/models/location_setting.dart';
 import '../../providers/settings_provider.dart';
 
 class LocationEditScreen extends StatefulWidget {

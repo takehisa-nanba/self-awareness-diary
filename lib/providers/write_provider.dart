@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../models/diary_record.dart';
+import '../../domain/models/diary_record.dart';
 import 'history_provider.dart';
 import '../services/environment_coordinator.dart';
-import '../services/isar_service.dart';
 import '../services/gemini_service.dart';
+import '../../domain/repositories/diary_repository.dart'; // DiaryRepositoryをインポート
 
 // WidgetsBindingObserver をミックスインしてアプリの開閉を監視
 class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
@@ -18,7 +18,9 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
   DateTime? _lastPausedTime; 
   static const int _refreshThresholdMinutes = 20;
 
-
+  final EnvironmentCoordinator _environmentCoordinator;
+  final GeminiService _geminiService;
+  final DiaryRepository _diaryRepository; // IsarServiceではなくDiaryRepositoryに依存
 
   // 入力データ
   int moodScore = 5;
@@ -37,7 +39,7 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
   bool isSaving = false;
 
   // コンストラクタ：監視員としての登録
-  WriteProvider() {
+  WriteProvider(this._environmentCoordinator, this._geminiService, this._diaryRepository) {
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -89,7 +91,7 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
 
       // 店長に一括依頼
-      final data = await environmentCoordinator.fetchFullData();
+      final data = await _environmentCoordinator.fetchFullData(); // _environmentCoordinatorに変更
       
       tempLocation = data.location;
       tempWeather = data.weather;
@@ -129,7 +131,7 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
     
     try {
-      reflectionQuestion = await geminiService.generateReflectionQuestion(
+      reflectionQuestion = await _geminiService.generateReflectionQuestion( // _geminiServiceに変更
         eventText: eventText,
         tags: selectedTags.join(', '),
       );
@@ -154,7 +156,7 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
       // 自己分析があればAI分析を実行
       if (selfAnalysisText.length >= 5) {
         try {
-          final analysis = await geminiService.analyzeStability(selfAnalysisText);
+          final analysis = await _geminiService.analyzeStability(selfAnalysisText); // _geminiServiceに変更
           aiScore = analysis['score'];
           aiReason = analysis['reason'];
         } catch (e) {
@@ -178,8 +180,8 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
         longitude: tempLng,
       );
 
-      // Isarに保存
-      await isarService.saveRecord(record);
+      // DiaryRepositoryに保存
+      await _diaryRepository.saveRecord(record); // _diaryRepositoryに変更
       debugPrint("日記保存完了: ${record.recordId}");
   
       // 履歴画面をリフレッシュ

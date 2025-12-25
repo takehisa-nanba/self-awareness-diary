@@ -20,6 +20,11 @@ import 'ui/screens/settings_screen.dart';
 import 'services/location_service.dart';
 import 'services/weather_service.dart';
 import 'core/constants/app_theme.dart'; // app_theme.dartをインポート
+import 'data/repositories/isar_diary_repository.dart'; // IsarDiaryRepositoryをインポート
+import 'domain/repositories/diary_repository.dart'; // DiaryRepositoryインターフェースをインポート
+import 'domain/use_cases/get_monthly_mood_data_use_case.dart'; // UseCaseをインポート
+import 'providers/analysis_provider.dart'; // AnalysisProviderをインポート
+
 
 void main() async {
   // これを一番上に追加（通信系のエラーでデバッガーが落ちるのを防ぐ）
@@ -57,16 +62,42 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        // Repository層の提供
+        Provider<DiaryRepository>(
+          create: (_) => IsarDiaryRepository(isarService),
+        ),
+        // UseCase層の提供
+        Provider<GetMonthlyMoodDataUseCase>(
+          create: (context) => GetMonthlyMoodDataUseCase(
+            context.read<DiaryRepository>(),
+          ),
+        ),
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
-        ChangeNotifierProvider(create: (_) => HistoryProvider()),
+        ChangeNotifierProvider(
+          create: (context) => HistoryProvider(
+            context.read<DiaryRepository>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AnalysisProvider(
+            context.read<GetMonthlyMoodDataUseCase>(),
+          ),
+        ),
         // SettingsProvider に HistoryProvider を渡す
         ChangeNotifierProxyProvider<HistoryProvider, SettingsProvider>(
-          create: (_) => SettingsProvider(),
+          create: (context) => SettingsProvider(
+            isarService,
+            context.read<DiaryRepository>(),
+          ),
           update: (_, history, settings) => settings!..setHistoryProvider(history),
         ),
         // WriteProvider に HistoryProvider を渡す
         ChangeNotifierProxyProvider<HistoryProvider, WriteProvider>(
-          create: (_) => WriteProvider(),
+          create: (context) => WriteProvider(
+            environmentCoordinator,
+            geminiService,
+            context.read<DiaryRepository>(),
+          ),
           update: (_, history, write) => write!..update(history),
         ),
       ],

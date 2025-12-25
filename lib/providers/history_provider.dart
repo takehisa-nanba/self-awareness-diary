@@ -1,26 +1,31 @@
 // lib/providers/history_provider.dart
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart'; // Add this import
-import '../../models/diary_record.dart';
-import '../../services/isar_service.dart'; // Isar等のDBサービス
+import 'package:table_calendar/table_calendar.dart';
+import '../../domain/models/diary_record.dart';
+import '../../domain/repositories/diary_repository.dart';
 
 class HistoryProvider with ChangeNotifier {
-  
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay = DateTime.now();
-  CalendarFormat _calendarFormat = CalendarFormat.month;
-  List<DiaryRecord> _allRecords = [];
-  List<DiaryRecord> _selectedDayRecords = [];
+  final DiaryRepository _diaryRepository;
 
-  DateTime get focusedDay => _focusedDay;
-  DateTime? get selectedDay => _selectedDay;
-  CalendarFormat get calendarFormat => _calendarFormat;
-  List<DiaryRecord> get selectedDayRecords => _selectedDayRecords;
-
-  HistoryProvider() {
-    // コンストラクタで直接呼ばず、初期化完了を待つメソッドを呼ぶ
+  HistoryProvider(this._diaryRepository) {
     _initialize();
   }
+
+  // --- 内部状態 ---
+  List<DiaryRecord> _allRecords = [];
+  Map<DateTime, List<DiaryRecord>> _groupedRecords = {};
+  DateTime _selectedDay = DateTime.now();
+  DateTime _focusedDay = DateTime.now();
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  List<DiaryRecord> _selectedDayRecords = []; // 選択された日のレコードリスト
+
+  // --- UIへの公開ゲッター ---
+  List<DiaryRecord> get allRecords => _allRecords;
+  Map<DateTime, List<DiaryRecord>> get groupedRecords => _groupedRecords;
+  DateTime get selectedDay => _selectedDay;
+  DateTime get focusedDay => _focusedDay;
+  CalendarFormat get calendarFormat => _calendarFormat;
+  List<DiaryRecord> get selectedDayRecords => _selectedDayRecords;
 
   void setCalendarFormat(CalendarFormat format) {
     _calendarFormat = format;
@@ -28,20 +33,13 @@ class HistoryProvider with ChangeNotifier {
   }
 
   Future<void> _initialize() async {
-    // main.dart の init() が終わるのを待つための安全策
-    // もし isarService.isar が未初期化なら、一瞬待機する
-    try {
-      await isarService.init(); 
-      await loadAllRecords();
-    } catch (e) {
-      debugPrint("HistoryProvider初期化エラー: $e");
-    }
+    await loadAllRecords();
   }
 
   // 初期読み込み
   Future<void> loadAllRecords() async {
     // DBから全件取得
-    _allRecords = await isarService.getAllRecords(); 
+    _allRecords = await _diaryRepository.getAllRecords(); 
     
     debugPrint("=== DB全件チェック: ${_allRecords.length}件 ===");
     
@@ -53,6 +51,14 @@ class HistoryProvider with ChangeNotifier {
   void onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     _selectedDay = selectedDay;
     _focusedDay = focusedDay;
+    _filterRecords();
+    notifyListeners();
+  }
+
+  // 特定の日付にジャンプする
+  void jumpToDate(DateTime date) {
+    _selectedDay = date;
+    _focusedDay = date;
     _filterRecords();
     notifyListeners();
   }
@@ -70,29 +76,25 @@ class HistoryProvider with ChangeNotifier {
   // lib/providers/history_provider.dart
 
   void _filterRecords() {
-    if (_selectedDay == null) {
-      _selectedDayRecords = _allRecords;
-    } else {
-      // 選択された日をローカル時間に変換
-      final s = _selectedDay!.toLocal();
+    // 選択された日をローカル時間に変換
+    final s = _selectedDay.toLocal();
+    
+    _selectedDayRecords = _allRecords.where((record) {
+      // 保存されたデータもローカル時間に変換して比較
+      final r = record.recordDate.toLocal();
       
-      _selectedDayRecords = _allRecords.where((record) {
-        // 保存されたデータもローカル時間に変換して比較
-        final r = record.recordDate.toLocal();
-        
-        return r.year == s.year && 
-               r.month == s.month && 
-               r.day == s.day;
-      }).toList();
-    }
-    debugPrint("【判定終了】選択日(Local): ${_selectedDay?.toLocal()} / 表示対象: ${_selectedDayRecords.length}件");
+      return r.year == s.year && 
+             r.month == s.month && 
+             r.day == s.day;
+    }).toList();
+    
+    debugPrint("【判定終了】選択日(Local): ${_selectedDay.toLocal()} / 表示対象: ${_selectedDayRecords.length}件");
   }
 
   Future<void> refreshHistory() async {
   // Isarから最新のデータを取ってきて、リストを更新する
-  _allRecords = await isarService.getAllRecords(); 
+  _allRecords = await _diaryRepository.getAllRecords(); 
   _filterRecords();
   notifyListeners(); // ← これが「画面を書き換えろ！」という合図です
   }
-  
 }
