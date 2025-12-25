@@ -26,6 +26,20 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
   static const double _itemMargin = 8.0; // 左右のマージンの合計
   static const double _totalItemWidth = _itemWidth + _itemMargin; // 1アイテムが占める合計幅
 
+  Color _getMoodColor(int score) {
+    // Normalize score to a 0.0 - 1.0 range
+    final double t = (score - 1) / 9; // (1-1)/9 = 0, (10-1)/9 = 1
+
+    // Interpolate between Red, Yellow, Green
+    // Red to Yellow (t=0 to t=0.5)
+    // Yellow to Green (t=0.5 to t=1)
+    if (t < 0.5) {
+      return Color.lerp(Colors.red, Colors.yellow, t * 2) ?? Colors.red;
+    } else {
+      return Color.lerp(Colors.yellow, Colors.green, (t - 0.5) * 2) ?? Colors.green;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -91,9 +105,6 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double horizontalPadding = (constraints.maxWidth / 2) - (_totalItemWidth / 2);
-        
-        final Color primaryColor = Theme.of(context).colorScheme.primary;
-        final Color onSurfaceColor = Theme.of(context).colorScheme.onSurface;
 
         return SizedBox(
           height: 120, // 高さを少し増やす
@@ -101,7 +112,7 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
             controller: _scrollController,
             scrollDirection: Axis.horizontal,
             itemCount: 10,
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            padding: EdgeInsets.symmetric(horizontal: max(0.0, horizontalPadding)),
             itemBuilder: (context, index) {
               final score = index + 1;
               final distance = (score - widget.currentMood).abs();
@@ -111,7 +122,8 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
               const double jumpRate = 7.5; // サイズ変化の速さ調整用
               final double size = max(minSize, maxSize - distance * jumpRate);
 
-              final Color color = Color.lerp(primaryColor, onSurfaceColor.withAlpha(153), distance / 5.0) ?? onSurfaceColor;
+              final Color scoreBaseColor = _getMoodColor(score);
+              final Color color = Color.lerp(scoreBaseColor, scoreBaseColor.withAlpha(0), distance / 3.0) ?? scoreBaseColor;
               final double fontSize = max(12.0, 24.0 - distance * 3.0);
               final FontWeight fontWeight = distance == 0 ? FontWeight.bold : FontWeight.normal;
 
@@ -127,11 +139,11 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
                     height: size,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: distance == 0 ? primaryColor.withAlpha(26) : Colors.transparent,
-                      border: Border.all(color: color.withAlpha(128), width: 2),
+                      color: distance == 0 ? _getMoodColor(widget.currentMood).withAlpha(26) : Colors.transparent,
+                      border: Border.all(color: scoreBaseColor.withAlpha(128), width: 2),
                       boxShadow: distance == 0 ? [
                         BoxShadow(
-                          color: primaryColor.withAlpha(77),
+                          color: _getMoodColor(widget.currentMood).withAlpha(77),
                           blurRadius: 10,
                           spreadRadius: 2,
                         ),

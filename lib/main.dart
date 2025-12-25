@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // 追加
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'services/environment_coordinator.dart';
 import 'services/isar_service.dart';
 import 'services/gemini_service.dart';
@@ -27,6 +29,7 @@ void main() async {
   };
 
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting();
 
   // 1. 各種設定の読み込み
   await dotenv.load(fileName: ".env");
@@ -80,6 +83,17 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '自己覚知日記',
       theme: lightTheme, // app_theme.dartで定義したlightThemeを使用
+      // ▼▼▼ ローカライズ設定 ▼▼▼
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''), 
+        Locale('ja', ''),
+      ],
+      // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲
       // ルーティング設定
       initialRoute: '/',
       routes: {

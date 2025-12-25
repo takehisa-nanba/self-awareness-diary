@@ -274,9 +274,9 @@ class _AIAnalysisCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1), // withValuesを推奨
+        color: color.withAlpha((255 * 0.1).round()),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)), // withValuesを推奨
+        border: Border.all(color: color.withAlpha((255 * 0.3).round())),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

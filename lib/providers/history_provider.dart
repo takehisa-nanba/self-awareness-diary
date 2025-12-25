@@ -1,5 +1,6 @@
 // lib/providers/history_provider.dart
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart'; // Add this import
 import '../../models/diary_record.dart';
 import '../../services/isar_service.dart'; // Isar等のDBサービス
 
@@ -7,16 +8,23 @@ class HistoryProvider with ChangeNotifier {
   
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay = DateTime.now();
+  CalendarFormat _calendarFormat = CalendarFormat.month;
   List<DiaryRecord> _allRecords = [];
   List<DiaryRecord> _selectedDayRecords = [];
 
   DateTime get focusedDay => _focusedDay;
   DateTime? get selectedDay => _selectedDay;
+  CalendarFormat get calendarFormat => _calendarFormat;
   List<DiaryRecord> get selectedDayRecords => _selectedDayRecords;
 
   HistoryProvider() {
     // コンストラクタで直接呼ばず、初期化完了を待つメソッドを呼ぶ
     _initialize();
+  }
+
+  void setCalendarFormat(CalendarFormat format) {
+    _calendarFormat = format;
+    notifyListeners();
   }
 
   Future<void> _initialize() async {
@@ -47,6 +55,15 @@ class HistoryProvider with ChangeNotifier {
     _focusedDay = focusedDay;
     _filterRecords();
     notifyListeners();
+  }
+
+  // カレンダーに表示するイベント（ドット）を返す
+  List<DiaryRecord> getEventsForDay(DateTime day) {
+    final d = day.toLocal();
+    return _allRecords.where((record) {
+      final r = record.recordDate.toLocal();
+      return r.year == d.year && r.month == d.month && r.day == d.day;
+    }).toList();
   }
 
   // 選択された日のデータだけを抽出するロジック

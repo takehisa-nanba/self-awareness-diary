@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/write_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/app_state_provider.dart';
 import '../widgets/location_status_bar.dart';
 import 'write_steps/step1_write.dart';
 import 'write_steps/step2_write.dart';
@@ -108,6 +109,9 @@ class _WriteScreenState extends State<WriteScreen> {
                       scaffoldMessenger.showSnackBar(
                         const SnackBar(content: Text('記録を保存しました'))
                       );
+                      // 保存後、履歴画面に遷移
+                      // AppStateProviderのsetTabメソッドを呼び出してタブをHistoryに切り替える
+                      context.read<AppStateProvider>().setTab(AppTab.history);
                     }
                   },
                   child: (writeProvider.isSaving || writeProvider.isGenerating) 

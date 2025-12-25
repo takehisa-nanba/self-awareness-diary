@@ -18,7 +18,7 @@ class LocationStatusBar extends StatelessWidget {
     if (location == null) {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
         child: Row(
           children: const [
             SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
@@ -33,7 +33,7 @@ class LocationStatusBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.5),
+        color: Theme.of(context).colorScheme.secondaryContainer.withAlpha((255 * 0.5).round()),
         border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
       ),
       child: Row(

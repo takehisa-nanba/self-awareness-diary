@@ -8,6 +8,21 @@ import 'record_detail_screen.dart';
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
+  // 年月ピッカーを表示するメソッド
+  Future<void> _showYearMonthPicker(BuildContext context, DateTime focusedDay, HistoryProvider provider) async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: focusedDay,
+      firstDate: DateTime(2024),
+      lastDate: DateTime(2030),
+      initialDatePickerMode: DatePickerMode.year, // 初期表示を年選択にする
+    );
+
+    if (pickedDate != null) {
+      provider.onDaySelected(pickedDate, pickedDate);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<HistoryProvider>();
@@ -15,16 +30,37 @@ class HistoryScreen extends StatelessWidget {
     return Column(
       children: [
         TableCalendar(
+          locale: Localizations.localeOf(context).toString(),
           firstDay: DateTime.utc(2024, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),
           focusedDay: provider.focusedDay,
           selectedDayPredicate: (day) => isSameDay(provider.selectedDay, day),
           onDaySelected: provider.onDaySelected,
+          // ▼▼▼ 以下、まるっと変更 ▼▼▼
+          eventLoader: (day) => provider.getEventsForDay(day).isNotEmpty ? [true] : [],
+          calendarFormat: provider.calendarFormat,
+          onFormatChanged: (format) => provider.setCalendarFormat(format),
+          onHeaderTapped: (date) => _showYearMonthPicker(context, date, provider),
+          daysOfWeekHeight: 30.0, // 曜日の高さを調整
           calendarStyle: CalendarStyle(
-            todayDecoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5), shape: BoxShape.circle),
+            todayDecoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withAlpha((255 * 0.5).round()), shape: BoxShape.circle),
             selectedDecoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
+            selectedTextStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16.0),
+            // ドットマーカーの設定
+            markerDecoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.secondary,
+              shape: BoxShape.circle,
+            ),
           ),
-          headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+          availableCalendarFormats: const {
+            CalendarFormat.month: '月',
+            CalendarFormat.week: '週',
+          },
+          headerStyle: const HeaderStyle( 
+            formatButtonVisible: true, // フォーマットボタンを表示
+            titleCentered: true,
+          ),
+          // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
         ),
         const Divider(),
         Expanded(

@@ -29,9 +29,9 @@ class DetailProvider with ChangeNotifier {
   // --- 場所の登録状態判定 ---
   // SettingsProviderのリストと突き合わせて、未登録なら true を返す
   bool isLocationUnregistered(SettingsProvider settings) {
-    if (record.location == null) return false;
-    // 住所が登録済みのリストに含まれていないかチェック
-    return !settings.locations.any((l) => l.address == record.location);
+    if (record.location == null || record.location!.isEmpty) return false;
+    // 住所またはラベルが登録済みのリストに含まれていないかチェック
+    return !settings.locations.any((l) => l.address == record.location || l.label == record.location);
   }
 
   // --- 場所の名前更新処理 ---

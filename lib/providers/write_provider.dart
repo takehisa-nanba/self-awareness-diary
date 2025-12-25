@@ -18,6 +18,8 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
   DateTime? _lastPausedTime; 
   static const int _refreshThresholdMinutes = 20;
 
+
+
   // 入力データ
   int moodScore = 5;
   List<String> selectedTags = [];
@@ -102,6 +104,7 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
     }
   }
+
 
   // ステップ制御
   void nextStep() {

@@ -6,6 +6,7 @@ import '../models/diary_record.dart';
 import '../models/location_setting.dart';
 import '../models/app_settings.dart'; // AppSettingsモデルをインポート
 
+
 class IsarService {
   Isar? _isar;
 
@@ -44,6 +45,10 @@ class IsarService {
     final setting = await isar.appSettings.where().keyEqualTo(key).findFirst();
     return setting?.value;
   }
+
+  // ------------------------------------
+
+  // ------------------------------------
 
   // ------------------------------------
 
