@@ -7,5 +7,7 @@ abstract class DiaryRepository {
 
   Future<DiaryRecord?> getRecord(int id);
 
+  Future<List<DiaryRecord>> getRecordsInDateRange(DateTime startDate, DateTime endDate);
+
   Stream<List<DiaryRecord>> watchAllRecords();
 }

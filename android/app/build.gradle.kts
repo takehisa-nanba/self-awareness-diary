@@ -27,14 +27,14 @@ android {
         }
     }
     compileOptions {
-        // Javaのソース/ターゲットバージョンをJava 21に設定
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        // Javaのソース/ターゲットバージョンをJava 17に設定
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        // KotlinのターゲットJVMバージョンをJava 21に設定
-        jvmTarget = "21"
+        // KotlinのターゲットJVMバージョンをJava 17に設定
+        jvmTarget = "17"
     }
 }
 

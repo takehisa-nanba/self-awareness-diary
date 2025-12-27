@@ -1,75 +1,48 @@
 import 'package:flutter/material.dart';
-import '../../domain/use_cases/get_monthly_mood_data_use_case.dart';
+import '../../domain/models/analysis_report.dart';
+import '../../domain/repositories/diary_repository.dart';
 
 class AnalysisProvider with ChangeNotifier {
-  final GetMonthlyMoodDataUseCase _getMonthlyMoodDataUseCase;
+  final DiaryRepository _diaryRepository;
 
-  AnalysisProvider(this._getMonthlyMoodDataUseCase);
+  AnalysisProvider(this._diaryRepository) {
+    // 初期期間を過去30日間に設定し、時刻コンポーネントを正規化
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+
+    final defaultStart = startOfDay.subtract(const Duration(days: 29)); // 30日前の00:00:00
+    final defaultEnd = endOfDay; // 現在日の23:59:59.999
+
+    _dateRange = DateTimeRange(start: defaultStart, end: defaultEnd);
+    loadAnalysisData();
+  }
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  int _selectedYear = DateTime.now().year;
-  int get selectedYear => _selectedYear;
+  late DateTimeRange _dateRange;
+  DateTimeRange get dateRange => _dateRange;
+  
+  AnalysisReport? _report;
+  AnalysisReport? get report => _report;
 
-  int _selectedMonth = DateTime.now().month;
-  int get selectedMonth => _selectedMonth;
 
-  Map<int, double> _monthlyMoodData = {}; // 日付(int) -> 平均ムードスコア
-  Map<int, double> get monthlyMoodData => _monthlyMoodData;
-
-  double _averageMoodScore = 0.0;
-  double get averageMoodScore => _averageMoodScore;
-
-  Future<void> loadMonthlyMoodData() async {
+  Future<void> loadAnalysisData() async {
     _isLoading = true;
     notifyListeners();
 
-    _monthlyMoodData = await _getMonthlyMoodDataUseCase.execute(_selectedYear, _selectedMonth);
-    _calculateAverageMoodScore();
-
+    final records = await _diaryRepository.getRecordsInDateRange(_dateRange.start, _dateRange.end);
+    debugPrint('[AnalysisProvider] 期間 [${_dateRange.start.toLocal().toString().substring(0,10)} - ${_dateRange.end.toLocal().toString().substring(0,10)}] のレコードを ${records.length} 件取得しました。');
+    _report = AnalysisReport(records: records, dateRange: _dateRange);
+    
     _isLoading = false;
     notifyListeners();
   }
-
-  void _calculateAverageMoodScore() {
-    if (_monthlyMoodData.isEmpty) {
-      _averageMoodScore = 0.0;
-      return;
-    }
-    final total = _monthlyMoodData.values.reduce((sum, score) => sum + score);
-    _averageMoodScore = total / _monthlyMoodData.length;
-  }
-
-  void selectMonth(int year, int month) {
-    _selectedYear = year;
-    _selectedMonth = month;
-    loadMonthlyMoodData();
-  }
-
-  void previousMonth() {
-    if (_selectedMonth == 1) {
-      _selectedMonth = 12;
-      _selectedYear--;
-    } else {
-      _selectedMonth--;
-    }
-    loadMonthlyMoodData();
-  }
-
-  void nextMonth() {
-    // 現在の月より先に進めない
-    final now = DateTime.now();
-    if (_selectedYear == now.year && _selectedMonth == now.month) {
-      return;
-    }
-
-    if (_selectedMonth == 12) {
-      _selectedMonth = 1;
-      _selectedYear++;
-    } else {
-      _selectedMonth++;
-    }
-    loadMonthlyMoodData();
+  
+  Future<void> changeDateRange(DateTimeRange newRange) async {
+    _dateRange = newRange;
+    await loadAnalysisData();
   }
 }
+

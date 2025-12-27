@@ -28,14 +28,15 @@ class IsarDiaryRepository implements DiaryRepository {
     return _isarService.isar.diaryRecords.where().watch(fireImmediately: true);
   }
 
-  Future<List<DiaryRecord>> getRecordsByDate(DateTime date) {
-    final start = DateTime(date.year, date.month, date.day);
-    final end = start.add(const Duration(days: 1));
+  @override
+  Future<List<DiaryRecord>> getRecordsInDateRange(DateTime startDate, DateTime endDate) {
+    // startDateをその日の始まりに、endDateをその日の終わりに設定する
+    final startOfRange = DateTime(startDate.year, startDate.month, startDate.day);
+    final endOfRange = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59, 999);
+
     return _isarService.isar.diaryRecords
         .filter()
-        .recordDateGreaterThan(start)
-        .and()
-        .recordDateLessThan(end)
+        .recordDateBetween(startOfRange, endOfRange) // 開始日と終了日を両方とも含める
         .sortByRecordDateDesc()
         .findAll();
   }

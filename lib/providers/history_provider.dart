@@ -13,7 +13,6 @@ class HistoryProvider with ChangeNotifier {
 
   // --- 内部状態 ---
   List<DiaryRecord> _allRecords = [];
-  Map<DateTime, List<DiaryRecord>> _groupedRecords = {};
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.month;
@@ -21,7 +20,6 @@ class HistoryProvider with ChangeNotifier {
 
   // --- UIへの公開ゲッター ---
   List<DiaryRecord> get allRecords => _allRecords;
-  Map<DateTime, List<DiaryRecord>> get groupedRecords => _groupedRecords;
   DateTime get selectedDay => _selectedDay;
   DateTime get focusedDay => _focusedDay;
   CalendarFormat get calendarFormat => _calendarFormat;

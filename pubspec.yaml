@@ -45,6 +45,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_speed_dial: ^7.0.0
+  collection: ^1.19.1
 
 dev_dependencies:
   flutter_test:

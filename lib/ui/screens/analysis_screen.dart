@@ -1,141 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../providers/analysis_provider.dart'; // 後ほど作成するAnalysisProvider
+import 'package:intl/intl.dart';
+import 'dart:math';
+import '../../domain/models/analysis_report.dart';
+import '../../providers/analysis_provider.dart';
+import '../../providers/history_provider.dart';
+import '../widgets/custom_date_range_picker_dialog.dart';
 
-class AnalysisScreen extends StatefulWidget {
+class AnalysisScreen extends StatelessWidget {
   const AnalysisScreen({super.key});
-
-  @override
-  State<AnalysisScreen> createState() => _AnalysisScreenState();
-}
-
-class _AnalysisScreenState extends State<AnalysisScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AnalysisProvider>(context, listen: false).loadMonthlyMoodData();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('月別ムード分析'),
+        title: const Text('データ分析'),
       ),
-      body: SingleChildScrollView( // ここで画面全体をスクロール可能にする
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildMonthSelector(context), 
+            _buildDateRangeSelector(context),
             const SizedBox(height: 24),
             Consumer<AnalysisProvider>(
-              builder: (context, consumerProvider, child) {
-                if (consumerProvider.isLoading) {
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
                   return const SizedBox(
-                    height: 250, // ローディング時もグラフと同じ高さを確保
+                    height: 400,
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
 
-                if (consumerProvider.monthlyMoodData.isEmpty) {
+                final report = provider.report;
+                if (report == null || (report.isSingleDay ? report.hourlyMoodScores.isEmpty : report.dailyMoodScores.isEmpty)) {
                   return const SizedBox(
-                    height: 250, // データなし時もグラフと同じ高さを確保
-                    child: Center(child: Text('この月のデータはありません。')),
+                    height: 400,
+                    child: Center(child: Text('この期間のデータはありません。')),
                   );
                 }
 
                 return Column(
                   children: [
-                    Text(
-                      '${consumerProvider.selectedYear}年 ${consumerProvider.selectedMonth}月のムード推移',
-                      style: Theme.of(context).textTheme.titleMedium, // 文字を少し小さく
-                      textAlign: TextAlign.center,
-                    ),
+                    _buildSectionTitle(context, 'ムード推移'),
                     const SizedBox(height: 16),
-                    SizedBox( // ここでグラフの高さを固定
-                      height: 300, 
-                      child: LineChart(
-                        LineChartData(
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: consumerProvider.monthlyMoodData.entries.map((entry) {
-                                return FlSpot(entry.key.toDouble(), entry.value);
-                              }).toList(),
-                              isCurved: true,
-                              color: Theme.of(context).primaryColor,
-                              barWidth: 3,
-                              isStrokeCapRound: true,
-                              dotData: FlDotData(
-                                show: true,
-                                getDotPainter: (spot, percent, barData, index) {
-                                  return FlDotCirclePainter(
-                                    radius: 4,
-                                    color: Theme.of(context).primaryColor,
-                                    strokeWidth: 2,
-                                    strokeColor: Theme.of(context).scaffoldBackgroundColor,
-                                  );
-                                },
-                              ),
-                              belowBarData: BarAreaData(
-                                show: true,
-                                color: Theme.of(context).primaryColor.withAlpha((255 * 0.3).round()),
-                              ),
-                            ),
-                          ],
-                          titlesData: FlTitlesData(
-                            show: true,
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, meta) {
-                                  if (value.toInt() % 5 == 0 && value.toInt() != 0) {
-                                    return Text(value.toInt().toString(), style: const TextStyle(fontSize: 8));
-                                  }
-                                  return const Text('');
-                                },
-                                reservedSize: 22,
-                              ),
-                            ),
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, meta) {
-                                  if (value == 0 || value == 2 || value == 4 || value == 6 || value == 8 || value == 10) {
-                                    return Text(value.toInt().toString(), style: const TextStyle(fontSize: 8));
-                                  }
-                                  return const Text('');
-                                },
-                                reservedSize: 28,
-                              ),
-                            ),
-                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                            getDrawingHorizontalLine: (value) => FlLine(
-                              color: Theme.of(context).dividerColor,
-                              strokeWidth: 0.5,
-                            ),
-                          ),
-                          minX: 1,
-                          maxX: _getDaysInMonth(consumerProvider.selectedYear, consumerProvider.selectedMonth).toDouble(),
-                          minY: 0,
-                          maxY: 10,
-                        ),
+                    SizedBox(
+                      height: 300,
+                      child: report.isSingleDay
+                          ? _buildHourlyMoodTrendChart(context, report)
+                          : _buildMoodTrendChart(context, report),
+                    ),
+                    const SizedBox(height: 8),
+                     Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '平均スコア: ${report.averageMoodScore.toStringAsFixed(1)}',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
+                    const SizedBox(height: 40),
+
+                    _buildSectionTitle(context, 'ムードの分布'),
                     const SizedBox(height: 16),
-                    Text(
-                      '月平均ムードスコア: ${consumerProvider.averageMoodScore.toStringAsFixed(1)}',
-                      style: Theme.of(context).textTheme.titleSmall,
-                      textAlign: TextAlign.center,
+                    SizedBox(
+                      height: 250,
+                      child: _buildMoodDistributionChart(context, report),
                     ),
                   ],
                 );
@@ -148,49 +78,336 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-  Widget _buildMonthSelector(BuildContext context) {
-    final provider = context.watch<AnalysisProvider>();
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_left),
-          onPressed: () => context.read<AnalysisProvider>().previousMonth(),
-        ),
-        GestureDetector(
-          onTap: () async {
-            final providerRead = context.read<AnalysisProvider>();
-            final DateTime? pickedDate = await showDatePicker(
-              context: context,
-              initialDate: DateTime(provider.selectedYear, provider.selectedMonth),
-              firstDate: DateTime(2000),
-              lastDate: DateTime.now(),
-              locale: Localizations.localeOf(context),
-            );
-            if (!context.mounted) return;
-            if (pickedDate != null) {
-              providerRead.selectMonth(pickedDate.year, pickedDate.month);
-            }
-          },
-          child: Text(
-            '${provider.selectedYear}年 ${provider.selectedMonth}月',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.arrow_right),
-          onPressed: () => context.read<AnalysisProvider>().nextMonth(),
-        ),
-      ],
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge,
     );
   }
 
-  int _getDaysInMonth(int year, int month) {
-    if (month == DateTime.february) {
-      final bool isLeapYear = (year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0);
-      return isLeapYear ? 29 : 28;
-    }
-    const List<int> daysInMonth = <int>[31, -1, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    return daysInMonth[month - 1];
+  Widget _buildDateRangeSelector(BuildContext context) {
+    final provider = context.watch<AnalysisProvider>();
+    final dateFormat = DateFormat('yyyy/MM/dd', 'ja_JP');
+    final start = dateFormat.format(provider.dateRange.start);
+    final end = dateFormat.format(provider.dateRange.end);
+
+    return InkWell(
+      onTap: () async {
+        // HistoryProviderから全レコードを取得してイベントとして渡す
+        final historyProvider = context.read<HistoryProvider>();
+        final events = historyProvider.allRecords;
+
+        final newRange = await showDialog<DateTimeRange>(
+          context: context,
+          builder: (context) => CustomDateRangePickerDialog(
+            initialDateRange: provider.dateRange,
+            events: events,
+          ),
+        );
+        if (!context.mounted) return;
+        if (newRange != null) {
+          context.read<AnalysisProvider>().changeDateRange(newRange);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.calendar_today_outlined, size: 18),
+            const SizedBox(width: 8),
+            Text('$start - $end', style: Theme.of(context).textTheme.titleMedium),
+          ],
+        ),
+      ),
+    );
+  }
+
+  LineTouchData _getLineTouchData(BuildContext context, AnalysisReport report, bool isHourly) {
+    return LineTouchData(
+      getTouchedSpotIndicator: (LineChartBarData barData, List<int> spotIndexes) {
+        return spotIndexes.map((spotIndex) {
+          return TouchedSpotIndicatorData(
+            FlLine(
+              color: Theme.of(context).primaryColor,
+              strokeWidth: 2,
+            ),
+            FlDotData(
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: 6,
+                  color: Theme.of(context).primaryColor,
+                  strokeColor: Theme.of(context).cardColor,
+                  strokeWidth: 2,
+                );
+              },
+            ),
+          );
+        }).toList();
+      },
+      touchTooltipData: LineTouchTooltipData(
+        getTooltipColor: (spot) => Theme.of(context).colorScheme.secondaryContainer,
+        getTooltipItems: (touchedSpots) {
+          return touchedSpots.map((spot) {
+            final String title;
+            if (isHourly) {
+              title = '${spot.x.toInt()}時';
+            } else {
+              final date = report.dateRange.start.add(Duration(days: spot.x.toInt()));
+              title = DateFormat('M/d').format(date);
+            }
+            return LineTooltipItem(
+              '$title\n',
+              TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold),
+              children: [
+                TextSpan(
+                  text: 'スコア: ${spot.y.toStringAsFixed(1)}',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer),
+                ),
+              ],
+            );
+          }).toList();
+        },
+      ),
+    );
+  }
+  
+  Widget _buildMoodTrendChart(BuildContext context, AnalysisReport report) {
+    debugPrint('--- Trend Chart Build Start ---');
+    debugPrint('Date Range: ${report.dateRange.start} - ${report.dateRange.end}');
+    
+    final spots = report.dailyMoodScores.entries.map((entry) {
+      final daysFromStart = entry.key.difference(report.dateRange.start).inDays;
+      return FlSpot(daysFromStart.toDouble(), entry.value);
+    }).toList();
+
+    final durationDays = report.dateRange.duration.inDays;
+    final bottomLabelInterval = durationDays > 7 ? 7 : 1;
+    final maxX = durationDays.toDouble() + 0.1;
+
+    debugPrint('Duration Days: $durationDays, MaxX: $maxX');
+    debugPrint('Daily Mood Scores Map: ${report.dailyMoodScores}');
+    debugPrint('Generated Spots: ${spots.map((s) => '(${s.x}, ${s.y})').join(', ')}');
+    debugPrint('--- Trend Chart Build End ---');
+
+    return LineChart(
+      LineChartData(
+        lineTouchData: _getLineTouchData(context, report, false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            curveSmoothness: 0.35,
+            color: Theme.of(context).primaryColor,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: Theme.of(context).primaryColor.withAlpha(50),
+            ),
+          ),
+        ],
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                // X軸の最大値（終端）はfl_chartに任せるか、描画しない
+                if (value == meta.max) {
+                  return const Text('');
+                }
+                final day = value.toInt();
+                if (day % bottomLabelInterval == 0) {
+                  final date = report.dateRange.start.add(Duration(days: day));
+                  return Text(DateFormat('M/d').format(date), style: const TextStyle(fontSize: 10));
+                }
+                return const Text('');
+              },
+              reservedSize: 24,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (value.toInt() % 2 == 0) {
+                  return Text(value.toInt().toString(), style: const TextStyle(fontSize: 10));
+                }
+                return const Text('');
+              },
+              reservedSize: 28,
+            ),
+          ),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: false),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 2,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Theme.of(context).dividerColor.withAlpha(128),
+            strokeWidth: 0.5,
+          ),
+        ),
+        minX: 0,
+        maxX: durationDays.toDouble() + 0.1,
+        minY: 0,
+        maxY: 10,
+      ),
+    );
+  }
+  
+  Widget _buildHourlyMoodTrendChart(BuildContext context, AnalysisReport report) {
+    final spots = report.hourlyMoodScores.entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value);
+    }).toList();
+
+    return LineChart(
+      LineChartData(
+        lineTouchData: _getLineTouchData(context, report, true),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            curveSmoothness: 0.35,
+            color: Theme.of(context).primaryColor,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: Theme.of(context).primaryColor.withAlpha(50),
+            ),
+          ),
+        ],
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (value.toInt() % 6 == 0) {
+                  return Text('${value.toInt()}時', style: const TextStyle(fontSize: 10));
+                }
+                return const Text('');
+              },
+              reservedSize: 24,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (value.toInt() % 2 == 0) {
+                  return Text(value.toInt().toString(), style: const TextStyle(fontSize: 10));
+                }
+                return const Text('');
+              },
+              reservedSize: 28,
+            ),
+          ),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: false),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 2,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Theme.of(context).dividerColor.withAlpha(128),
+            strokeWidth: 0.5,
+          ),
+        ),
+        minX: 0,
+        maxX: 23,
+        minY: 0,
+        maxY: 10,
+      ),
+    );
+  }
+  
+  Widget _buildMoodDistributionChart(BuildContext context, AnalysisReport report) {
+    final distribution = report.moodTagDistribution;
+    final primaryColor = Theme.of(context).primaryColor;
+
+    final topItems = distribution.entries.take(5).toList();
+    if (topItems.isEmpty) return const Center(child: Text('データがありません'));
+
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: max(5, (topItems.first.value * 1.2).toDouble()),
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (spot) => Theme.of(context).colorScheme.secondaryContainer,
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                '${topItems[groupIndex].key}\n',
+                TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: '${topItems[groupIndex].value} 回',
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                final index = value.toInt();
+                if (index < topItems.length) {
+                  return Text(
+                    topItems[index].key,
+                    style: const TextStyle(fontSize: 10),
+                    overflow: TextOverflow.ellipsis,
+                  );
+                }
+                return const Text('');
+              },
+              reservedSize: 22,
+            ),
+          ),
+          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: false),
+        gridData: const FlGridData(show: false),
+        barGroups: topItems.asMap().entries.map((entry) {
+          final index = entry.key;
+          final value = entry.value.value;
+          return BarChartGroupData(
+            x: index,
+            barRods: [
+              BarChartRodData(
+                toY: value.toDouble(),
+                color: primaryColor.withAlpha((255 * (0.6 + (index * 0.08))).toInt()),
+                width: 16,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(4),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      ),
+    );
   }
 }

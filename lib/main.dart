@@ -22,7 +22,6 @@ import 'services/weather_service.dart';
 import 'core/constants/app_theme.dart'; // app_theme.dartをインポート
 import 'data/repositories/isar_diary_repository.dart'; // IsarDiaryRepositoryをインポート
 import 'domain/repositories/diary_repository.dart'; // DiaryRepositoryインターフェースをインポート
-import 'domain/use_cases/get_monthly_mood_data_use_case.dart'; // UseCaseをインポート
 import 'providers/analysis_provider.dart'; // AnalysisProviderをインポート
 
 
@@ -66,12 +65,12 @@ void main() async {
         Provider<DiaryRepository>(
           create: (_) => IsarDiaryRepository(isarService),
         ),
-        // UseCase層の提供
-        Provider<GetMonthlyMoodDataUseCase>(
-          create: (context) => GetMonthlyMoodDataUseCase(
-            context.read<DiaryRepository>(),
-          ),
-        ),
+        // UseCase層はAnalysisProviderに統合されたため不要
+        // Provider<GetMonthlyMoodDataUseCase>(
+        //   create: (context) => GetMonthlyMoodDataUseCase(
+        //     context.read<DiaryRepository>(),
+        //   ),
+        // ),
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
         ChangeNotifierProvider(
           create: (context) => HistoryProvider(
@@ -80,7 +79,7 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (context) => AnalysisProvider(
-            context.read<GetMonthlyMoodDataUseCase>(),
+            context.read<DiaryRepository>(),
           ),
         ),
         // SettingsProvider に HistoryProvider を渡す
