@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart'; // 追加
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:myapp/providers/mood_tag_provider.dart'; // Add this import
 import 'services/environment_coordinator.dart';
 import 'services/isar_service.dart';
 import 'services/gemini_service.dart';
@@ -24,7 +25,6 @@ import 'data/repositories/isar_diary_repository.dart'; // IsarDiaryRepositoryを
 import 'domain/repositories/diary_repository.dart'; // DiaryRepositoryインターフェースをインポート
 import 'providers/analysis_provider.dart'; // AnalysisProviderをインポート
 
-
 void main() async {
   // これを一番上に追加（通信系のエラーでデバッガーが落ちるのを防ぐ）
   FlutterError.onError = (details) {
@@ -43,7 +43,7 @@ void main() async {
 
   // 2. 実働スタッフ（サービス）の準備
   // ★重要: インスタンスを作成し、その「同じインスタンス」を初期化する
-  isarService = IsarService(); 
+  isarService = IsarService();
   await isarService.init(); // staticなIsarService.init()ではなく、インスタンスのinitを呼ぶ
 
   locationService = LocationService(mapsKey);
@@ -53,8 +53,8 @@ void main() async {
   // 3. 店長（コーディネーター）を任命
   // ★重要: 初期化済みの isarService を渡す
   environmentCoordinator = EnvironmentCoordinator(
-    locationService, 
-    weatherService, 
+    locationService,
+    weatherService,
     isarService,
   );
 
@@ -65,6 +65,9 @@ void main() async {
         Provider<DiaryRepository>(
           create: (_) => IsarDiaryRepository(isarService),
         ),
+        Provider<GeminiService>(
+          create: (_) => geminiService, // 既存のgeminiServiceインスタンスを提供
+        ),
         // UseCase層はAnalysisProviderに統合されたため不要
         // Provider<GetMonthlyMoodDataUseCase>(
         //   create: (context) => GetMonthlyMoodDataUseCase(
@@ -73,22 +76,23 @@ void main() async {
         // ),
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
         ChangeNotifierProvider(
-          create: (context) => HistoryProvider(
-            context.read<DiaryRepository>(),
-          ),
+          create: (context) => HistoryProvider(context.read<DiaryRepository>()),
         ),
         ChangeNotifierProvider(
           create: (context) => AnalysisProvider(
             context.read<DiaryRepository>(),
+            geminiService,
           ),
         ),
         // SettingsProvider に HistoryProvider を渡す
         ChangeNotifierProxyProvider<HistoryProvider, SettingsProvider>(
-          create: (context) => SettingsProvider(
-            isarService,
-            context.read<DiaryRepository>(),
-          ),
-          update: (_, history, settings) => settings!..setHistoryProvider(history),
+          create: (context) =>
+              SettingsProvider(isarService, context.read<DiaryRepository>()),
+          update: (_, history, settings) =>
+              settings!..setHistoryProvider(history),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => MoodTagProvider(context.read<SettingsProvider>()),
         ),
         // WriteProvider に HistoryProvider を渡す
         ChangeNotifierProxyProvider<HistoryProvider, WriteProvider>(
@@ -119,19 +123,17 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en', ''), 
-        Locale('ja', ''),
-      ],
+      supportedLocales: const [Locale('en', ''), Locale('ja', '')],
       // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲
       // ルーティング設定
       initialRoute: '/',
       routes: {
-        '/': (context) => const RootScreen(), 
+        '/': (context) => const RootScreen(),
         '/write': (context) => const WriteScreen(),
         '/history': (context) => const HistoryScreen(),
         '/analysis': (context) => const AnalysisScreen(),
-        '/settings': (context) => const SettingsScreen(),      },
+        '/settings': (context) => const SettingsScreen(),
+      },
     );
   }
 }

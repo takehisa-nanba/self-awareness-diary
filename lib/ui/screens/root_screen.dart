@@ -44,7 +44,7 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       debugPrint("【生体反応検知】アプリが再開されました。店長、データを更新してください。");
       // ここで最新の場所と天気を取得し直す
-      context.read<WriteProvider>().fetchEnvironmentData(); 
+      context.read<WriteProvider>().fetchEnvironmentData();
     }
   }
 
@@ -68,7 +68,8 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
             content: const Text('アプリを終了します。よろしいですか？'),
             actions: <Widget>[
               TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false), // キャンセル
+                onPressed: () =>
+                    Navigator.of(dialogContext).pop(false), // キャンセル
                 child: const Text('いいえ'),
               ),
               TextButton(
@@ -83,7 +84,10 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
           if (!context.mounted) return; // 非同期ギャップを越えたBuildContextの使用をガード
           // ユーザーが終了を確認
           // 次回起動時のデフォルトタブを設定
-          final appState = Provider.of<AppStateProvider>(context, listen: false);
+          final appState = Provider.of<AppStateProvider>(
+            context,
+            listen: false,
+          );
           if (!context.mounted) return; // 非同期ギャップを越えたBuildContextの使用をガード
           appState.setTab(AppTab.write);
 
@@ -92,7 +96,7 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
             _canPop = true; // ポップを許可
           });
           // ブロックされていたポップをプログラム的にトリガーします。
-          if (context.mounted) { 
+          if (context.mounted) {
             SystemNavigator.pop();
           }
         } else {
@@ -105,13 +109,14 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
           });
         }
       },
-      child: Scaffold( // 元のScaffoldをラップ
+      child: Scaffold(
+        // 元のScaffoldをラップ
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: AppShell(
           title: _getTitle(currentTab),
           child: _getScreen(currentTab),
         ),
-        // 「記録」ページ以外の時にFABを表示
+      // 「記録」ページ以外の時にFABを表示
         floatingActionButton: currentTab == AppTab.write
             ? null
             : FloatingActionButton(
@@ -138,9 +143,12 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
 
   // 選択されたタブのインデックスを取得
   int _getSelectedIndex(AppTab tab) {
-    if (tab == AppTab.analysis) return 1;
-    if (tab == AppTab.settings) return 2;
-    return 0;
+    switch (tab) {
+      case AppTab.history: return 0;
+      case AppTab.analysis: return 1;
+      case AppTab.settings: return 2;
+      default: return 0;
+    }
   }
 
   // 現在のタブに対応する画面ウィジェットを取得

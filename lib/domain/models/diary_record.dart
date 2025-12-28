@@ -9,11 +9,11 @@ class DiaryRecord {
   late String recordId;
   late DateTime recordDate;
   late List<String> moodTags;
-  late int moodScore;    
-  late String eventText; 
-  String? selfAnalysis;  
-  int? aiStabilityScore; 
-  String? aiAnalysisReason; 
+  late int moodScore;
+  late String eventText;
+  String? selfAnalysis;
+  int? aiStabilityScore;
+  String? aiAnalysisReason;
   String? location;
   String? weather;
   double? latitude;
@@ -40,5 +40,6 @@ class DiaryRecord {
     return (moodScore * 10 - aiStabilityScore!).abs() >= 20;
   }
 
-  String get timeString => "${recordDate.hour.toString().padLeft(2, '0')}:${recordDate.minute.toString().padLeft(2, '0')}";
+  String get timeString =>
+      "${recordDate.hour.toString().padLeft(2, '0')}:${recordDate.minute.toString().padLeft(2, '0')}";
 }

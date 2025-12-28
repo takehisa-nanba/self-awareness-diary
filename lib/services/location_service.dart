@@ -19,14 +19,13 @@ class LocationService {
           return null;
         }
       }
-      
+
       // 修正：timeLimit を追加して、20秒で必ず処理を終わらせる
       return await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.low,
         forceAndroidLocationManager: false,
-        timeLimit: const Duration(seconds: 20), 
+        timeLimit: const Duration(seconds: 20),
       );
-      
     } catch (e) {
       // タイムアウトした場合はここに来る
       debugPrint("GPS取得失敗またはタイムアウト: $e");
@@ -34,11 +33,10 @@ class LocationService {
     }
   }
 
-
   // Google APIを使って住所文字列に変換する
   Future<String> getAddressFromLatLng(double lat, double lng) async {
     final url = Uri.parse(
-      'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$googleApiKey&language=ja'
+      'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$googleApiKey&language=ja',
     );
 
     try {

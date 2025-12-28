@@ -6,6 +6,7 @@ import 'dart:math';
 import '../../domain/models/analysis_report.dart';
 import '../../providers/analysis_provider.dart';
 import '../../providers/history_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../widgets/custom_date_range_picker_dialog.dart';
 
 class AnalysisScreen extends StatelessWidget {
@@ -13,68 +14,175 @@ class AnalysisScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('データ分析'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildDateRangeSelector(context),
-            const SizedBox(height: 24),
-            Consumer<AnalysisProvider>(
-              builder: (context, provider, child) {
-                if (provider.isLoading) {
-                  return const SizedBox(
-                    height: 400,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                final report = provider.report;
-                if (report == null || (report.isSingleDay ? report.hourlyMoodScores.isEmpty : report.dailyMoodScores.isEmpty)) {
-                  return const SizedBox(
-                    height: 400,
-                    child: Center(child: Text('この期間のデータはありません。')),
-                  );
-                }
-
-                return Column(
-                  children: [
-                    _buildSectionTitle(context, 'ムード推移'),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 300,
-                      child: report.isSingleDay
-                          ? _buildHourlyMoodTrendChart(context, report)
-                          : _buildMoodTrendChart(context, report),
-                    ),
-                    const SizedBox(height: 8),
-                     Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        '平均スコア: ${report.averageMoodScore.toStringAsFixed(1)}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-
-                    _buildSectionTitle(context, 'ムードの分布'),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 250,
-                      child: _buildMoodDistributionChart(context, report),
-                    ),
-                  ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildDateRangeSelector(context),
+          const SizedBox(height: 24),
+          Consumer<AnalysisProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return const SizedBox(
+                  height: 400,
+                  child: Center(child: CircularProgressIndicator()),
                 );
-              },
+              }
+
+              final report = provider.report;
+              if (report == null ||
+                  (report.isSingleDay
+                      ? report.hourlyMoodScores.isEmpty
+                      : report.dailyMoodScores.isEmpty)) {
+                return const SizedBox(
+                  height: 400,
+                  child: Center(child: Text('この期間のデータはありません。')),
+                );
+              }
+
+              return Column(
+                children: [
+                  _buildSectionTitle(context, 'ムード推移'),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 300,
+                    child: report.isSingleDay
+                        ? _buildHourlyMoodTrendChart(context, report)
+                        : _buildMoodTrendChart(context, report),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '平均スコア: ${report.averageMoodScore.toStringAsFixed(1)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  _buildSectionTitle(context, 'ムードの分布'),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 250,
+                    child: _buildMoodDistributionChart(context, report),
+                  ),
+
+                  const SizedBox(height: 40),
+                  Consumer<SettingsProvider>(
+                    builder: (context, settings, child) {
+                      if (settings.currentTier != SubscriptionTier.tier2) {
+                        return _buildUpgradePlaceholder(context);
+                      }
+                      // Tier 2ユーザーのみAI洞察を表示
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildSectionTitle(context, 'AIによる洞察'),
+                          const SizedBox(height: 16),
+                          _buildAiInsights(context, provider),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 80), // FABのための余白
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpgradePlaceholder(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.tertiaryContainer.withAlpha((255 * 0.5).toInt()),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          children: [
+            Icon(
+              Icons.lock_outline,
+              size: 32,
+              color: Theme.of(context).colorScheme.onTertiaryContainer,
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 16),
+            Text(
+              'AIによる高度な分析',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onTertiaryContainer,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'アップグレードすると、AIがあなたの記録を分析し、パーソナライズされた洞察を提供します。',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onTertiaryContainer,
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.tonal(
+              onPressed: () {
+                // TODO: 課金画面への遷移を実装
+              },
+              child: const Text('プランを確認する'),
+            )
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAiInsights(BuildContext context, AnalysisProvider provider) {
+    if (provider.isAiLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (provider.aiInsights.isEmpty) {
+      return const Center(child: Text('AIからの洞察はありません。'));
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: provider.aiInsights.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final insight = provider.aiInsights[index];
+        return Card(
+          elevation: 0,
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Theme.of(context).dividerColor),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.lightbulb_outline,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    insight,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

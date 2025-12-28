@@ -15,7 +15,7 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
   HistoryProvider? _historyProvider;
 
   // --- 20分ルール用の設定 ---
-  DateTime? _lastPausedTime; 
+  DateTime? _lastPausedTime;
   static const int _refreshThresholdMinutes = 20;
 
   final EnvironmentCoordinator _environmentCoordinator;
@@ -28,18 +28,22 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
   String eventText = "";
   String selfAnalysisText = "";
   String reflectionQuestion = "";
-  
+
   // 位置・天気データ
   String? tempLocation;
   String? tempWeather;
   double? tempLat;
   double? tempLng;
-  
+
   bool isGenerating = false;
   bool isSaving = false;
 
   // コンストラクタ：監視員としての登録
-  WriteProvider(this._environmentCoordinator, this._geminiService, this._diaryRepository) {
+  WriteProvider(
+    this._environmentCoordinator,
+    this._geminiService,
+    this._diaryRepository,
+  ) {
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -66,14 +70,14 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
     if (_lastPausedTime == null) return;
 
     final diff = DateTime.now().difference(_lastPausedTime!);
-    
+
     if (diff.inMinutes >= _refreshThresholdMinutes) {
       debugPrint("WriteProvider：$_refreshThresholdMinutes分以上経過したため情報をリセットします");
       tempLocation = null;
       tempWeather = null;
       tempLat = null;
       tempLng = null;
-      
+
       // 自動で最新情報を取得しにいく
       fetchEnvironmentData();
     } else {
@@ -91,14 +95,14 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
 
       // 店長に一括依頼
-      final data = await _environmentCoordinator.fetchFullData(); // _environmentCoordinatorに変更
-      
+      final data = await _environmentCoordinator
+          .fetchFullData(); // _environmentCoordinatorに変更
+
       tempLocation = data.location;
       tempWeather = data.weather;
       // 店長から受け取った座標もしっかり保持
       tempLat = data.latitude;
       tempLng = data.longitude;
-      
     } catch (e) {
       debugPrint("識別依頼エラー: $e");
       tempLocation = "位置情報取得失敗";
@@ -106,7 +110,6 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
     }
   }
-
 
   // ステップ制御
   void nextStep() {
@@ -126,12 +129,13 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
   // Geminiによる深掘り質問の生成
   Future<void> prepareReflection() async {
     if (eventText.isEmpty) return;
-    
+
     isGenerating = true;
     notifyListeners();
-    
+
     try {
-      reflectionQuestion = await _geminiService.generateReflectionQuestion( // _geminiServiceに変更
+      reflectionQuestion = await _geminiService.generateReflectionQuestion(
+        // _geminiServiceに変更
         eventText: eventText,
         tags: selectedTags.join(', '),
       );
@@ -156,7 +160,9 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
       // 自己分析があればAI分析を実行
       if (selfAnalysisText.length >= 5) {
         try {
-          final analysis = await _geminiService.analyzeStability(selfAnalysisText); // _geminiServiceに変更
+          final analysis = await _geminiService.analyzeStability(
+            selfAnalysisText,
+          ); // _geminiServiceに変更
           aiScore = analysis['score'];
           aiReason = analysis['reason'];
         } catch (e) {
@@ -176,14 +182,14 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
         aiAnalysisReason: aiReason,
         location: tempLocation,
         weather: tempWeather,
-        latitude: tempLat,  
+        latitude: tempLat,
         longitude: tempLng,
       );
 
       // DiaryRepositoryに保存
       await _diaryRepository.saveRecord(record); // _diaryRepositoryに変更
       debugPrint("日記保存完了: ${record.recordId}");
-  
+
       // 履歴画面をリフレッシュ
       _historyProvider?.refreshHistory();
 
@@ -193,7 +199,7 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
     }
   }
-  
+
   // 入力リセット（場所・天気・座標はあえて残す）
   void _reset() {
     _currentStep = 0;
@@ -216,5 +222,4 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
   void notify() {
     notifyListeners();
   }
-
 }

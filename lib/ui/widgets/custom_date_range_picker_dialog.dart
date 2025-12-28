@@ -13,14 +13,16 @@ class CustomDateRangePickerDialog extends StatefulWidget {
   });
 
   @override
-  State<CustomDateRangePickerDialog> createState() => _CustomDateRangePickerDialogState();
+  State<CustomDateRangePickerDialog> createState() =>
+      _CustomDateRangePickerDialogState();
 }
 
-class _CustomDateRangePickerDialogState extends State<CustomDateRangePickerDialog> {
+class _CustomDateRangePickerDialogState
+    extends State<CustomDateRangePickerDialog> {
   late DateTime _focusedDay;
   late DateTime? _rangeStart;
   late DateTime? _rangeEnd;
-  RangeSelectionMode _rangeSelectionMode = RangeSelectionMode.toggledOn;
+  final RangeSelectionMode _rangeSelectionMode = RangeSelectionMode.toggledOn;
 
   @override
   void initState() {
@@ -36,8 +38,8 @@ class _CustomDateRangePickerDialogState extends State<CustomDateRangePickerDialo
     return widget.events.where((event) {
       final localEventDate = event.recordDate.toLocal();
       return localEventDate.year == day.year &&
-             localEventDate.month == day.month &&
-             localEventDate.day == day.day;
+          localEventDate.month == day.month &&
+          localEventDate.day == day.day;
     }).toList();
   }
 
@@ -58,7 +60,9 @@ class _CustomDateRangePickerDialogState extends State<CustomDateRangePickerDialo
           eventLoader: _getEventsForDay,
           calendarStyle: CalendarStyle(
             markerDecoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withAlpha((255 * 0.7).toInt()),
+              color: Theme.of(
+                context,
+              ).primaryColor.withAlpha((255 * 0.7).toInt()),
               shape: BoxShape.circle,
             ),
           ),
@@ -71,7 +75,7 @@ class _CustomDateRangePickerDialogState extends State<CustomDateRangePickerDialo
                 if (_rangeStart == null || _rangeEnd != null) {
                   _rangeStart = localSelectedDay;
                   _rangeEnd = null;
-                } 
+                }
               });
             }
           },
@@ -97,21 +101,25 @@ class _CustomDateRangePickerDialogState extends State<CustomDateRangePickerDialo
           onPressed: () {
             if (_rangeStart != null) {
               // 開始日をその日の00:00:00に正規化
-              final normalizedStart = DateTime(_rangeStart!.year, _rangeStart!.month, _rangeStart!.day);
+              final normalizedStart = DateTime(
+                _rangeStart!.year,
+                _rangeStart!.month,
+                _rangeStart!.day,
+              );
               // 終了日をその日の23:59:59.999に正規化
               final normalizedEnd = DateTime(
                 (_rangeEnd ?? _rangeStart!).year,
                 (_rangeEnd ?? _rangeStart!).month,
                 (_rangeEnd ?? _rangeStart!).day,
-                23, 59, 59, 999
+                23,
+                59,
+                59,
+                999,
               );
 
-              Navigator.of(context).pop(
-                DateTimeRange(
-                  start: normalizedStart,
-                  end: normalizedEnd,
-                ),
-              );
+              Navigator.of(
+                context,
+              ).pop(DateTimeRange(start: normalizedStart, end: normalizedEnd));
             }
           },
           child: const Text('決定'),

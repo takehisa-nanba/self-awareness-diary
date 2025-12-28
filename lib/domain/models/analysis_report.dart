@@ -8,30 +8,44 @@ class AnalysisReport {
   final List<DiaryRecord> _records;
   final DateTimeRange dateRange;
 
+  // public getterを追加
+  List<DiaryRecord> get records => _records;
+
   AnalysisReport({required List<DiaryRecord> records, required this.dateRange})
-      : _records = records;
+    : _records = records;
 
   /// 分析対象の期間が単日かどうか
   bool get isSingleDay => dateRange.duration.inDays == 0;
 
   /// 日付(DateTime) -> 平均ムードスコア
-  late final Map<DateTime, double> dailyMoodScores = _calculateDailyMoodScores();
+  late final Map<DateTime, double> dailyMoodScores =
+      _calculateDailyMoodScores();
 
   /// 時間(int) -> 平均ムードスコア
   late final Map<int, double> hourlyMoodScores = _calculateHourlyMoodScores();
-  
+
   /// タグ(String) -> 出現回数(int)
-  late final Map<String, int> moodTagDistribution = _calculateMoodTagDistribution();
+  late final Map<String, int> moodTagDistribution =
+      _calculateMoodTagDistribution();
 
   /// 平均ムードスコア
   late final double averageMoodScore = _calculateAverageMoodScore();
-  
+
   // --- privateな計算メソッド ---
 
   Map<DateTime, double> _calculateDailyMoodScores() {
-    final groupedByDay = groupBy(_records, (record) => DateTime(record.recordDate.year, record.recordDate.month, record.recordDate.day));
+    final groupedByDay = groupBy(
+      _records,
+      (record) => DateTime(
+        record.recordDate.year,
+        record.recordDate.month,
+        record.recordDate.day,
+      ),
+    );
     return groupedByDay.map((date, records) {
-      final totalScore = records.map((r) => r.moodScore).reduce((a, b) => a + b);
+      final totalScore = records
+          .map((r) => r.moodScore)
+          .reduce((a, b) => a + b);
       return MapEntry(date, totalScore / records.length);
     });
   }
@@ -40,7 +54,9 @@ class AnalysisReport {
     if (!isSingleDay) return {};
     final groupedByHour = groupBy(_records, (record) => record.recordDate.hour);
     return groupedByHour.map((hour, records) {
-      final totalScore = records.map((r) => r.moodScore).reduce((a, b) => a + b);
+      final totalScore = records
+          .map((r) => r.moodScore)
+          .reduce((a, b) => a + b);
       return MapEntry(hour, totalScore / records.length);
     });
   }
@@ -55,7 +71,7 @@ class AnalysisReport {
     }
     final sortedEntries = distribution.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-      
+
     final finalDistribution = Map.fromEntries(sortedEntries);
     debugPrint('[AnalysisReport] 計算結果: $finalDistribution');
     return finalDistribution;
@@ -63,7 +79,9 @@ class AnalysisReport {
 
   double _calculateAverageMoodScore() {
     if (_records.isEmpty) return 0.0;
-    final total = _records.map((r) => r.moodScore).reduce((sum, score) => sum + score);
+    final total = _records
+        .map((r) => r.moodScore)
+        .reduce((sum, score) => sum + score);
     return total / _records.length;
   }
 }

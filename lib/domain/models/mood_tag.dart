@@ -7,9 +7,5 @@ class MoodTag {
   final IconData icon;
   final Color color;
 
-  const MoodTag({
-    required this.label,
-    required this.icon,
-    required this.color,
-  });
+  const MoodTag({required this.label, required this.icon, required this.color});
 }

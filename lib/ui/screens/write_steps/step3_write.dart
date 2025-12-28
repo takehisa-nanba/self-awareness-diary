@@ -15,9 +15,9 @@ class Step3Write extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start, // 左寄せにして読みやすく
       children: [
         // AIからの問いかけ部分
-        if (provider.isGenerating) 
+        if (provider.isGenerating)
           const Center(child: CircularProgressIndicator())
-        else 
+        else
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -26,17 +26,17 @@ class Step3Write extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              provider.reflectionQuestion.isEmpty 
-                  ? "今の自分を、ゆっくり眺めてみましょう。" 
-                  : provider.reflectionQuestion, 
+              provider.reflectionQuestion.isEmpty
+                  ? "今の自分を、ゆっくり眺めてみましょう。"
+                  : provider.reflectionQuestion,
               style: TextStyle(
-            fontStyle: FontStyle.italic,
-            color: Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.bold,
-          ),
+                fontStyle: FontStyle.italic,
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        
+
         const SizedBox(height: 12),
 
         // 案内メッセージ
@@ -44,7 +44,11 @@ class Step3Write extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
             "※忙しい時は空欄のまま保存しても大丈夫です。\n後ほど「履歴」からゆっくりと書き足せます。",
-            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.5),
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
           ),
         ),
 
@@ -53,7 +57,7 @@ class Step3Write extends StatelessWidget {
         TextField(
           maxLines: 8, // 少し広めにして、書く時の没頭感を確保
           decoration: const InputDecoration(
-            border: OutlineInputBorder(), 
+            border: OutlineInputBorder(),
             hintText: '今の気持ちや、気づいたこと（任意）',
             alignLabelWithHint: true,
           ),

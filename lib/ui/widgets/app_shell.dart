@@ -21,7 +21,7 @@ class AppShell extends StatelessWidget {
           padding: EdgeInsets.only(top: 66.0 + safePaddingTop),
           child: child,
         ),
-        
+
         // ヘッダー（最前面）
         Positioned(
           top: safePaddingTop,
@@ -34,7 +34,9 @@ class AppShell extends StatelessWidget {
             child: Text(
               title,
               style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimaryContainer, // primaryContainerの上の文字色
+                color: Theme.of(
+                  context,
+                ).colorScheme.onPrimaryContainer, // primaryContainerの上の文字色
               ),
             ),
           ),

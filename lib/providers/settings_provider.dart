@@ -10,6 +10,9 @@ import '../services/isar_service.dart';
 import '../services/location_service.dart';
 import 'history_provider.dart';
 
+// サブスクリプションのティアを定義
+enum SubscriptionTier { free, tier1, tier2 }
+
 class SettingsProvider extends ChangeNotifier {
   HistoryProvider? _historyProvider;
   final IsarService _isarService;
@@ -18,8 +21,8 @@ class SettingsProvider extends ChangeNotifier {
   bool _startFromStep2 = false;
   bool get startFromStep2 => _startFromStep2;
 
-  bool _isPremium = false;
-  bool get isPremium => _isPremium;
+  SubscriptionTier _currentTier = SubscriptionTier.free;
+  SubscriptionTier get currentTier => _currentTier;
 
   List<LocationSetting> _locations = [];
   List<LocationSetting> get locations => _locations;
@@ -49,6 +52,12 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> _loadSettings() async {
     final savedStepSetting = await _isarService.getSetting('startFromStep2');
     _startFromStep2 = savedStepSetting == 'true';
+    
+    final savedTier = await _isarService.getSetting('subscriptionTier');
+    if (savedTier != null) {
+      _currentTier = SubscriptionTier.values[int.tryParse(savedTier) ?? 0];
+    }
+
     _locations = await _isarService.getLocations();
     notifyListeners();
   }
@@ -59,8 +68,9 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setPremium(bool value) {
-    _isPremium = value;
+  Future<void> setSubscriptionTier(SubscriptionTier tier) async {
+    _currentTier = tier;
+    await _isarService.saveSetting('subscriptionTier', tier.index.toString());
     notifyListeners();
   }
 

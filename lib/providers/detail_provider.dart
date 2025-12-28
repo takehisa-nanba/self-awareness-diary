@@ -31,20 +31,22 @@ class DetailProvider with ChangeNotifier {
   bool isLocationUnregistered(SettingsProvider settings) {
     if (record.location == null || record.location!.isEmpty) return false;
     // 住所またはラベルが登録済みのリストに含まれていないかチェック
-    return !settings.locations.any((l) => l.address == record.location || l.label == record.location);
+    return !settings.locations.any(
+      (l) => l.address == record.location || l.label == record.location,
+    );
   }
 
   // --- 場所の名前更新処理 ---
   Future<void> updateLocationName(String newLabel) async {
     // 1. メモリ上のデータを更新
     record.location = newLabel;
-    
+
     // 2. DB（Isar）を更新（上書き保存）
     await isarService.saveRecord(record);
-    
+
     // 3. 画面に「データが変わったよ！」と通知して再描画
     notifyListeners();
-    
+
     debugPrint("DetailProvider: 場所の名前を「$newLabel」に更新しました。");
   }
 
@@ -53,7 +55,7 @@ class DetailProvider with ChangeNotifier {
     return getAiScoreColor(record.aiStabilityScore); // 共通関数を呼び出す
   }
 
-  String get environmentInfo => 
+  String get environmentInfo =>
       "${record.weather ?? '不明'} / ${record.location ?? '位置情報なし'}";
 
   bool get hasAnalysis => record.aiStabilityScore != null;

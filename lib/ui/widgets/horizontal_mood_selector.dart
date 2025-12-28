@@ -24,7 +24,8 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
 
   static const double _itemWidth = 80.0; // アイテム自体の幅
   static const double _itemMargin = 8.0; // 左右のマージンの合計
-  static const double _totalItemWidth = _itemWidth + _itemMargin; // 1アイテムが占める合計幅
+  static const double _totalItemWidth =
+      _itemWidth + _itemMargin; // 1アイテムが占める合計幅
 
   Color _getMoodColor(int score) {
     // Normalize score to a 0.0 - 1.0 range
@@ -36,7 +37,8 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
     if (t < 0.5) {
       return Color.lerp(Colors.red, Colors.yellow, t * 2) ?? Colors.red;
     } else {
-      return Color.lerp(Colors.yellow, Colors.green, (t - 0.5) * 2) ?? Colors.green;
+      return Color.lerp(Colors.yellow, Colors.green, (t - 0.5) * 2) ??
+          Colors.green;
     }
   }
 
@@ -45,7 +47,7 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    
+
     // 初期のスクロール位置を設定
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSelected(widget.currentMood, animated: false);
@@ -60,14 +62,15 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
       _scrollToSelected(widget.currentMood, animated: true);
     }
   }
-  
+
   void _onScroll() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 50), () {
       if (!_scrollController.position.isScrollingNotifier.value) {
-        final int intendedIndex = (_scrollController.offset / _totalItemWidth).round();
+        final int intendedIndex = (_scrollController.offset / _totalItemWidth)
+            .round();
         final int newMood = max(1, min(10, intendedIndex + 1));
-        
+
         if (newMood != widget.currentMood) {
           widget.onChanged(newMood);
         } else {
@@ -104,7 +107,8 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double horizontalPadding = (constraints.maxWidth / 2) - (_totalItemWidth / 2);
+        final double horizontalPadding =
+            (constraints.maxWidth / 2) - (_totalItemWidth / 2);
 
         return SizedBox(
           height: 120, // 高さを少し増やす
@@ -112,20 +116,30 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
             controller: _scrollController,
             scrollDirection: Axis.horizontal,
             itemCount: 10,
-            padding: EdgeInsets.symmetric(horizontal: max(0.0, horizontalPadding)),
+            padding: EdgeInsets.symmetric(
+              horizontal: max(0.0, horizontalPadding),
+            ),
             itemBuilder: (context, index) {
               final score = index + 1;
               final distance = (score - widget.currentMood).abs();
 
               const double maxSize = 80.0; // 最大サイズ
-              const double minSize = 20.0; // 最小サイズ 
+              const double minSize = 20.0; // 最小サイズ
               const double jumpRate = 7.5; // サイズ変化の速さ調整用
               final double size = max(minSize, maxSize - distance * jumpRate);
 
               final Color scoreBaseColor = _getMoodColor(score);
-              final Color color = Color.lerp(scoreBaseColor, scoreBaseColor.withAlpha(0), distance / 3.0) ?? scoreBaseColor;
+              final Color color =
+                  Color.lerp(
+                    scoreBaseColor,
+                    scoreBaseColor.withAlpha(0),
+                    distance / 3.0,
+                  ) ??
+                  scoreBaseColor;
               final double fontSize = max(12.0, 24.0 - distance * 3.0);
-              final FontWeight fontWeight = distance == 0 ? FontWeight.bold : FontWeight.normal;
+              final FontWeight fontWeight = distance == 0
+                  ? FontWeight.bold
+                  : FontWeight.normal;
 
               return GestureDetector(
                 onTap: () => widget.onChanged(score),
@@ -139,15 +153,24 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
                     height: size,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: distance == 0 ? _getMoodColor(widget.currentMood).withAlpha(26) : Colors.transparent,
-                      border: Border.all(color: scoreBaseColor.withAlpha(128), width: 2),
-                      boxShadow: distance == 0 ? [
-                        BoxShadow(
-                          color: _getMoodColor(widget.currentMood).withAlpha(77),
-                          blurRadius: 10,
-                          spreadRadius: 2,
-                        ),
-                      ] : [],
+                      color: distance == 0
+                          ? _getMoodColor(widget.currentMood).withAlpha(26)
+                          : Colors.transparent,
+                      border: Border.all(
+                        color: scoreBaseColor.withAlpha(128),
+                        width: 2,
+                      ),
+                      boxShadow: distance == 0
+                          ? [
+                              BoxShadow(
+                                color: _getMoodColor(
+                                  widget.currentMood,
+                                ).withAlpha(77),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ]
+                          : [],
                     ),
                     child: Center(
                       child: Text(

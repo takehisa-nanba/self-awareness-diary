@@ -37,10 +37,10 @@ class HistoryProvider with ChangeNotifier {
   // 初期読み込み
   Future<void> loadAllRecords() async {
     // DBから全件取得
-    _allRecords = await _diaryRepository.getAllRecords(); 
-    
+    _allRecords = await _diaryRepository.getAllRecords();
+
     debugPrint("=== DB全件チェック: ${_allRecords.length}件 ===");
-    
+
     _filterRecords();
     notifyListeners();
   }
@@ -76,23 +76,23 @@ class HistoryProvider with ChangeNotifier {
   void _filterRecords() {
     // 選択された日をローカル時間に変換
     final s = _selectedDay.toLocal();
-    
+
     _selectedDayRecords = _allRecords.where((record) {
       // 保存されたデータもローカル時間に変換して比較
       final r = record.recordDate.toLocal();
-      
-      return r.year == s.year && 
-             r.month == s.month && 
-             r.day == s.day;
+
+      return r.year == s.year && r.month == s.month && r.day == s.day;
     }).toList();
-    
-    debugPrint("【判定終了】選択日(Local): ${_selectedDay.toLocal()} / 表示対象: ${_selectedDayRecords.length}件");
+
+    debugPrint(
+      "【判定終了】選択日(Local): ${_selectedDay.toLocal()} / 表示対象: ${_selectedDayRecords.length}件",
+    );
   }
 
   Future<void> refreshHistory() async {
-  // Isarから最新のデータを取ってきて、リストを更新する
-  _allRecords = await _diaryRepository.getAllRecords(); 
-  _filterRecords();
-  notifyListeners(); // ← これが「画面を書き換えろ！」という合図です
+    // Isarから最新のデータを取ってきて、リストを更新する
+    _allRecords = await _diaryRepository.getAllRecords();
+    _filterRecords();
+    notifyListeners(); // ← これが「画面を書き換えろ！」という合図です
   }
 }

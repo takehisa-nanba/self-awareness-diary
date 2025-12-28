@@ -15,7 +15,7 @@ class WeatherService {
 
       debugPrint("天気スタッフ：OpenWeatherMap API に接続中...");
       final url = Uri.parse(
-        'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=ja'
+        'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=ja',
       );
 
       final response = await http.get(url);
@@ -25,7 +25,7 @@ class WeatherService {
         final data = json.decode(response.body);
         final description = data['weather'][0]['description'];
         final temp = data['main']['temp'];
-        
+
         final result = "$description (${temp.toStringAsFixed(1)}°C)";
         debugPrint("天気スタッフ：取得完了！ $result");
         return result;

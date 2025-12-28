@@ -46,7 +46,10 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text('削除', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text(
+              '削除',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
         ],
       ),
@@ -57,14 +60,14 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
     if (confirmed == true) {
       await context.read<SettingsProvider>().deleteLocation(widget.location.id);
       if (!mounted) return;
-      
+
       navigator.pop();
       scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('場所を削除しました。')),
       );
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,7 +75,10 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
         title: const Text('場所の編集'),
         actions: [
           IconButton(
-            icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+            icon: Icon(
+              Icons.delete_outline,
+              color: Theme.of(context).colorScheme.error,
+            ),
             onPressed: _deleteLocation,
           ),
         ],
@@ -113,7 +119,10 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
                   final navigator = Navigator.of(context);
                   final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-                  await settingsProvider.updateLocation(widget.location, newLabel);
+                  await settingsProvider.updateLocation(
+                    widget.location,
+                    newLabel,
+                  );
                   if (!mounted) return;
 
                   navigator.pop();

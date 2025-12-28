@@ -11,7 +11,12 @@ class EnvironmentData {
   final String? weather;
   final double? latitude;
   final double? longitude;
-  EnvironmentData({required this.location, this.weather, this.latitude, this.longitude});
+  EnvironmentData({
+    required this.location,
+    this.weather,
+    this.latitude,
+    this.longitude,
+  });
 }
 
 // lib/services/environment_coordinator.dart
@@ -21,7 +26,11 @@ class EnvironmentCoordinator {
   final WeatherService _weatherStaff;
   final IsarService _isarStaff;
 
-  EnvironmentCoordinator(this._locationStaff, this._weatherStaff, this._isarStaff);
+  EnvironmentCoordinator(
+    this._locationStaff,
+    this._weatherStaff,
+    this._isarStaff,
+  );
 
   Future<EnvironmentData> fetchFullData() async {
     try {
@@ -47,19 +56,24 @@ class EnvironmentCoordinator {
 
       // 3. 【修正】確定した座標を使って、天気スタッフに問い合わせる
       debugPrint("店長：天気スタッフ、現在の天気を教えてくれ！");
-      final weather = await _weatherStaff.getWeather(pos.latitude, pos.longitude);
+      final weather = await _weatherStaff.getWeather(
+        pos.latitude,
+        pos.longitude,
+      );
 
-      final displayWeather = weather ?? "取得失敗（オフライン）"; 
+      final displayWeather = weather ?? "取得失敗（オフライン）";
       debugPrint("店長：天気は「$displayWeather」だな。");
-      
+
       // 4. 登録地点（Isar）との照合
       debugPrint("店長：DBスタッフ、登録地点を確認してくれ！");
       final savedLocations = await _isarStaff.getLocations();
       for (var loc in savedLocations) {
         if (loc.latitude != null && loc.longitude != null) {
           double distance = Geolocator.distanceBetween(
-            pos.latitude, pos.longitude,
-            loc.latitude!, loc.longitude!
+            pos.latitude,
+            pos.longitude,
+            loc.latitude!,
+            loc.longitude!,
           );
           debugPrint("店長：登録地点「${loc.label}」までの距離は $distance m だな。");
 
@@ -73,14 +87,16 @@ class EnvironmentCoordinator {
 
       // 5. 登録地点になければ住所を取得（Google API）
       debugPrint("店長：位置情報スタッフ、住所を教えてくれ！");
-      final address = await _locationStaff.getAddressFromLatLng(pos.latitude, pos.longitude);
+      final address = await _locationStaff.getAddressFromLatLng(
+        pos.latitude,
+        pos.longitude,
+      );
       return EnvironmentData(
         location: address,
         weather: weather,
         latitude: pos.latitude,
-        longitude: pos.longitude
+        longitude: pos.longitude,
       );
-
     } catch (e) {
       debugPrint("店長業務エラー: $e");
       return EnvironmentData(location: "識別エラー");

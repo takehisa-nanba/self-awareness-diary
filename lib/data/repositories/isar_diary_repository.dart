@@ -29,10 +29,25 @@ class IsarDiaryRepository implements DiaryRepository {
   }
 
   @override
-  Future<List<DiaryRecord>> getRecordsInDateRange(DateTime startDate, DateTime endDate) {
+  Future<List<DiaryRecord>> getRecordsInDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
     // startDateをその日の始まりに、endDateをその日の終わりに設定する
-    final startOfRange = DateTime(startDate.year, startDate.month, startDate.day);
-    final endOfRange = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59, 999);
+    final startOfRange = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+    );
+    final endOfRange = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+      23,
+      59,
+      59,
+      999,
+    );
 
     return _isarService.isar.diaryRecords
         .filter()
