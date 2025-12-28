@@ -19,17 +19,14 @@ class MoodTagProvider extends ChangeNotifier {
   }
 
   void _onSettingsChanged() {
-    notifyListeners(); // 設定プロバイダの変更に応じてUIを更新
+    notifyListeners(); 
   }
 
+  // エラー解決：refを使わず _settingsProvider を直接参照
   List<MoodTag> get availableMoodTags {
-    switch (_settingsProvider.currentTier) {
-      case SubscriptionTier.free:
-        return freeMoodTagList;
-      case SubscriptionTier.tier1:
-        return tier1MoodTagList;
-      case SubscriptionTier.tier2:
-        return tier2MoodTagList;
-    }
+    final userTierIndex = _settingsProvider.currentTier.index;
+    
+    // allMoodTagsから、ユーザーのTier以下のものだけを抽出する
+    return allMoodTags.where((tag) => tag.tier.index <= userTierIndex).toList();
   }
 }
