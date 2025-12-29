@@ -82,11 +82,7 @@ const DiaryRecordSchema = CollectionSchema(
       name: r'timeString',
       type: IsarType.string,
     ),
-    r'weather': PropertySchema(
-      id: 13,
-      name: r'weather',
-      type: IsarType.string,
-    )
+    r'weather': PropertySchema(id: 13, name: r'weather', type: IsarType.string),
   },
   estimateSize: _diaryRecordEstimateSize,
   serialize: _diaryRecordSerialize,
@@ -104,9 +100,9 @@ const DiaryRecordSchema = CollectionSchema(
           name: r'recordId',
           type: IndexType.hash,
           caseSensitive: true,
-        )
+        ),
       ],
-    )
+    ),
   },
   links: {},
   embeddedSchemas: {},
@@ -254,7 +250,10 @@ List<IsarLinkBase<dynamic>> _diaryRecordGetLinks(DiaryRecord object) {
 }
 
 void _diaryRecordAttach(
-    IsarCollection<dynamic> col, Id id, DiaryRecord object) {
+  IsarCollection<dynamic> col,
+  Id id,
+  DiaryRecord object,
+) {
   object.isarId = id;
 }
 
@@ -307,8 +306,10 @@ extension DiaryRecordByIndex on IsarCollection<DiaryRecord> {
     return putAllByIndex(r'recordId', objects);
   }
 
-  List<Id> putAllByRecordIdSync(List<DiaryRecord> objects,
-      {bool saveLinks = true}) {
+  List<Id> putAllByRecordIdSync(
+    List<DiaryRecord> objects, {
+    bool saveLinks = true,
+  }) {
     return putAllByIndexSync(r'recordId', objects, saveLinks: saveLinks);
   }
 }
@@ -325,17 +326,18 @@ extension DiaryRecordQueryWhereSort
 extension DiaryRecordQueryWhere
     on QueryBuilder<DiaryRecord, DiaryRecord, QWhereClause> {
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterWhereClause> isarIdEqualTo(
-      Id isarId) {
+    Id isarId,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: isarId,
-        upper: isarId,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(lower: isarId, upper: isarId),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterWhereClause> isarIdNotEqualTo(
-      Id isarId) {
+    Id isarId,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -358,8 +360,9 @@ extension DiaryRecordQueryWhere
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterWhereClause> isarIdGreaterThan(
-      Id isarId,
-      {bool include = false}) {
+    Id isarId, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: isarId, includeLower: include),
@@ -368,8 +371,9 @@ extension DiaryRecordQueryWhere
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterWhereClause> isarIdLessThan(
-      Id isarId,
-      {bool include = false}) {
+    Id isarId, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: isarId, includeUpper: include),
@@ -384,56 +388,67 @@ extension DiaryRecordQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerIsarId,
-        includeLower: includeLower,
-        upper: upperIsarId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerIsarId,
+          includeLower: includeLower,
+          upper: upperIsarId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterWhereClause> recordIdEqualTo(
-      String recordId) {
+    String recordId,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'recordId',
-        value: [recordId],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'recordId', value: [recordId]),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterWhereClause> recordIdNotEqualTo(
-      String recordId) {
+    String recordId,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'recordId',
-              lower: [],
-              upper: [recordId],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'recordId',
-              lower: [recordId],
-              includeLower: false,
-              upper: [],
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'recordId',
+                lower: [],
+                upper: [recordId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'recordId',
+                lower: [recordId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'recordId',
-              lower: [recordId],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'recordId',
-              lower: [],
-              upper: [recordId],
-              includeUpper: false,
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'recordId',
+                lower: [recordId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'recordId',
+                lower: [],
+                upper: [recordId],
+                includeUpper: false,
+              ),
+            );
       }
     });
   }
@@ -442,71 +457,74 @@ extension DiaryRecordQueryWhere
 extension DiaryRecordQueryFilter
     on QueryBuilder<DiaryRecord, DiaryRecord, QFilterCondition> {
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonIsNull() {
+  aiAnalysisReasonIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'aiAnalysisReason',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'aiAnalysisReason'),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonIsNotNull() {
+  aiAnalysisReasonIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'aiAnalysisReason',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'aiAnalysisReason'),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
+  aiAnalysisReasonEqualTo(String? value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'aiAnalysisReason',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'aiAnalysisReason',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'aiAnalysisReason',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonLessThan(
+  aiAnalysisReasonGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'aiAnalysisReason',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'aiAnalysisReason',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonBetween(
+  aiAnalysisReasonLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'aiAnalysisReason',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  aiAnalysisReasonBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -514,209 +532,213 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'aiAnalysisReason',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'aiAnalysisReason',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  aiAnalysisReasonStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'aiAnalysisReason',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'aiAnalysisReason',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  aiAnalysisReasonEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'aiAnalysisReason',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'aiAnalysisReason',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonContains(String value, {bool caseSensitive = true}) {
+  aiAnalysisReasonContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'aiAnalysisReason',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'aiAnalysisReason',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonMatches(String pattern, {bool caseSensitive = true}) {
+  aiAnalysisReasonMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'aiAnalysisReason',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'aiAnalysisReason',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonIsEmpty() {
+  aiAnalysisReasonIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'aiAnalysisReason',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'aiAnalysisReason', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiAnalysisReasonIsNotEmpty() {
+  aiAnalysisReasonIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'aiAnalysisReason',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'aiAnalysisReason', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiStabilityScoreIsNull() {
+  aiStabilityScoreIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'aiStabilityScore',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'aiStabilityScore'),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiStabilityScoreIsNotNull() {
+  aiStabilityScoreIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'aiStabilityScore',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'aiStabilityScore'),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiStabilityScoreEqualTo(int? value) {
+  aiStabilityScoreEqualTo(int? value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'aiStabilityScore',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'aiStabilityScore', value: value),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiStabilityScoreGreaterThan(
-    int? value, {
-    bool include = false,
-  }) {
+  aiStabilityScoreGreaterThan(int? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'aiStabilityScore',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'aiStabilityScore',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiStabilityScoreLessThan(
-    int? value, {
-    bool include = false,
-  }) {
+  aiStabilityScoreLessThan(int? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'aiStabilityScore',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'aiStabilityScore',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      aiStabilityScoreBetween(
+  aiStabilityScoreBetween(
     int? lower,
     int? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'aiStabilityScore',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'aiStabilityScore',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      eventTextEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  eventTextEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'eventText',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'eventText',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      eventTextGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'eventText',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      eventTextLessThan(
+  eventTextGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'eventText',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'eventText',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      eventTextBetween(
+  eventTextLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'eventText',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  eventTextBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -724,135 +746,135 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'eventText',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'eventText',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      eventTextStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  eventTextStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'eventText',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'eventText',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      eventTextEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  eventTextEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'eventText',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'eventText',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      eventTextContains(String value, {bool caseSensitive = true}) {
+  eventTextContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'eventText',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'eventText',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      eventTextMatches(String pattern, {bool caseSensitive = true}) {
+  eventTextMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'eventText',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'eventText',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      eventTextIsEmpty() {
+  eventTextIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'eventText',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'eventText', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      eventTextIsNotEmpty() {
+  eventTextIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'eventText',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'eventText', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      isGapLargeEqualTo(bool value) {
+  isGapLargeEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'isGapLarge',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isGapLarge', value: value),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition> isarIdIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'isarId',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'isarId'),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      isarIdIsNotNull() {
+  isarIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'isarId',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'isarId'),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition> isarIdEqualTo(
-      Id? value) {
+    Id? value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'isarId',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isarId', value: value),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      isarIdGreaterThan(
-    Id? value, {
-    bool include = false,
-  }) {
+  isarIdGreaterThan(Id? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'isarId',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'isarId',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -861,11 +883,13 @@ extension DiaryRecordQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'isarId',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'isarId',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -876,31 +900,33 @@ extension DiaryRecordQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'isarId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'isarId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      latitudeIsNull() {
+  latitudeIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'latitude',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'latitude'),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      latitudeIsNotNull() {
+  latitudeIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'latitude',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'latitude'),
+      );
     });
   }
 
@@ -909,43 +935,49 @@ extension DiaryRecordQueryFilter
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'latitude',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'latitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      latitudeGreaterThan(
+  latitudeGreaterThan(
     double? value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'latitude',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'latitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      latitudeLessThan(
+  latitudeLessThan(
     double? value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'latitude',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'latitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
@@ -957,32 +989,34 @@ extension DiaryRecordQueryFilter
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'latitude',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'latitude',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      locationIsNull() {
+  locationIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'location',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'location'),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      locationIsNotNull() {
+  locationIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'location',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'location'),
+      );
     });
   }
 
@@ -991,43 +1025,49 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'location',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'location',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      locationGreaterThan(
+  locationGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'location',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'location',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      locationLessThan(
+  locationLessThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'location',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'location',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -1039,154 +1079,160 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'location',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'location',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      locationStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  locationStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'location',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'location',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      locationEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  locationEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'location',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'location',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      locationContains(String value, {bool caseSensitive = true}) {
+  locationContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'location',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'location',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition> locationMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'location',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      locationIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'location',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      locationIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'location',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      longitudeIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'longitude',
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      longitudeIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'longitude',
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      longitudeEqualTo(
-    double? value, {
-    double epsilon = Query.epsilon,
+    String pattern, {
+    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'longitude',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'location',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      longitudeGreaterThan(
-    double? value, {
-    bool include = false,
-    double epsilon = Query.epsilon,
-  }) {
+  locationIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'longitude',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'location', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      longitudeLessThan(
+  locationIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'location', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  longitudeIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'longitude'),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  longitudeIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'longitude'),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  longitudeEqualTo(double? value, {double epsilon = Query.epsilon}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'longitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  longitudeGreaterThan(
     double? value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'longitude',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'longitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      longitudeBetween(
+  longitudeLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'longitude',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  longitudeBetween(
     double? lower,
     double? upper, {
     bool includeLower = true,
@@ -1194,121 +1240,125 @@ extension DiaryRecordQueryFilter
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'longitude',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'longitude',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodScoreEqualTo(int value) {
+  moodScoreEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'moodScore',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'moodScore', value: value),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodScoreGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  moodScoreGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'moodScore',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'moodScore',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodScoreLessThan(
-    int value, {
-    bool include = false,
-  }) {
+  moodScoreLessThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'moodScore',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'moodScore',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodScoreBetween(
+  moodScoreBetween(
     int lower,
     int upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'moodScore',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'moodScore',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsElementEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  moodTagsElementEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'moodTags',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'moodTags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsElementGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'moodTags',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsElementLessThan(
+  moodTagsElementGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'moodTags',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'moodTags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsElementBetween(
+  moodTagsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'moodTags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  moodTagsElementBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -1316,160 +1366,126 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'moodTags',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsElementStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'moodTags',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsElementEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'moodTags',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsElementContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'moodTags',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsElementMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'moodTags',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsElementIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'moodTags',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsElementIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'moodTags',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsLengthEqualTo(int length) {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'moodTags',
-        length,
-        true,
-        length,
-        true,
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'moodTags',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
       );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsIsEmpty() {
+  moodTagsElementStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'moodTags',
-        0,
-        true,
-        0,
-        true,
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'moodTags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
       );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsIsNotEmpty() {
+  moodTagsElementEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'moodTags',
-        0,
-        false,
-        999999,
-        true,
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'moodTags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
       );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsLengthLessThan(
-    int length, {
-    bool include = false,
-  }) {
+  moodTagsElementContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'moodTags',
-        0,
-        true,
-        length,
-        include,
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'moodTags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
       );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsLengthGreaterThan(
-    int length, {
-    bool include = false,
-  }) {
+  moodTagsElementMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'moodTags',
-        length,
-        include,
-        999999,
-        true,
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'moodTags',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
       );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      moodTagsLengthBetween(
+  moodTagsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'moodTags', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  moodTagsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'moodTags', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  moodTagsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'moodTags', length, true, length, true);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  moodTagsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'moodTags', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  moodTagsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'moodTags', 0, false, 999999, true);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  moodTagsLengthLessThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'moodTags', 0, true, length, include);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  moodTagsLengthGreaterThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'moodTags', length, include, 999999, true);
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  moodTagsLengthBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -1487,58 +1503,57 @@ extension DiaryRecordQueryFilter
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordDateEqualTo(DateTime value) {
+  recordDateEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'recordDate',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'recordDate', value: value),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordDateGreaterThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  recordDateGreaterThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'recordDate',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'recordDate',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordDateLessThan(
-    DateTime value, {
-    bool include = false,
-  }) {
+  recordDateLessThan(DateTime value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'recordDate',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'recordDate',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordDateBetween(
+  recordDateBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'recordDate',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'recordDate',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
@@ -1547,43 +1562,49 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'recordId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'recordId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordIdGreaterThan(
+  recordIdGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'recordId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'recordId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordIdLessThan(
+  recordIdLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'recordId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'recordId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -1595,154 +1616,160 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'recordId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'recordId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordIdStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  recordIdStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'recordId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'recordId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordIdEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  recordIdEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'recordId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'recordId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordIdContains(String value, {bool caseSensitive = true}) {
+  recordIdContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'recordId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'recordId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition> recordIdMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'recordId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordIdIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'recordId',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      recordIdIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'recordId',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'selfAnalysis',
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'selfAnalysis',
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisEqualTo(
-    String? value, {
+    String pattern, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'selfAnalysis',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'recordId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
+  recordIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'selfAnalysis',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'recordId', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisLessThan(
+  recordIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'recordId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  selfAnalysisIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'selfAnalysis'),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  selfAnalysisIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'selfAnalysis'),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  selfAnalysisEqualTo(String? value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'selfAnalysis',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  selfAnalysisGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'selfAnalysis',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'selfAnalysis',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisBetween(
+  selfAnalysisLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'selfAnalysis',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  selfAnalysisBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -1750,135 +1777,140 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'selfAnalysis',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'selfAnalysis',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  selfAnalysisStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'selfAnalysis',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'selfAnalysis',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  selfAnalysisEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'selfAnalysis',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'selfAnalysis',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisContains(String value, {bool caseSensitive = true}) {
+  selfAnalysisContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'selfAnalysis',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'selfAnalysis',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisMatches(String pattern, {bool caseSensitive = true}) {
+  selfAnalysisMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'selfAnalysis',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'selfAnalysis',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisIsEmpty() {
+  selfAnalysisIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'selfAnalysis',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'selfAnalysis', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      selfAnalysisIsNotEmpty() {
+  selfAnalysisIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'selfAnalysis',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'selfAnalysis', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      timeStringEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  timeStringEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'timeString',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'timeString',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      timeStringGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'timeString',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      timeStringLessThan(
+  timeStringGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'timeString',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'timeString',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      timeStringBetween(
+  timeStringLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'timeString',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
+  timeStringBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -1886,102 +1918,104 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'timeString',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'timeString',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      timeStringStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  timeStringStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'timeString',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'timeString',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      timeStringEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  timeStringEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'timeString',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'timeString',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      timeStringContains(String value, {bool caseSensitive = true}) {
+  timeStringContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'timeString',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'timeString',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      timeStringMatches(String pattern, {bool caseSensitive = true}) {
+  timeStringMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'timeString',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'timeString',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      timeStringIsEmpty() {
+  timeStringIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'timeString',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'timeString', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      timeStringIsNotEmpty() {
+  timeStringIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'timeString',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'timeString', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      weatherIsNull() {
+  weatherIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'weather',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'weather'),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      weatherIsNotNull() {
+  weatherIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'weather',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'weather'),
+      );
     });
   }
 
@@ -1990,27 +2024,31 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'weather',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'weather',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      weatherGreaterThan(
+  weatherGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'weather',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'weather',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -2020,12 +2058,14 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'weather',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'weather',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -2037,28 +2077,29 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'weather',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'weather',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      weatherStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  weatherStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'weather',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'weather',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -2067,55 +2108,61 @@ extension DiaryRecordQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'weather',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'weather',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition> weatherContains(
-      String value,
-      {bool caseSensitive = true}) {
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'weather',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'weather',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition> weatherMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'weather',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'weather',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      weatherIsEmpty() {
+  weatherIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'weather',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'weather', value: ''),
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterFilterCondition>
-      weatherIsNotEmpty() {
+  weatherIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'weather',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'weather', value: ''),
+      );
     });
   }
 }
@@ -2129,28 +2176,28 @@ extension DiaryRecordQueryLinks
 extension DiaryRecordQuerySortBy
     on QueryBuilder<DiaryRecord, DiaryRecord, QSortBy> {
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy>
-      sortByAiAnalysisReason() {
+  sortByAiAnalysisReason() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'aiAnalysisReason', Sort.asc);
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy>
-      sortByAiAnalysisReasonDesc() {
+  sortByAiAnalysisReasonDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'aiAnalysisReason', Sort.desc);
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy>
-      sortByAiStabilityScore() {
+  sortByAiStabilityScore() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'aiStabilityScore', Sort.asc);
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy>
-      sortByAiStabilityScoreDesc() {
+  sortByAiStabilityScoreDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'aiStabilityScore', Sort.desc);
     });
@@ -2259,7 +2306,7 @@ extension DiaryRecordQuerySortBy
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy>
-      sortBySelfAnalysisDesc() {
+  sortBySelfAnalysisDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'selfAnalysis', Sort.desc);
     });
@@ -2293,28 +2340,28 @@ extension DiaryRecordQuerySortBy
 extension DiaryRecordQuerySortThenBy
     on QueryBuilder<DiaryRecord, DiaryRecord, QSortThenBy> {
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy>
-      thenByAiAnalysisReason() {
+  thenByAiAnalysisReason() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'aiAnalysisReason', Sort.asc);
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy>
-      thenByAiAnalysisReasonDesc() {
+  thenByAiAnalysisReasonDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'aiAnalysisReason', Sort.desc);
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy>
-      thenByAiStabilityScore() {
+  thenByAiStabilityScore() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'aiStabilityScore', Sort.asc);
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy>
-      thenByAiStabilityScoreDesc() {
+  thenByAiStabilityScoreDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'aiStabilityScore', Sort.desc);
     });
@@ -2435,7 +2482,7 @@ extension DiaryRecordQuerySortThenBy
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QAfterSortBy>
-      thenBySelfAnalysisDesc() {
+  thenBySelfAnalysisDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'selfAnalysis', Sort.desc);
     });
@@ -2468,23 +2515,27 @@ extension DiaryRecordQuerySortThenBy
 
 extension DiaryRecordQueryWhereDistinct
     on QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> {
-  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByAiAnalysisReason(
-      {bool caseSensitive = true}) {
+  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByAiAnalysisReason({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'aiAnalysisReason',
-          caseSensitive: caseSensitive);
+      return query.addDistinctBy(
+        r'aiAnalysisReason',
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
   QueryBuilder<DiaryRecord, DiaryRecord, QDistinct>
-      distinctByAiStabilityScore() {
+  distinctByAiStabilityScore() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'aiStabilityScore');
     });
   }
 
-  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByEventText(
-      {bool caseSensitive = true}) {
+  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByEventText({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'eventText', caseSensitive: caseSensitive);
     });
@@ -2502,8 +2553,9 @@ extension DiaryRecordQueryWhereDistinct
     });
   }
 
-  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByLocation(
-      {bool caseSensitive = true}) {
+  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByLocation({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'location', caseSensitive: caseSensitive);
     });
@@ -2533,29 +2585,33 @@ extension DiaryRecordQueryWhereDistinct
     });
   }
 
-  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByRecordId(
-      {bool caseSensitive = true}) {
+  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByRecordId({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'recordId', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctBySelfAnalysis(
-      {bool caseSensitive = true}) {
+  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctBySelfAnalysis({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'selfAnalysis', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByTimeString(
-      {bool caseSensitive = true}) {
+  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByTimeString({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'timeString', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByWeather(
-      {bool caseSensitive = true}) {
+  QueryBuilder<DiaryRecord, DiaryRecord, QDistinct> distinctByWeather({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'weather', caseSensitive: caseSensitive);
     });
@@ -2571,7 +2627,7 @@ extension DiaryRecordQueryProperty
   }
 
   QueryBuilder<DiaryRecord, String?, QQueryOperations>
-      aiAnalysisReasonProperty() {
+  aiAnalysisReasonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'aiAnalysisReason');
     });

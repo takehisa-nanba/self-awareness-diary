@@ -26,6 +26,12 @@ class EnvironmentCoordinator {
   final WeatherService _weatherStaff;
   final IsarService _isarStaff;
 
+  // --- キャッシュ機能の追加 ---
+  EnvironmentData? _cachedData;
+  DateTime? _lastFetchTime;
+  static const int _refreshThresholdMinutes = 20;
+  // --------------------------
+
   EnvironmentCoordinator(
     this._locationStaff,
     this._weatherStaff,
@@ -33,6 +39,17 @@ class EnvironmentCoordinator {
   );
 
   Future<EnvironmentData> fetchFullData() async {
+    // --- キャッシュチェックロジック ---
+    if (_cachedData != null && _lastFetchTime != null) {
+      final diff = DateTime.now().difference(_lastFetchTime!);
+      if (diff.inMinutes < _refreshThresholdMinutes) {
+        debugPrint("店長：キャッシュが有効です。以前の情報を利用します。");
+        return _cachedData!;
+      }
+      debugPrint("店長：キャッシュが古いため（${diff.inMinutes}分経過）、情報を再取得します。");
+    }
+    // ---------------------------------
+
     try {
       // ★ 店長による点呼：DBスタッフが準備できるまで待機
       int retry = 0;
@@ -79,7 +96,10 @@ class EnvironmentCoordinator {
 
           if (distance <= 30.0) {
             debugPrint("【節約】登録地点と一致: ${loc.label}");
-            return EnvironmentData(location: loc.label, weather: weather);
+            final data = EnvironmentData(location: loc.label, weather: weather);
+            _cachedData = data; // キャッシュを更新
+            _lastFetchTime = DateTime.now(); // 取得時刻を更新
+            return data;
           }
         }
       }
@@ -91,12 +111,16 @@ class EnvironmentCoordinator {
         pos.latitude,
         pos.longitude,
       );
-      return EnvironmentData(
+
+      final data = EnvironmentData(
         location: address,
         weather: weather,
         latitude: pos.latitude,
         longitude: pos.longitude,
       );
+      _cachedData = data; // キャッシュを更新
+      _lastFetchTime = DateTime.now(); // 取得時刻を更新
+      return data;
     } catch (e) {
       debugPrint("店長業務エラー: $e");
       return EnvironmentData(location: "識別エラー");

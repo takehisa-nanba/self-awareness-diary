@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/diary_record.dart';
 import '../../services/isar_service.dart';
-import '../../providers/settings_provider.dart';
 import '../../core/utils/color_helpers.dart'; // color_helpersをインポート
 
 class DetailProvider with ChangeNotifier {
@@ -27,13 +26,14 @@ class DetailProvider with ChangeNotifier {
   }
 
   // --- 場所の登録状態判定 ---
-  // SettingsProviderのリストと突き合わせて、未登録なら true を返す
-  bool isLocationUnregistered(SettingsProvider settings) {
+  // IsarServiceに問い合わせて、未登録なら true を返す
+  Future<bool> isLocationUnregistered() async {
     if (record.location == null || record.location!.isEmpty) return false;
-    // 住所またはラベルが登録済みのリストに含まれていないかチェック
-    return !settings.locations.any(
-      (l) => l.address == record.location || l.label == record.location,
+    // サービス層に問い合わせて、結果の真偽を逆にする
+    final isRegistered = await isarService.isLocationRegistered(
+      record.location!,
     );
+    return !isRegistered;
   }
 
   // --- 場所の名前更新処理 ---

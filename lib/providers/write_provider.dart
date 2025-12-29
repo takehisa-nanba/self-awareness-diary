@@ -6,21 +6,16 @@ import '../services/environment_coordinator.dart';
 import '../services/gemini_service.dart';
 import '../../domain/repositories/diary_repository.dart'; // DiaryRepositoryをインポート
 
-// WidgetsBindingObserver をミックスインしてアプリの開閉を監視
-class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
+class WriteProvider with ChangeNotifier {
   int _currentStep = 0;
   int get currentStep => _currentStep;
 
   // 履歴スタッフ
   HistoryProvider? _historyProvider;
 
-  // --- 20分ルール用の設定 ---
-  DateTime? _lastPausedTime;
-  static const int _refreshThresholdMinutes = 20;
-
   final EnvironmentCoordinator _environmentCoordinator;
   final GeminiService _geminiService;
-  final DiaryRepository _diaryRepository; // IsarServiceではなくDiaryRepositoryに依存
+  final DiaryRepository _diaryRepository;
 
   // 入力データ
   int moodScore = 5;
@@ -38,14 +33,11 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
   bool isGenerating = false;
   bool isSaving = false;
 
-  // コンストラクタ：監視員としての登録
   WriteProvider(
     this._environmentCoordinator,
     this._geminiService,
     this._diaryRepository,
-  ) {
-    WidgetsBinding.instance.addObserver(this);
-  }
+  );
 
   // UI更新用（履歴Providerとの連携）
   void update(HistoryProvider history) {
@@ -53,54 +45,21 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
   }
 
-  // アプリの状態変化を検知
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      // アプリが裏に回った時間を記録
-      _lastPausedTime = DateTime.now();
-    } else if (state == AppLifecycleState.resumed) {
-      // アプリに戻ってきた時に鮮度をチェック
-      _checkLocationFreshness();
-    }
-  }
-
-  // 20分経過判定ロジック
-  void _checkLocationFreshness() {
-    if (_lastPausedTime == null) return;
-
-    final diff = DateTime.now().difference(_lastPausedTime!);
-
-    if (diff.inMinutes >= _refreshThresholdMinutes) {
-      debugPrint("WriteProvider：$_refreshThresholdMinutes分以上経過したため情報をリセットします");
-      tempLocation = null;
-      tempWeather = null;
-      tempLat = null;
-      tempLng = null;
-
-      // 自動で最新情報を取得しにいく
-      fetchEnvironmentData();
-    } else {
-      debugPrint("WriteProvider：20分以内のため情報を維持します（経過: ${diff.inMinutes}分）");
-    }
-  }
-
   // 環境データの取得（店長への依頼）
   Future<void> fetchEnvironmentData() async {
-    // すでに取得済みなら何もしない
-    if (tempLocation != null && tempLocation != "位置情報取得中...") return;
-
-    try {
+    // UIに「取得中」と表示するのは、まだデータが何もない初回のみ
+    if (tempLocation == null) {
       tempLocation = "位置情報取得中...";
       notifyListeners();
+    }
 
-      // 店長に一括依頼
-      final data = await _environmentCoordinator
-          .fetchFullData(); // _environmentCoordinatorに変更
+    // 常に店長（Coordinator）に問い合わせる。キャッシュ管理は店長の責任。
+    try {
+      final data = await _environmentCoordinator.fetchFullData();
 
+      // 取得したデータでUIを更新
       tempLocation = data.location;
       tempWeather = data.weather;
-      // 店長から受け取った座標もしっかり保持
       tempLat = data.latitude;
       tempLng = data.longitude;
     } catch (e) {
@@ -135,7 +94,6 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
 
     try {
       reflectionQuestion = await _geminiService.generateReflectionQuestion(
-        // _geminiServiceに変更
         eventText: eventText,
         tags: selectedTags.join(', '),
       );
@@ -162,7 +120,7 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
         try {
           final analysis = await _geminiService.analyzeStability(
             selfAnalysisText,
-          ); // _geminiServiceに変更
+          );
           aiScore = analysis['score'];
           aiReason = analysis['reason'];
         } catch (e) {
@@ -187,7 +145,7 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
       );
 
       // DiaryRepositoryに保存
-      await _diaryRepository.saveRecord(record); // _diaryRepositoryに変更
+      await _diaryRepository.saveRecord(record);
       debugPrint("日記保存完了: ${record.recordId}");
 
       // 履歴画面をリフレッシュ
@@ -209,14 +167,7 @@ class WriteProvider with ChangeNotifier, WidgetsBindingObserver {
     selfAnalysisText = "";
     reflectionQuestion = "";
     notifyListeners();
-    debugPrint("WriteProvider：入力内容はリセット（場所情報は30分維持モード）");
-  }
-
-  // 解放時に監視を解除
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
+    debugPrint("WriteProvider：入力内容はリセット（場所情報はCoordinatorのキャッシュに依存）");
   }
 
   void notify() {

@@ -24,6 +24,7 @@ import 'core/constants/app_theme.dart'; // app_theme.dartをインポート
 import 'data/repositories/isar_diary_repository.dart'; // IsarDiaryRepositoryをインポート
 import 'domain/repositories/diary_repository.dart'; // DiaryRepositoryインターフェースをインポート
 import 'providers/analysis_provider.dart'; // AnalysisProviderをインポート
+import 'package:myapp/services/developer_service.dart';
 
 void main() async {
   // これを一番上に追加（通信系のエラーでデバッガーが落ちるのを防ぐ）
@@ -79,10 +80,8 @@ void main() async {
           create: (context) => HistoryProvider(context.read<DiaryRepository>()),
         ),
         ChangeNotifierProvider(
-          create: (context) => AnalysisProvider(
-            context.read<DiaryRepository>(),
-            geminiService,
-          ),
+          create: (context) =>
+              AnalysisProvider(context.read<DiaryRepository>(), geminiService),
         ),
         // SettingsProvider に HistoryProvider を渡す
         ChangeNotifierProxyProvider<HistoryProvider, SettingsProvider>(
@@ -92,7 +91,8 @@ void main() async {
               settings!..setHistoryProvider(history),
         ),
         ChangeNotifierProvider(
-          create: (context) => MoodTagProvider(context.read<SettingsProvider>()),
+          create: (context) =>
+              MoodTagProvider(context.read<SettingsProvider>()),
         ),
         // WriteProvider に HistoryProvider を渡す
         ChangeNotifierProxyProvider<HistoryProvider, WriteProvider>(
@@ -102,6 +102,11 @@ void main() async {
             context.read<DiaryRepository>(),
           ),
           update: (_, history, write) => write!..update(history),
+        ),
+        // 開発者向けサービス
+        ChangeNotifierProvider(
+          create: (context) =>
+              DeveloperService(context.read<DiaryRepository>()),
         ),
       ],
       child: const MyApp(),

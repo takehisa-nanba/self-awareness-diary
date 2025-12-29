@@ -51,7 +51,8 @@ class _WriteScreenState extends State<WriteScreen> {
     _eventTextController.text = writeProvider.eventText;
     // カーソル位置を末尾に移動（テキスト変更時に先頭に戻るのを防ぐ）
     _eventTextController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _eventTextController.text.length));
+      TextPosition(offset: _eventTextController.text.length),
+    );
 
     return Column(
       children: [
@@ -116,10 +117,13 @@ class _WriteScreenState extends State<WriteScreen> {
                   onPressed: writeProvider.isSaving
                       ? null
                       : () async {
-                          final scaffoldMessenger = ScaffoldMessenger.of(context);
+                          final scaffoldMessenger = ScaffoldMessenger.of(
+                            context,
+                          );
 
                           // --- バリデーションロジック ---
-                          if (isMoodTagsStep) { // Step 0: ムードタグ選択
+                          if (isMoodTagsStep) {
+                            // Step 0: ムードタグ選択
                             if (writeProvider.selectedTags.isEmpty) {
                               scaffoldMessenger.showSnackBar(
                                 const SnackBar(
@@ -128,7 +132,8 @@ class _WriteScreenState extends State<WriteScreen> {
                               );
                               return;
                             }
-                          } else if (currentStepIndex == 1) { // Step 1: ムードスコアと出来事入力
+                          } else if (currentStepIndex == 1) {
+                            // Step 1: ムードスコアと出来事入力
                             // Validation for eventText moved to Step2Write, but currentStepIndex==1 refers to Step2Write
                             // So, the eventText validation should happen when currentStepIndex == 1 (Step2Write)
                             // and the _eventTextController is managed in Step2Write.
@@ -146,10 +151,14 @@ class _WriteScreenState extends State<WriteScreen> {
                           // バリデーション通過後
                           if (writeProvider.currentStep < 2) {
                             // Step 2 (Self-analysis & AI) に進む前にAI質問生成
-                            if (writeProvider.currentStep == 1 && settingsProvider.currentTier != SubscriptionTier.free) {
+                            if (writeProvider.currentStep == 1 &&
+                                settingsProvider.currentTier !=
+                                    SubscriptionTier.free) {
                               await writeProvider.prepareReflection();
                               if (!context.mounted) return;
-                            } else if (writeProvider.currentStep == 1 && settingsProvider.currentTier == SubscriptionTier.free) {
+                            } else if (writeProvider.currentStep == 1 &&
+                                settingsProvider.currentTier ==
+                                    SubscriptionTier.free) {
                               debugPrint("非会員のためAI質問生成をスキップします");
                               writeProvider.reflectionQuestion = "";
                             }
@@ -162,7 +171,9 @@ class _WriteScreenState extends State<WriteScreen> {
                               const SnackBar(content: Text('記録を保存しました')),
                             );
                             // 保存後、履歴画面に遷移
-                            context.read<AppStateProvider>().setTab(AppTab.history);
+                            context.read<AppStateProvider>().setTab(
+                              AppTab.history,
+                            );
                           }
                         },
                   child: (writeProvider.isSaving || writeProvider.isGenerating)

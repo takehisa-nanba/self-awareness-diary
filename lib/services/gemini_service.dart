@@ -63,25 +63,26 @@ class GeminiService {
     }
   }
 
-    // 内省質問生成用
-    Future<String> generateReflectionQuestion({
-      required String eventText,
-      required String tags,
-    }) async {
-      final prompt = '出来事「$eventText」と、感情「$tags」を踏まえ、内省を深掘りする質問を1つ作成してください。';
-  
-      try {
-        final response = await _model.generateContent([Content.text(prompt)]);
-        return response.text ?? 'その時、どんな感覚がありましたか？';
-      } catch (e) {
-        debugPrint('質問生成エラー: $e');
-        return 'その出来事について、もっと詳しく教えてください。';
-      }
+  // 内省質問生成用
+  Future<String> generateReflectionQuestion({
+    required String eventText,
+    required String tags,
+  }) async {
+    final prompt = '出来事「$eventText」と、感情「$tags」を踏まえ、内省を深掘りする質問を1つ作成してください。';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text ?? 'その時、どんな感覚がありましたか？';
+    } catch (e) {
+      debugPrint('質問生成エラー: $e');
+      return 'その出来事について、もっと詳しく教えてください。';
     }
-  
-      /// 分析レポートからAIの洞察を生成する
-      Future<List<String>> generateAnalysisInsights(String reportSummary) async {
-        final prompt = '''
+  }
+
+  /// 分析レポートからAIの洞察を生成する
+  Future<List<String>> generateAnalysisInsights(String reportSummary) async {
+    final prompt =
+        '''
     あなたはデータ分析に長けた、優秀な心理カウンセラーです。
     以下の分析レポートサマリーを読み解き、ユーザーが自分自身をより深く理解するための、具体的でデータに基づいた「洞察」または「質問」を3つ提案してください。
     
@@ -101,17 +102,21 @@ class GeminiService {
     # 回答形式の例
     月曜日は他の曜日よりスコアが低い傾向があるようです。週の始まりに何か特別なストレスがありますか？||最も多いタグは「不安」ですね。この感情は、特にどのような場面で感じますか？||期間中の最高スコアは「旅行」タグの日に記録されています。旅行が良いリフレッシュになっている証拠かもしれません。
     ''';
-        try {
-          final response = await _model.generateContent([Content.text(prompt)]);
-          final text = response.text;
-          if (text == null || text.isEmpty) {
-            return [];
-          }
-          // 「||」で分割してリストにする
-          return text.split('||').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-        } catch (e) {
-          debugPrint('AI洞察生成エラー: $e');
-          return ['AIとの通信中にエラーが発生しました。'];
-        }
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text;
+      if (text == null || text.isEmpty) {
+        return [];
       }
+      // 「||」で分割してリストにする
+      return text
+          .split('||')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+    } catch (e) {
+      debugPrint('AI洞察生成エラー: $e');
+      return ['AIとの通信中にエラーが発生しました。'];
     }
+  }
+}

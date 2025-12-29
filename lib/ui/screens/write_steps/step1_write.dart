@@ -27,7 +27,8 @@ class Step1Write extends StatelessWidget {
               radius: const Radius.circular(3.0), // スクロールバーの角の丸み
               child: GridView.builder(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(), // SingleChildScrollViewが親なので無効にする
+                physics:
+                    const NeverScrollableScrollPhysics(), // SingleChildScrollViewが親なので無効にする
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2, // 1行に2つのタグに調整
                   childAspectRatio: 4.0, // タグの幅/高さの比率を調整 (3.5から4.0程度)
@@ -40,18 +41,20 @@ class Step1Write extends StatelessWidget {
                   final isSelected = writeProvider.selectedTags.contains(
                     tag.label,
                   );
-                  return SizedBox( // FilterChipをSizedBoxでラップして幅を制御
+                  return SizedBox(
+                    // FilterChipをSizedBoxでラップして幅を制御
                     width: 120.0, // 固定幅を設定（7文字幅相当）
                     child: FilterChip(
-                      label: Row( // RowでTextをラップし、ExpandedでTextを広げる
+                      label: Row(
+                        // RowでTextをラップし、ExpandedでTextを広げる
                         children: [
                           Expanded(
                             child: Text(
-                        tag.label,
-                        textAlign: TextAlign.center, // 文字を中央揃え
-                        maxLines: 1, // 1行に限定
-                        overflow: TextOverflow.ellipsis, // 長すぎる場合は...で省略
-                      ),
+                              tag.label,
+                              textAlign: TextAlign.center, // 文字を中央揃え
+                              maxLines: 1, // 1行に限定
+                              overflow: TextOverflow.ellipsis, // 長すぎる場合は...で省略
+                            ),
                           ),
                         ],
                       ),

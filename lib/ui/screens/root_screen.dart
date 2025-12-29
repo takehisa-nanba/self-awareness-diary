@@ -116,7 +116,7 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
           title: _getTitle(currentTab),
           child: _getScreen(currentTab),
         ),
-      // 「記録」ページ以外の時にFABを表示
+        // 「記録」ページ以外の時にFABを表示
         floatingActionButton: currentTab == AppTab.write
             ? null
             : FloatingActionButton(
@@ -128,13 +128,23 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
             : NavigationBar(
                 selectedIndex: _getSelectedIndex(currentTab),
                 onDestinationSelected: (index) {
-                  const tabs = [AppTab.history, AppTab.analysis, AppTab.settings];
+                  const tabs = [
+                    AppTab.history,
+                    AppTab.analysis,
+                    AppTab.settings,
+                  ];
                   appState.setTab(tabs[index]);
                 },
                 destinations: const [
                   NavigationDestination(icon: Icon(Icons.history), label: '履歴'),
-                  NavigationDestination(icon: Icon(Icons.analytics), label: '分析'),
-                  NavigationDestination(icon: Icon(Icons.settings), label: '設定'),
+                  NavigationDestination(
+                    icon: Icon(Icons.analytics),
+                    label: '分析',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.settings),
+                    label: '設定',
+                  ),
                 ],
               ),
       ),
@@ -144,30 +154,42 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
   // 選択されたタブのインデックスを取得
   int _getSelectedIndex(AppTab tab) {
     switch (tab) {
-      case AppTab.history: return 0;
-      case AppTab.analysis: return 1;
-      case AppTab.settings: return 2;
-      default: return 0;
+      case AppTab.history:
+        return 0;
+      case AppTab.analysis:
+        return 1;
+      case AppTab.settings:
+        return 2;
+      default:
+        return 0;
     }
   }
 
   // 現在のタブに対応する画面ウィジェットを取得
   Widget _getScreen(AppTab tab) {
     switch (tab) {
-      case AppTab.write: return const WriteScreen();
-      case AppTab.history: return const HistoryScreen();
-      case AppTab.analysis: return const AnalysisScreen();
-      case AppTab.settings: return const SettingsScreen();
+      case AppTab.write:
+        return const WriteScreen();
+      case AppTab.history:
+        return const HistoryScreen();
+      case AppTab.analysis:
+        return const AnalysisScreen();
+      case AppTab.settings:
+        return const SettingsScreen();
     }
   }
 
   // 現在のタブに対応するタイトルを取得
   String _getTitle(AppTab tab) {
     switch (tab) {
-      case AppTab.write: return "記録";
-      case AppTab.history: return "履歴";
-      case AppTab.analysis: return "分析";
-      case AppTab.settings: return "設定";
+      case AppTab.write:
+        return "記録";
+      case AppTab.history:
+        return "履歴";
+      case AppTab.analysis:
+        return "分析";
+      case AppTab.settings:
+        return "設定";
     }
   }
 }

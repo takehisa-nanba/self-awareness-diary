@@ -29,7 +29,8 @@ class _Step2WriteState extends State<Step2Write> {
     _eventTextController.text = writeProvider.eventText;
     // カーソル位置を末尾に移動（テキスト変更時に先頭に戻るのを防ぐ）
     _eventTextController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _eventTextController.text.length));
+      TextPosition(offset: _eventTextController.text.length),
+    );
 
     return Column(
       children: [

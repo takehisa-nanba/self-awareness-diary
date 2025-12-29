@@ -98,7 +98,9 @@ class AnalysisScreen extends StatelessWidget {
   Widget _buildUpgradePlaceholder(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Theme.of(context).colorScheme.tertiaryContainer.withAlpha((255 * 0.5).toInt()),
+      color: Theme.of(
+        context,
+      ).colorScheme.tertiaryContainer.withAlpha((255 * 0.5).toInt()),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -130,7 +132,7 @@ class AnalysisScreen extends StatelessWidget {
                 // TODO: 課金画面への遷移を実装
               },
               child: const Text('プランを確認する'),
-            )
+            ),
           ],
         ),
       ),
@@ -187,10 +189,7 @@ class AnalysisScreen extends StatelessWidget {
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleLarge,
-    );
+    return Text(title, style: Theme.of(context).textTheme.titleLarge);
   }
 
   Widget _buildDateRangeSelector(BuildContext context) {
@@ -229,53 +228,66 @@ class AnalysisScreen extends StatelessWidget {
           children: [
             const Icon(Icons.calendar_today_outlined, size: 18),
             const SizedBox(width: 8),
-            Text('$start - $end', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              '$start - $end',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ],
         ),
       ),
     );
   }
 
-  LineTouchData _getLineTouchData(BuildContext context, AnalysisReport report, bool isHourly) {
+  LineTouchData _getLineTouchData(
+    BuildContext context,
+    AnalysisReport report,
+    bool isHourly,
+  ) {
     return LineTouchData(
-      getTouchedSpotIndicator: (LineChartBarData barData, List<int> spotIndexes) {
-        return spotIndexes.map((spotIndex) {
-          return TouchedSpotIndicatorData(
-            FlLine(
-              color: Theme.of(context).primaryColor,
-              strokeWidth: 2,
-            ),
-            FlDotData(
-              getDotPainter: (spot, percent, barData, index) {
-                return FlDotCirclePainter(
-                  radius: 6,
-                  color: Theme.of(context).primaryColor,
-                  strokeColor: Theme.of(context).cardColor,
-                  strokeWidth: 2,
-                );
-              },
-            ),
-          );
-        }).toList();
-      },
+      getTouchedSpotIndicator:
+          (LineChartBarData barData, List<int> spotIndexes) {
+            return spotIndexes.map((spotIndex) {
+              return TouchedSpotIndicatorData(
+                FlLine(color: Theme.of(context).primaryColor, strokeWidth: 2),
+                FlDotData(
+                  getDotPainter: (spot, percent, barData, index) {
+                    return FlDotCirclePainter(
+                      radius: 6,
+                      color: Theme.of(context).primaryColor,
+                      strokeColor: Theme.of(context).cardColor,
+                      strokeWidth: 2,
+                    );
+                  },
+                ),
+              );
+            }).toList();
+          },
       touchTooltipData: LineTouchTooltipData(
-        getTooltipColor: (spot) => Theme.of(context).colorScheme.secondaryContainer,
+        getTooltipColor: (spot) =>
+            Theme.of(context).colorScheme.secondaryContainer,
         getTooltipItems: (touchedSpots) {
           return touchedSpots.map((spot) {
             final String title;
             if (isHourly) {
               title = '${spot.x.toInt()}時';
             } else {
-              final date = report.dateRange.start.add(Duration(days: spot.x.toInt()));
+              final date = report.dateRange.start.add(
+                Duration(days: spot.x.toInt()),
+              );
               title = DateFormat('M/d').format(date);
             }
             return LineTooltipItem(
               '$title\n',
-              TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold),
+              TextStyle(
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                fontWeight: FontWeight.bold,
+              ),
               children: [
                 TextSpan(
                   text: 'スコア: ${spot.y.toStringAsFixed(1)}',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
                 ),
               ],
             );
@@ -284,11 +296,13 @@ class AnalysisScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildMoodTrendChart(BuildContext context, AnalysisReport report) {
     debugPrint('--- Trend Chart Build Start ---');
-    debugPrint('Date Range: ${report.dateRange.start} - ${report.dateRange.end}');
-    
+    debugPrint(
+      'Date Range: ${report.dateRange.start} - ${report.dateRange.end}',
+    );
+
     final spots = report.dailyMoodScores.entries.map((entry) {
       final daysFromStart = entry.key.difference(report.dateRange.start).inDays;
       return FlSpot(daysFromStart.toDouble(), entry.value);
@@ -300,7 +314,9 @@ class AnalysisScreen extends StatelessWidget {
 
     debugPrint('Duration Days: $durationDays, MaxX: $maxX');
     debugPrint('Daily Mood Scores Map: ${report.dailyMoodScores}');
-    debugPrint('Generated Spots: ${spots.map((s) => '(${s.x}, ${s.y})').join(', ')}');
+    debugPrint(
+      'Generated Spots: ${spots.map((s) => '(${s.x}, ${s.y})').join(', ')}',
+    );
     debugPrint('--- Trend Chart Build End ---');
 
     return LineChart(
@@ -334,7 +350,10 @@ class AnalysisScreen extends StatelessWidget {
                 final day = value.toInt();
                 if (day % bottomLabelInterval == 0) {
                   final date = report.dateRange.start.add(Duration(days: day));
-                  return Text(DateFormat('M/d').format(date), style: const TextStyle(fontSize: 10));
+                  return Text(
+                    DateFormat('M/d').format(date),
+                    style: const TextStyle(fontSize: 10),
+                  );
                 }
                 return const Text('');
               },
@@ -346,15 +365,22 @@ class AnalysisScreen extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 if (value.toInt() % 2 == 0) {
-                  return Text(value.toInt().toString(), style: const TextStyle(fontSize: 10));
+                  return Text(
+                    value.toInt().toString(),
+                    style: const TextStyle(fontSize: 10),
+                  );
                 }
                 return const Text('');
               },
               reservedSize: 28,
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         borderData: FlBorderData(show: false),
         gridData: FlGridData(
@@ -373,8 +399,11 @@ class AnalysisScreen extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildHourlyMoodTrendChart(BuildContext context, AnalysisReport report) {
+
+  Widget _buildHourlyMoodTrendChart(
+    BuildContext context,
+    AnalysisReport report,
+  ) {
     final spots = report.hourlyMoodScores.entries.map((entry) {
       return FlSpot(entry.key.toDouble(), entry.value);
     }).toList();
@@ -404,7 +433,10 @@ class AnalysisScreen extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 if (value.toInt() % 6 == 0) {
-                  return Text('${value.toInt()}時', style: const TextStyle(fontSize: 10));
+                  return Text(
+                    '${value.toInt()}時',
+                    style: const TextStyle(fontSize: 10),
+                  );
                 }
                 return const Text('');
               },
@@ -416,15 +448,22 @@ class AnalysisScreen extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 if (value.toInt() % 2 == 0) {
-                  return Text(value.toInt().toString(), style: const TextStyle(fontSize: 10));
+                  return Text(
+                    value.toInt().toString(),
+                    style: const TextStyle(fontSize: 10),
+                  );
                 }
                 return const Text('');
               },
               reservedSize: 28,
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         borderData: FlBorderData(show: false),
         gridData: FlGridData(
@@ -443,8 +482,11 @@ class AnalysisScreen extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildMoodDistributionChart(BuildContext context, AnalysisReport report) {
+
+  Widget _buildMoodDistributionChart(
+    BuildContext context,
+    AnalysisReport report,
+  ) {
     final distribution = report.moodTagDistribution;
     final primaryColor = Theme.of(context).primaryColor;
 
@@ -457,15 +499,21 @@ class AnalysisScreen extends StatelessWidget {
         maxY: max(5, (topItems.first.value * 1.2).toDouble()),
         barTouchData: BarTouchData(
           touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (spot) => Theme.of(context).colorScheme.secondaryContainer,
+            getTooltipColor: (spot) =>
+                Theme.of(context).colorScheme.secondaryContainer,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               return BarTooltipItem(
                 '${topItems[groupIndex].key}\n',
-                TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold),
+                TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
                 children: <TextSpan>[
                   TextSpan(
                     text: '${topItems[groupIndex].value} 回',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
                   ),
                 ],
               );
@@ -491,9 +539,15 @@ class AnalysisScreen extends StatelessWidget {
               reservedSize: 22,
             ),
           ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         borderData: FlBorderData(show: false),
         gridData: const FlGridData(show: false),
@@ -505,7 +559,9 @@ class AnalysisScreen extends StatelessWidget {
             barRods: [
               BarChartRodData(
                 toY: value.toDouble(),
-                color: primaryColor.withAlpha((255 * (0.6 + (index * 0.08))).toInt()),
+                color: primaryColor.withAlpha(
+                  (255 * (0.6 + (index * 0.08))).toInt(),
+                ),
                 width: 16,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(4),

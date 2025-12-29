@@ -19,13 +19,13 @@ class MoodTagProvider extends ChangeNotifier {
   }
 
   void _onSettingsChanged() {
-    notifyListeners(); 
+    notifyListeners();
   }
 
   // エラー解決：refを使わず _settingsProvider を直接参照
   List<MoodTag> get availableMoodTags {
     final userTierIndex = _settingsProvider.currentTier.index;
-    
+
     // allMoodTagsから、ユーザーのTier以下のものだけを抽出する
     return allMoodTags.where((tag) => tag.tier.index <= userTierIndex).toList();
   }

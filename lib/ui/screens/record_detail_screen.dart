@@ -35,9 +35,10 @@ class _DetailBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Consumer<SettingsProvider>(
-            builder: (context, settings, _) {
-              final isUnregistered = provider.isLocationUnregistered(settings);
+          FutureBuilder<bool>(
+            future: provider.isLocationUnregistered(),
+            builder: (context, snapshot) {
+              final isUnregistered = snapshot.data ?? false;
               return Row(
                 children: [
                   Expanded(
@@ -48,7 +49,8 @@ class _DetailBody extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (isUnregistered)
+                  if (snapshot.connectionState == ConnectionState.done &&
+                      isUnregistered)
                     TextButton.icon(
                       onPressed: () => _showLocationDialog(context, provider),
                       icon: const Icon(Icons.add_location_alt, size: 16),
@@ -56,6 +58,12 @@ class _DetailBody extends StatelessWidget {
                         "場所を登録",
                         style: TextStyle(fontSize: 12),
                       ),
+                    )
+                  else if (snapshot.connectionState == ConnectionState.waiting)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                 ],
               );
@@ -126,45 +134,55 @@ class _DetailBody extends StatelessWidget {
                 final label = controller.text;
                 if (label.isEmpty) return;
 
+                // ProviderとNavigatorを先に取得
+                final settingsProvider = context.read<SettingsProvider>();
+                final detailProvider = context.read<DetailProvider>();
+                final historyProvider = context.read<HistoryProvider>();
+                final navigator = Navigator.of(ctx);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+
                 final lat = provider.record.latitude;
                 final lng = provider.record.longitude;
+                bool doUpdatePast = updatePast;
 
-                if (updatePast && lat != null && lng != null) {
+                // 過去の記録を更新する場合、確認ダイアログを表示
+                if (doUpdatePast && lat != null && lng != null) {
                   final nearbyRecords = await isarService.findNearbyRecords(
                     lat,
                     lng,
                   );
-
                   if (context.mounted && nearbyRecords.isNotEmpty) {
-                    final bool? confirm = await _showConfirmDialog(
+                    final bool? confirmed = await _showConfirmDialog(
                       context,
                       nearbyRecords.length,
                       label,
                     );
-
-                    if (confirm == true) {
-                      await isarService.updateRecordsLocation(
-                        nearbyRecords,
-                        label,
-                      );
+                    // 確認ダイアログでNoが押されたら更新しない
+                    if (confirmed == false) {
+                      doUpdatePast = false;
                     }
                   }
                 }
 
-                if (!context.mounted) return;
-                await context.read<SettingsProvider>().addLocation(
-                  label,
-                  provider.record.location!,
+                // --- ロジックの実行 ---
+                await settingsProvider.addNewLocationAndUpdateRecords(
+                  label: label,
+                  address: provider.record.location!,
+                  lat: lat,
+                  lng: lng,
+                  updatePast: doUpdatePast,
                 );
-                await provider.updateLocationName(label);
 
-                if (context.mounted) {
-                  context.read<HistoryProvider>().refreshHistory();
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('「$label」を登録しました')));
-                }
+                // --- UIの更新 ---
+                // 詳細画面の表示を更新
+                await detailProvider.updateLocationName(label);
+                // 履歴画面のリストを更新
+                historyProvider.refreshHistory();
+
+                navigator.pop(); // ダイアログを閉じる
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(content: Text('「$label」を登録しました')),
+                );
               },
               child: const Text("登録"),
             ),
