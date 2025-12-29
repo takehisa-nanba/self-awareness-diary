@@ -67,7 +67,7 @@ class _WriteScreenState extends State<WriteScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'なぜその気分？（複数選択可）',
+                  '今の気分は？（複数選択可）',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
