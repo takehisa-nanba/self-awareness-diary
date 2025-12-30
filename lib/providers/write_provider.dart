@@ -18,6 +18,10 @@ class WriteProvider with ChangeNotifier {
   int _currentStep = 0;
   int get currentStep => _currentStep;
 
+  /// 更新対象の日記レコードのIsar ID。これがnullでない場合、更新モードと判断する。
+  /// 更新対象の日記レコードのIsar ID。これがnullでない場合、更新モードと判断する。
+  int? isarId;
+
   // 連携するProvider
   /// 履歴プロバイダーへの参照。日記保存後に履歴を更新するために使用。
   HistoryProvider? _historyProvider;
@@ -87,6 +91,27 @@ class WriteProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// 既存の日記レコードを編集するために、プロバイダーの状態を初期化します。
+  ///
+  /// [record] 編集対象の [DiaryRecord] オブジェクト。
+  /// 既存の日記レコードを編集するために、プロバイダーの状態を初期化します。
+  ///
+  /// [record] 編集対象の [DiaryRecord] オブジェクト。
+  void initForEdit(DiaryRecord record) {
+    _currentStep = 2; // 自己分析ステップから開始
+    isarId = record.isarId; // 編集対象レコードのIsar IDを保持
+    moodScore = record.moodScore;
+    selectedTags = List.from(record.moodTags);
+    eventText = record.eventText;
+    selfAnalysisText = record.selfAnalysis ?? "";
+    tempLocation = record.location;
+    tempWeather = record.weather;
+    tempLat = record.latitude;
+    tempLng = record.longitude;
+    reflectionQuestion = ""; // 編集時はAI質問をクリア
+    notifyListeners();
+  }
+
   /// 環境コーディネーターを通じて、最新の位置情報と天気データを取得します。
   ///
   /// データ取得中はローディング表示を行い、完了後にUIを更新します。
@@ -153,10 +178,10 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
-  /// 入力されたデータと取得した環境データ、AI分析結果（Tier 2ユーザーのみ）を統合して、
-  /// 新しい日記レコードとして永続ストレージに保存します。
+  /// 入力されたデータと取得した環境データ、AI分析結果を統合して、
+  /// 日記レコードを保存または更新します。
   ///
-  /// 保存中は `isSaving` フラグを `true` に設定し、完了後に履歴画面を更新します。
+  /// `isarId` がnullでない場合は更新、nullの場合は新規保存を行います。
   Future<void> save() async {
     isSaving = true;
     notifyListeners();
@@ -179,30 +204,59 @@ class WriteProvider with ChangeNotifier {
         }
       }
 
-      // DiaryRecordモデルの作成
-      final record = DiaryRecord(
-        recordId: const Uuid().v4(), // 一意なIDを生成
-        recordDate: DateTime.now(),
-        moodTags: List.from(selectedTags), // リストはコピーして保存
-        moodScore: moodScore,
-        eventText: eventText,
-        selfAnalysis: selfAnalysisText,
-        aiStabilityScore: aiScore,
-        aiAnalysisReason: aiReason,
-        location: tempLocation,
-        weather: tempWeather,
-        latitude: tempLat,
-        longitude: tempLng,
-      );
+      DiaryRecord record;
+      if (isarId != null) {
+        // 更新モードの場合: 既存のレコードをデータベースから取得し、変更されたフィールドを更新する
+        final existingRecord = await _diaryRepository.getRecordByIsarId(isarId!);
+        if (existingRecord != null) {
+          // 既存レコードのIDと記録日時を維持しつつ、編集された内容で新しいDiaryRecordオブジェクトを作成
+          record = DiaryRecord(
+            isarId: isarId,
+            recordId: existingRecord.recordId, // 既存のrecordIdを維持
+            recordDate: existingRecord.recordDate, // 記録日時は更新しない
+            moodTags: List.from(selectedTags),
+            moodScore: moodScore,
+            eventText: eventText,
+            selfAnalysis: selfAnalysisText,
+            aiStabilityScore: aiScore,
+            aiAnalysisReason: aiReason,
+            location: tempLocation,
+            weather: tempWeather,
+            latitude: tempLat,
+            longitude: tempLng,
+          );
+        } else {
+          // IDがあるのにレコードが見つからない場合は例外をスロー
+          throw Exception("Record with isarId $isarId not found for update.");
+        }
+      } else {
+        // 新規作成モードの場合: 新しいレコードとしてDiaryRecordオブジェクトを作成
+        record = DiaryRecord(
+          recordId: const Uuid().v4(), // 一意なUUIDを生成
+          recordDate: DateTime.now(), // 現在の日時を記録日時とする
+          moodTags: List.from(selectedTags),
+          moodScore: moodScore,
+          eventText: eventText,
+          selfAnalysis: selfAnalysisText,
+          aiStabilityScore: aiScore,
+          aiAnalysisReason: aiReason,
+          location: tempLocation,
+          weather: tempWeather,
+          latitude: tempLat,
+          longitude: tempLng,
+        );
+      }
 
-      // DiaryRepositoryに保存
+      // DiaryRepositoryを介してレコードを保存または更新
       await _diaryRepository.saveRecord(record);
-      debugPrint("日記保存完了: ${record.recordId}");
+      debugPrint(
+        "日記${isarId == null ? '保存' : '更新'}完了: ${record.recordId}", // ログ出力
+      );
 
       // 履歴画面をリフレッシュ
       _historyProvider?.refreshHistory();
 
-      _reset(); // フォームをリセット
+      _reset(); // フォームの状態をリセット
     } finally {
       isSaving = false;
       notifyListeners();
@@ -210,15 +264,17 @@ class WriteProvider with ChangeNotifier {
   }
 
   /// 日記作成フォームのすべての入力状態を初期値にリセットします。
+  /// 日記作成フォームのすべての入力状態を初期値にリセットします。
   void _reset() {
     _currentStep = 0;
+    isarId = null; // 更新IDをクリア
     moodScore = 5;
     selectedTags = [];
     eventText = "";
     selfAnalysisText = "";
     reflectionQuestion = "";
     notifyListeners();
-    debugPrint("WriteProvider：入力内容はリセット（場所情報はCoordinatorのキャッシュに依存）");
+    debugPrint("WriteProvider：入力内容はリセットされました。");
   }
 
   /// リスナーに状態の変更を通知します。

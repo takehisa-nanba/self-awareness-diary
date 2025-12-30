@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/models/location_setting.dart';
-import '../../providers/settings_provider.dart';
+import '../../providers/location_provider.dart';
 
 /// 登録された場所の詳細を編集および削除するための画面ウィジェット。
 ///
@@ -22,7 +22,7 @@ class LocationEditScreen extends StatefulWidget {
 ///
 /// 場所のラベル入力用のテキストコントローラーを管理します。
 class _LocationEditScreenState extends State<LocationEditScreen> {
-  late final TextEditingController _labelController;
+  late final TextEditingController _labelController; // ラベル入力用コントローラー
 
   @override
   void initState() {
@@ -44,6 +44,7 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
     final navigator = Navigator.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
+    // 削除確認ダイアログを表示
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -51,11 +52,11 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
         content: Text('「${widget.location.label}」を削除しますか？'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(context).pop(false), // キャンセル
             child: const Text('キャンセル'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(context).pop(true), // 削除実行
             child: Text(
               '削除',
               style: TextStyle(color: Theme.of(context).colorScheme.error),
@@ -68,12 +69,13 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
     if (!mounted) return; // ダイアログが閉じられた後にウィジェットが破棄されている可能性を考慮
 
     if (confirmed == true) {
-      await context.read<SettingsProvider>().deleteLocation(widget.location.id);
+      // LocationProviderを介して場所を削除
+      await context.read<LocationProvider>().deleteLocation(widget.location.id);
       if (!mounted) return;
 
       navigator.pop(); // 画面を閉じる
       scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('場所を削除しました。')),
+        const SnackBar(content: Text('場所を削除しました。')), // 削除完了メッセージ
       );
     }
   }
@@ -90,7 +92,7 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
               Icons.delete_outline,
               color: Theme.of(context).colorScheme.error,
             ),
-            onPressed: _deleteLocation,
+            onPressed: _deleteLocation, // 削除処理を実行
           ),
         ],
       ),
@@ -130,11 +132,12 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
               onPressed: () async {
                 final newLabel = _labelController.text;
                 if (newLabel.isNotEmpty) {
-                  final settingsProvider = context.read<SettingsProvider>();
+                  final locationProvider = context.read<LocationProvider>(); // LocationProviderを取得
                   final navigator = Navigator.of(context);
                   final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-                  await settingsProvider.updateLocation(
+                  // LocationProviderを介して場所のラベルを更新
+                  await locationProvider.updateLocation(
                     widget.location,
                     newLabel,
                   );
@@ -142,7 +145,7 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
 
                   navigator.pop(); // 画面を閉じる
                   scaffoldMessenger.showSnackBar(
-                    const SnackBar(content: Text('場所のラベルを更新しました。')),
+                    const SnackBar(content: Text('場所のラベルを更新しました。')), // 更新完了メッセージ
                   );
                 }
               },

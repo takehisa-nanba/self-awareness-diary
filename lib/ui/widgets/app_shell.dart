@@ -14,46 +14,41 @@ class AppShell extends StatelessWidget {
   /// ヘッダーに表示されるタイトル文字列。
   final String title;
 
-  const AppShell({super.key, required this.child, required this.title});
+  /// フローティングアクションボタン。
+  final FloatingActionButton? floatingActionButton;
+
+  const AppShell({
+    super.key,
+    required this.child,
+    required this.title,
+    this.floatingActionButton, // FloatingActionButtonを受け取るように変更
+  });
 
   @override
   Widget build(BuildContext context) {
-    final safePaddingTop = MediaQuery.of(context).padding.top;
+    // safePaddingTopが使われていないため削除
+    // final safePaddingTop = MediaQuery.of(context).padding.top;
 
-    // Scaffoldを返さず、Stackのみを返す
-    return Stack(
-      children: [
-        // メインコンテンツ
-        Padding(
-          padding: EdgeInsets.only(top: 66.0 + safePaddingTop),
-          child: child,
-        ),
-
-        // ヘッダー
-        Positioned(
-          top: safePaddingTop,
-          left: 0,
-          right: 0,
-          child: Container(
-            height: 66.0,
-            color: Theme.of(context).colorScheme.primaryContainer,
-            alignment: Alignment.center,
-            child: Text(
-              title,
-              style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          title,
+          style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
           ),
         ),
-
-        // 左上のナビゲーター
-        Positioned(
-          left: 16,
-          top: safePaddingTop + 5,
-          child: const ExtendedFabNavigator(),
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        // 左上部にExtendedFabNavigatorを配置
+        leadingWidth: 70, // ExtendedFabNavigatorの幅に合わせて調整
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 16.0), // 左からのパディングを調整
+          // ExtendedFabNavigatorをAlignでラップして左寄せにする代わりに、leadingWidthとPaddingで調整
+          child: ExtendedFabNavigator(),
         ),
-      ],
+      ),
+      body: child, // メインコンテンツ
+      floatingActionButton: floatingActionButton, // 受け取ったFloatingActionButtonを配置
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat, // FABの配置位置
     );
   }
 }

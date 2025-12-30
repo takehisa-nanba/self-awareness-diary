@@ -16,6 +16,10 @@ abstract class DiaryRepository {
   /// 指定されたIDに一致する日記レコードを1件取得します。
   Future<DiaryRecord?> getRecord(int id);
 
+  /// 指定されたIsar IDに一致する日記レコードを1件取得します。
+  /// 指定されたIsar IDに一致する日記レコードを1件取得します。
+  Future<DiaryRecord?> getRecordByIsarId(int isarId);
+
   /// 指定された開始日から終了日までの範囲に含まれる日記レコードを取得します。
   Future<List<DiaryRecord>> getRecordsInDateRange(
     DateTime startDate,

@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart'; // 日付のローカライズを初期化するために必要
+import 'package:myapp/providers/location_provider.dart';
 import 'package:myapp/providers/mood_tag_provider.dart';
 import 'services/environment_coordinator.dart';
 import 'services/isar_service.dart';
@@ -75,13 +76,16 @@ void main() async {
           create: (context) =>
               AnalysisProvider(context.read<DiaryRepository>(), geminiService),
         ),
-        ChangeNotifierProxyProvider<HistoryProvider, SettingsProvider>(
+        // SettingsProviderの提供方法を変更。HistoryProviderへの依存を削除。
+        ChangeNotifierProvider(
           create: (context) =>
               SettingsProvider(isarService, context.read<DiaryRepository>()),
-          update: (_, history, settings) => settings!
-            ..setHistoryProvider(
-              history,
-            ), // HistoryProviderをSettingsProviderに注入
+        ),
+        // LocationProviderを追加。HistoryProviderに依存するためChangeNotifierProxyProviderを使用。
+        ChangeNotifierProxyProvider<HistoryProvider, LocationProvider>(
+          create: (context) => LocationProvider(isarService),
+          update: (_, history, location) =>
+              location!..setHistoryProvider(history), // LocationProviderにHistoryProviderを注入
         ),
         ChangeNotifierProvider(
           create: (context) =>

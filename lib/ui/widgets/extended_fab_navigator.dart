@@ -25,7 +25,8 @@ class ExtendedFabNavigator extends StatelessWidget {
       icon: Icons.menu,
       activeIcon: Icons.close,
       direction: SpeedDialDirection.down, // FABメニューが下方向に展開
-      switchLabelPosition: true, // ラベルの位置を切り替える
+      switchLabelPosition: true, // ラベルの位置を切り替える（falseだとラベルが表示されない）
+      spacing: 3, // メインFABと子FAB間の垂直方向のスペース
       animatedIconTheme: const IconThemeData(size: 22.0),
       curve: Curves.bounceIn, // アニメーションのカーブ
       backgroundColor: Theme.of(context).colorScheme.primaryContainer,

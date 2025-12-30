@@ -26,6 +26,12 @@ class IsarDiaryRepository implements DiaryRepository {
   }
 
   @override
+  Future<DiaryRecord?> getRecordByIsarId(int isarId) async {
+    // 指定されたIsar IDでDiaryRecordをデータベースから取得する
+    return await _isarService.isar.diaryRecords.get(isarId);
+  }
+
+  @override
   Future<void> saveRecord(DiaryRecord record) {
     return _isarService.saveRecord(record);
   }

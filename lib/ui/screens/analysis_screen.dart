@@ -567,14 +567,16 @@ class AnalysisScreen extends StatelessWidget {
       );
     }
 
+    // --- グラフのX軸設定 ---
     final double duration = isHourly
         ? 23
         : report.dateRange.duration.inDays.toDouble();
     final double bottomLabelInterval = isHourly ? 6 : (duration > 7 ? 7 : 1);
 
+    // --- グラフウィジェットの構築 ---
     return LineChart(
       LineChartData(
-        lineTouchData: _getLineTouchData(context, report, isHourly),
+        lineTouchData: _getLineTouchData(context, report, isHourly), // タッチデータ
         lineBarsData: lineBarsData,
         titlesData: FlTitlesData(
           show: true,
@@ -582,7 +584,7 @@ class AnalysisScreen extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                if (value == meta.max) return const Text('');
+                if (value == meta.max) return const Text(''); // 最後のラベルは表示しない
                 final day = value.toInt();
                 if (day % bottomLabelInterval == 0) {
                   final String text = isHourly
@@ -590,7 +592,7 @@ class AnalysisScreen extends StatelessWidget {
                       : DateFormat('M/d').format(
                           report.dateRange.start.add(Duration(days: day)),
                         );
-                  return Text(text, style: const TextStyle(fontSize: 10));
+                  return Text(text, style: const TextStyle(fontSize: 10)); // ラベルスタイル
                 }
                 return const Text('');
               },
@@ -604,14 +606,15 @@ class AnalysisScreen extends StatelessWidget {
                 if (value.toInt() % 2 == 0) {
                   return Text(
                     value.toInt().toString(),
-                    style: const TextStyle(fontSize: 10),
+                    style: const TextStyle(fontSize: 10), // ラベルスタイル
                   );
                 }
-                return const Text('');
+                return const Text(''); // 奇数は表示しない
               },
               reservedSize: 28,
             ),
           ),
+          // 右と上のタイトルは非表示
           topTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: false),
           ),
@@ -619,7 +622,7 @@ class AnalysisScreen extends StatelessWidget {
             sideTitles: SideTitles(showTitles: false),
           ),
         ),
-        borderData: FlBorderData(show: false),
+        borderData: FlBorderData(show: false), // 枠線非表示
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
