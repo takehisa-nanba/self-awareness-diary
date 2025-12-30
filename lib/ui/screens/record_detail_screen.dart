@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/models/diary_record.dart';
 import '../../providers/detail_provider.dart';
-import '../../providers/settings_provider.dart';
 import '../../providers/history_provider.dart';
+import '../../providers/settings_provider.dart';
+import '../../services/gemini_service.dart';
 import '../../services/isar_service.dart';
 
 class RecordDetailScreen extends StatelessWidget {
@@ -13,7 +14,11 @@ class RecordDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => DetailProvider(record),
+      create: (context) => DetailProvider(
+        record,
+        context.read<GeminiService>(),
+        context.read<SettingsProvider>(),
+      ),
       child: Scaffold(
         appBar: AppBar(title: const Text('記録の詳細')),
         body: const _DetailBody(),
@@ -69,15 +74,56 @@ class _DetailBody extends StatelessWidget {
               );
             },
           ),
-
           const SizedBox(height: 16),
           const _SectionTitle("起きたこと"),
           const SizedBox(height: 8),
           Text(record.eventText, style: const TextStyle(fontSize: 18)),
 
+          // タグの表示
+          if (record.moodTags.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8.0,
+              runSpacing: 4.0,
+              children: record.moodTags
+                  .map(
+                    (tag) => Chip(
+                      label: Text(tag),
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      labelStyle: const TextStyle(fontSize: 12),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+
           const SizedBox(height: 32),
 
-          const _SectionTitle("振り返り（セルフアナリシス）"),
+          // 研磨度を含むセクションタイトル
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const _SectionTitle("振り返り（セルフアナリシス）"),
+              Row(
+                children: [
+                  Text(
+                    record.polishingIcon,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(width: 4),
+                  if (record.polishingLevel > 0)
+                    Text(
+                      '研磨度: ${record.polishingLevel}%',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           if (provider.isEditing)
             _AnalysisEditor(provider: provider)
@@ -88,8 +134,63 @@ class _DetailBody extends StatelessWidget {
 
           const _SectionTitle("AI分析結果"),
           const SizedBox(height: 12),
-          _AIAnalysisCard(provider: provider),
+          // AI分析カードの条件付き表示
+          Consumer<SettingsProvider>(
+            builder: (context, settings, _) {
+              if (settings.currentTier == SubscriptionTier.tier2) {
+                return _AIAnalysisCard(provider: provider);
+              } else {
+                return _buildUpgradePlaceholder(context);
+              }
+            },
+          ),
         ],
+      ),
+    );
+  }
+
+  // --- 以降のメソッドは変更なし ---
+
+  Widget _buildUpgradePlaceholder(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Theme.of(
+        context,
+      ).colorScheme.tertiaryContainer.withAlpha((255 * 0.5).toInt()),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          children: [
+            Icon(
+              Icons.lock_outline,
+              size: 32,
+              color: Theme.of(context).colorScheme.onTertiaryContainer,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'AIによる高度な分析',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onTertiaryContainer,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'アップグレードすると、AIがあなたの記録を分析し、パーソナライズされた洞察を提供します。',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onTertiaryContainer,
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.tonal(
+              onPressed: () {
+                // TODO: 課金画面への遷移を実装
+              },
+              child: const Text('プランを確認する'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -136,7 +237,6 @@ class _DetailBody extends StatelessWidget {
 
                 // ProviderとNavigatorを先に取得
                 final settingsProvider = context.read<SettingsProvider>();
-                final detailProvider = context.read<DetailProvider>();
                 final historyProvider = context.read<HistoryProvider>();
                 final navigator = Navigator.of(ctx);
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -175,7 +275,7 @@ class _DetailBody extends StatelessWidget {
 
                 // --- UIの更新 ---
                 // 詳細画面の表示を更新
-                await detailProvider.updateLocationName(label);
+                await provider.updateLocationName(label);
                 // 履歴画面のリストを更新
                 historyProvider.refreshHistory();
 

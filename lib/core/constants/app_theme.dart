@@ -6,12 +6,7 @@ import 'package:flutter/material.dart';
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color.fromARGB(
-      128,
-      77,
-      228,
-      77,
-    ), // ユーザー指定の鮮やかな緑 (透明度0.5を適用)
+    seedColor: const Color(0xFF98FB98), // ミントグリーン
     brightness: Brightness.light,
   ),
   appBarTheme: AppBarTheme(

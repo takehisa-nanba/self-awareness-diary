@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/diary_record.dart';
 import '../../services/isar_service.dart';
-import '../../core/utils/color_helpers.dart'; // color_helpersをインポート
+import '../../core/utils/color_helpers.dart';
+import '../../services/gemini_service.dart';
+import 'settings_provider.dart';
 
 class DetailProvider with ChangeNotifier {
   final DiaryRecord record;
-  DetailProvider(this.record);
+  final GeminiService _geminiService;
+  final SettingsProvider _settingsProvider;
+
+  DetailProvider(this.record, this._geminiService, this._settingsProvider);
 
   // --- 編集モードの管理 ---
   bool _isEditing = false;
@@ -19,6 +24,26 @@ class DetailProvider with ChangeNotifier {
   // --- 保存処理 ---
   Future<void> updateSelfAnalysis(String newText) async {
     record.selfAnalysis = newText;
+
+    // Tier 2ユーザーで、かつ自己分析が5文字以上の場合のみAI分析を実行
+    if (_settingsProvider.currentTier == SubscriptionTier.tier2 &&
+        newText.length >= 5) {
+      try {
+        final analysis = await _geminiService.analyzeStability(newText);
+        record.aiStabilityScore = analysis['score'];
+        record.aiAnalysisReason = analysis['reason'];
+      } catch (e) {
+        debugPrint("AI Analysis Error on update: $e");
+        // エラーでもUIの更新は止めない
+        record.aiStabilityScore = null;
+        record.aiAnalysisReason = "AI分析中にエラーが発生しました。";
+      }
+    } else {
+      // 条件を満たさない場合はAI分析結果をクリア
+      record.aiStabilityScore = null;
+      record.aiAnalysisReason = null;
+    }
+
     // Isarに上書き保存
     await isarService.saveRecord(record);
     _isEditing = false;
@@ -26,10 +51,8 @@ class DetailProvider with ChangeNotifier {
   }
 
   // --- 場所の登録状態判定 ---
-  // IsarServiceに問い合わせて、未登録なら true を返す
   Future<bool> isLocationUnregistered() async {
     if (record.location == null || record.location!.isEmpty) return false;
-    // サービス層に問い合わせて、結果の真偽を逆にする
     final isRegistered = await isarService.isLocationRegistered(
       record.location!,
     );
@@ -38,21 +61,15 @@ class DetailProvider with ChangeNotifier {
 
   // --- 場所の名前更新処理 ---
   Future<void> updateLocationName(String newLabel) async {
-    // 1. メモリ上のデータを更新
     record.location = newLabel;
-
-    // 2. DB（Isar）を更新（上書き保存）
     await isarService.saveRecord(record);
-
-    // 3. 画面に「データが変わったよ！」と通知して再描画
     notifyListeners();
-
     debugPrint("DetailProvider: 場所の名前を「$newLabel」に更新しました。");
   }
 
   // --- 既存の表示ロジック ---
   Color get scoreColor {
-    return getAiScoreColor(record.aiStabilityScore); // 共通関数を呼び出す
+    return getAiScoreColor(record.aiStabilityScore);
   }
 
   String get environmentInfo =>

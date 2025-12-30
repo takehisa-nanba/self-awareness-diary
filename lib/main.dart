@@ -12,18 +12,15 @@ import 'services/gemini_service.dart';
 import 'providers/write_provider.dart';
 import 'providers/history_provider.dart';
 import 'providers/app_state_provider.dart';
-import 'providers/settings_provider.dart';
-import 'ui/screens/write_screen.dart';
-import 'ui/screens/history_screen.dart';
-import 'ui/screens/analysis_screen.dart';
-import 'ui/screens/root_screen.dart';
-import 'ui/screens/settings_screen.dart';
-import 'services/location_service.dart';
-import 'services/weather_service.dart';
-import 'core/constants/app_theme.dart'; // app_theme.dartをインポート
-import 'data/repositories/isar_diary_repository.dart'; // IsarDiaryRepositoryをインポート
-import 'domain/repositories/diary_repository.dart'; // DiaryRepositoryインターフェースをインポート
-import 'providers/analysis_provider.dart'; // AnalysisProviderをインポート
+import 'package:myapp/providers/settings_provider.dart';
+import 'package:myapp/ui/screens/root_screen.dart';
+import 'package:myapp/services/location_service.dart';
+import 'package:myapp/services/weather_service.dart';
+import 'package:myapp/core/constants/app_theme.dart';
+import 'package:myapp/data/repositories/isar_diary_repository.dart';
+import 'package:myapp/domain/repositories/diary_repository.dart';
+import 'package:myapp/providers/analysis_provider.dart';
+import 'package:myapp/ui/screens/brand_splash_screen.dart';
 import 'package:myapp/services/developer_service.dart';
 
 void main() async {
@@ -94,14 +91,19 @@ void main() async {
           create: (context) =>
               MoodTagProvider(context.read<SettingsProvider>()),
         ),
-        // WriteProvider に HistoryProvider を渡す
-        ChangeNotifierProxyProvider<HistoryProvider, WriteProvider>(
+        // WriteProvider に HistoryProvider と SettingsProvider を渡す
+        ChangeNotifierProxyProvider2<
+          HistoryProvider,
+          SettingsProvider,
+          WriteProvider
+        >(
           create: (context) => WriteProvider(
             environmentCoordinator,
             geminiService,
             context.read<DiaryRepository>(),
           ),
-          update: (_, history, write) => write!..update(history),
+          update: (_, history, settings, write) =>
+              write!..updateProviders(history, settings),
         ),
         // 開発者向けサービス
         ChangeNotifierProvider(
@@ -121,23 +123,36 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '自己覚知日記',
-      theme: lightTheme, // app_theme.dartで定義したlightThemeを使用
-      // ▼▼▼ ローカライズ設定 ▼▼▼
+      theme: lightTheme,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('en', ''), Locale('ja', '')],
-      // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-      // ルーティング設定
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const RootScreen(),
-        '/write': (context) => const WriteScreen(),
-        '/history': (context) => const HistoryScreen(),
-        '/analysis': (context) => const AnalysisScreen(),
-        '/settings': (context) => const SettingsScreen(),
+      home: const InitialScreenWrapper(), // 起動画面の振り分け
+    );
+  }
+}
+
+class InitialScreenWrapper extends StatelessWidget {
+  const InitialScreenWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        // _loadSettingsが完了するのを待つため、一瞬ローディング画面を出す
+        // ただし、このアーキテクチャでは一瞬で終わるのでほぼ見えない
+        if (settings.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return settings.isFirstLaunch
+            ? const BrandSplashScreen()
+            : const RootScreen();
       },
     );
   }

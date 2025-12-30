@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/developer_service.dart';
 import '../../providers/history_provider.dart';
+import 'brand_splash_screen.dart'; // BrandSplashScreenをインポート
 
 class DeveloperModeScreen extends StatelessWidget {
   const DeveloperModeScreen({super.key});
@@ -109,6 +110,45 @@ class DeveloperModeScreen extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodySmall,
                       )
                     : const Icon(Icons.add_circle_outline),
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text('起動シーケンス', style: Theme.of(context).textTheme.titleLarge),
+            const Divider(),
+            Card(
+              elevation: 0,
+              color: Theme.of(
+                context,
+              ).colorScheme.secondaryContainer.withAlpha(80),
+              child: ListTile(
+                leading: const Icon(Icons.replay),
+                title: const Text('初回起動フラグをリセット'),
+                subtitle: const Text('次回のアプリ起動時にスプラッシュ画面を表示します。'),
+                onTap: () async {
+                  await settingsProvider.resetFirstLaunchFlag();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('初回起動フラグをリセットしました。')),
+                  );
+                },
+              ),
+            ),
+            Card(
+              elevation: 0,
+              color: Theme.of(
+                context,
+              ).colorScheme.secondaryContainer.withAlpha(80),
+              child: ListTile(
+                leading: const Icon(Icons.preview_outlined),
+                title: const Text('スプラッシュ画面をプレビュー'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BrandSplashScreen(),
+                    ),
+                  );
+                },
               ),
             ),
           ],

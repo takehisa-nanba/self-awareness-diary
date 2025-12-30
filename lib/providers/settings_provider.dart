@@ -31,6 +31,10 @@ class SettingsProvider extends ChangeNotifier {
   double? _lastLng;
   double? get lastLng => _lastLng;
 
+  // --- 初回起動判定 ---
+  bool isFirstLaunch = true;
+  // ---------------------
+
   SettingsProvider(this._isarService, DiaryRepository diaryRepository) {
     _loadSettings();
   }
@@ -40,6 +44,12 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> _loadSettings() async {
+    // isFirstLaunchの読み込み
+    final firstLaunchFlag = await _isarService.getSetting('isFirstLaunch');
+    if (firstLaunchFlag == 'false') {
+      isFirstLaunch = false;
+    }
+
     final savedStepSetting = await _isarService.getSetting('startFromStep2');
     _startFromStep2 = savedStepSetting == 'true';
 
@@ -49,6 +59,20 @@ class SettingsProvider extends ChangeNotifier {
     }
 
     _locations = await _isarService.getLocations();
+    notifyListeners();
+  }
+
+  /// 初回起動の完了をマーク
+  Future<void> completeFirstLaunch() async {
+    isFirstLaunch = false;
+    await _isarService.saveSetting('isFirstLaunch', 'false');
+    notifyListeners();
+  }
+
+  /// 初回起動フラグをリセット（開発者向け）
+  Future<void> resetFirstLaunchFlag() async {
+    isFirstLaunch = true;
+    await _isarService.saveSetting('isFirstLaunch', 'true');
     notifyListeners();
   }
 

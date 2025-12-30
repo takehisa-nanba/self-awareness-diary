@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
+import '../../domain/models/diary_record.dart'; // polishingLevelエクステンションのためにインポート
 import '../../providers/history_provider.dart';
 import '../../core/utils/color_helpers.dart'; // color_helpers.dartをインポート
 import 'record_detail_screen.dart';
@@ -179,6 +180,41 @@ class HistoryScreen extends StatelessWidget {
                                     ).colorScheme.onSurfaceVariant,
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 8),
+                              // 研磨度ステータス行
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 4.0,
+                                  top: 4.0,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      record.polishingIcon,
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: isSelfAnalysisEmpty
+                                          ? Text(
+                                              record.polishingMessage,
+                                              style: TextStyle(
+                                                fontStyle: FontStyle.italic,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
+                                            )
+                                          : Text(
+                                              '研磨度: ${record.polishingLevel}%',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               if (record.moodTags.isNotEmpty) ...[
                                 const SizedBox(height: 10),

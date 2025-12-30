@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/write_provider.dart';
+import '../../../providers/settings_provider.dart';
 
 class Step3Write extends StatelessWidget {
   const Step3Write({super.key});
@@ -10,6 +11,18 @@ class Step3Write extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<WriteProvider>();
+    final settings = context.watch<SettingsProvider>();
+
+    String message;
+    if (settings.currentTier == SubscriptionTier.tier2) {
+      message = provider.reflectionQuestion.isEmpty
+          ? "AIがあなたの言葉を待っています..."
+          : provider.reflectionQuestion;
+    } else {
+      message = provider.reflectionQuestion.isEmpty
+          ? "この出来事から、どんなことを感じましたか？\n原石を磨く時間です。"
+          : provider.reflectionQuestion;
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start, // 左寄せにして読みやすく
@@ -26,13 +39,12 @@ class Step3Write extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              provider.reflectionQuestion.isEmpty
-                  ? "今の自分を、ゆっくり眺めてみましょう。"
-                  : provider.reflectionQuestion,
+              message,
               style: TextStyle(
                 fontStyle: FontStyle.italic,
                 color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.bold,
+                height: 1.5, // 行間を少し広げる
               ),
             ),
           ),

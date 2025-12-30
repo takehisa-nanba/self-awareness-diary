@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/models/diary_record.dart';
 import 'history_provider.dart';
+import 'settings_provider.dart'; // SettingsProviderをインポート
 import '../services/environment_coordinator.dart';
 import '../services/gemini_service.dart';
-import '../../domain/repositories/diary_repository.dart'; // DiaryRepositoryをインポート
+import '../../domain/repositories/diary_repository.dart';
 
 class WriteProvider with ChangeNotifier {
   int _currentStep = 0;
   int get currentStep => _currentStep;
 
-  // 履歴スタッフ
+  // 連携するProvider
   HistoryProvider? _historyProvider;
+  SettingsProvider? _settingsProvider;
 
   final EnvironmentCoordinator _environmentCoordinator;
   final GeminiService _geminiService;
@@ -39,9 +41,10 @@ class WriteProvider with ChangeNotifier {
     this._diaryRepository,
   );
 
-  // UI更新用（履歴Providerとの連携）
-  void update(HistoryProvider history) {
+  // UI更新用（連携Providerの更新）
+  void updateProviders(HistoryProvider history, SettingsProvider settings) {
     _historyProvider = history;
+    _settingsProvider = settings;
     notifyListeners();
   }
 
@@ -115,8 +118,9 @@ class WriteProvider with ChangeNotifier {
       int? aiScore;
       String? aiReason;
 
-      // 自己分析があればAI分析を実行
-      if (selfAnalysisText.length >= 5) {
+      // Tier 2ユーザーで、かつ自己分析が5文字以上の場合のみAI分析を実行
+      if (_settingsProvider?.currentTier == SubscriptionTier.tier2 &&
+          selfAnalysisText.length >= 5) {
         try {
           final analysis = await _geminiService.analyzeStability(
             selfAnalysisText,
