@@ -1,3 +1,5 @@
+// lib/ui/screens/record_detail_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/models/diary_record.dart';
@@ -5,14 +7,20 @@ import '../../providers/detail_provider.dart';
 import '../../providers/history_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/gemini_service.dart';
-import '../../services/isar_service.dart';
+import '../../services/isar_service.dart'; // isarService にアクセスするためにインポート
 
+/// 個々の日記レコードの詳細を表示する画面ウィジェット。
+///
+/// [DiaryRecord] オブジェクトを受け取り、その詳細情報、自己分析、
+/// AI分析結果などを表示します。
 class RecordDetailScreen extends StatelessWidget {
+  /// 表示する日記レコード。
   final DiaryRecord record;
   const RecordDetailScreen({super.key, required this.record});
 
   @override
   Widget build(BuildContext context) {
+    /// [DetailProvider] を作成し、[RecordDetailScreen] のウィジェットツリーで利用可能にします。
     return ChangeNotifierProvider(
       create: (context) => DetailProvider(
         record,
@@ -27,6 +35,9 @@ class RecordDetailScreen extends StatelessWidget {
   }
 }
 
+/// 日記レコードの詳細コンテンツを構築するウィジェット。
+///
+/// 環境情報、出来事、気分タグ、自己分析、AI分析結果などを表示します。
 class _DetailBody extends StatelessWidget {
   const _DetailBody();
 
@@ -40,6 +51,7 @@ class _DetailBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          /// 位置情報が未登録の場合に「場所を登録」ボタンを表示。
           FutureBuilder<bool>(
             future: provider.isLocationUnregistered(),
             builder: (context, snapshot) {
@@ -47,6 +59,7 @@ class _DetailBody extends StatelessWidget {
               return Row(
                 children: [
                   Expanded(
+                    /// 環境情報（場所、天気、日時）を表示。
                     child: Text(
                       provider.environmentInfo,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -65,6 +78,7 @@ class _DetailBody extends StatelessWidget {
                       ),
                     )
                   else if (snapshot.connectionState == ConnectionState.waiting)
+                    /// 位置情報確認中はローディングインジケータを表示。
                     const SizedBox(
                       width: 16,
                       height: 16,
@@ -75,11 +89,12 @@ class _DetailBody extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
+          /// 「起きたこと」セクションのタイトル。
           const _SectionTitle("起きたこと"),
           const SizedBox(height: 8),
+          /// 記録された出来事のテキスト。
           Text(record.eventText, style: const TextStyle(fontSize: 18)),
-
-          // タグの表示
+          /// 記録された気分タグがあれば表示。
           if (record.moodTags.isNotEmpty) ...[
             const SizedBox(height: 16),
             Wrap(
@@ -99,20 +114,21 @@ class _DetailBody extends StatelessWidget {
           ],
 
           const SizedBox(height: 32),
-
-          // 研磨度を含むセクションタイトル
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              /// 「振り返り（セルフアナリシス）」セクションのタイトル。
               const _SectionTitle("振り返り（セルフアナリシス）"),
               Row(
                 children: [
+                  /// 自己分析の研磨度に応じたアイコン。
                   Text(
                     record.polishingIcon,
                     style: const TextStyle(fontSize: 18),
                   ),
                   const SizedBox(width: 4),
+                  /// 研磨度が表示可能であればパーセンテージを表示。
                   if (record.polishingLevel > 0)
                     Text(
                       '研磨度: ${record.polishingLevel}%',
@@ -125,6 +141,7 @@ class _DetailBody extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
+          /// 自己分析の表示または編集UI。
           if (provider.isEditing)
             _AnalysisEditor(provider: provider)
           else
@@ -132,9 +149,10 @@ class _DetailBody extends StatelessWidget {
 
           const SizedBox(height: 32),
 
+          /// 「AI分析結果」セクションのタイトル。
           const _SectionTitle("AI分析結果"),
           const SizedBox(height: 12),
-          // AI分析カードの条件付き表示
+          /// ユーザーの購読ティアに応じてAI分析カードまたはアップグレードのプレースホルダーを表示。
           Consumer<SettingsProvider>(
             builder: (context, settings, _) {
               if (settings.currentTier == SubscriptionTier.tier2) {
@@ -149,8 +167,7 @@ class _DetailBody extends StatelessWidget {
     );
   }
 
-  // --- 以降のメソッドは変更なし ---
-
+  /// AI分析機能が利用できない場合に表示されるアップグレード促進用のプレースホルダー。
   Widget _buildUpgradePlaceholder(BuildContext context) {
     return Card(
       elevation: 0,
@@ -183,18 +200,18 @@ class _DetailBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            FilledButton.tonal(
-              onPressed: () {
-                // TODO: 課金画面への遷移を実装
-              },
-              child: const Text('プランを確認する'),
-            ),
+            /// プラン確認ボタン（実際の機能は未実装）。
+            FilledButton.tonal(onPressed: () {}, child: const Text('プランを確認する')),
           ],
         ),
       ),
     );
   }
 
+  /// 場所を登録するためのダイアログを表示します。
+  ///
+  /// 現在のレコードの位置情報を使用して新しい場所を登録し、
+  /// 必要に応じて過去の類似記録を一括更新するオプションを提供します。
   void _showLocationDialog(BuildContext context, DetailProvider provider) {
     final controller = TextEditingController();
     bool updatePast = false;
@@ -235,7 +252,6 @@ class _DetailBody extends StatelessWidget {
                 final label = controller.text;
                 if (label.isEmpty) return;
 
-                // ProviderとNavigatorを先に取得
                 final settingsProvider = context.read<SettingsProvider>();
                 final historyProvider = context.read<HistoryProvider>();
                 final navigator = Navigator.of(ctx);
@@ -245,7 +261,6 @@ class _DetailBody extends StatelessWidget {
                 final lng = provider.record.longitude;
                 bool doUpdatePast = updatePast;
 
-                // 過去の記録を更新する場合、確認ダイアログを表示
                 if (doUpdatePast && lat != null && lng != null) {
                   final nearbyRecords = await isarService.findNearbyRecords(
                     lat,
@@ -257,14 +272,12 @@ class _DetailBody extends StatelessWidget {
                       nearbyRecords.length,
                       label,
                     );
-                    // 確認ダイアログでNoが押されたら更新しない
                     if (confirmed == false) {
                       doUpdatePast = false;
                     }
                   }
                 }
 
-                // --- ロジックの実行 ---
                 await settingsProvider.addNewLocationAndUpdateRecords(
                   label: label,
                   address: provider.record.location!,
@@ -273,13 +286,10 @@ class _DetailBody extends StatelessWidget {
                   updatePast: doUpdatePast,
                 );
 
-                // --- UIの更新 ---
-                // 詳細画面の表示を更新
                 await provider.updateLocationName(label);
-                // 履歴画面のリストを更新
                 historyProvider.refreshHistory();
 
-                navigator.pop(); // ダイアログを閉じる
+                navigator.pop();
                 scaffoldMessenger.showSnackBar(
                   SnackBar(content: Text('「$label」を登録しました')),
                 );
@@ -292,6 +302,7 @@ class _DetailBody extends StatelessWidget {
     );
   }
 
+  /// 過去の記録を一括更新する際の確認ダイアログを表示します。
   Future<bool?> _showConfirmDialog(
     BuildContext context,
     int count,
@@ -317,6 +328,9 @@ class _DetailBody extends StatelessWidget {
   }
 }
 
+/// 自己分析のテキストを表示するウィジェット。
+///
+/// タップすることで編集モードに切り替わります。
 class _AnalysisDisplay extends StatelessWidget {
   final DetailProvider provider;
   const _AnalysisDisplay({required this.provider});
@@ -351,6 +365,7 @@ class _AnalysisDisplay extends StatelessWidget {
   }
 }
 
+/// 自己分析のテキストを編集するためのウィジェット。
 class _AnalysisEditor extends StatefulWidget {
   final DetailProvider provider;
   const _AnalysisEditor({required this.provider});
@@ -359,6 +374,7 @@ class _AnalysisEditor extends StatefulWidget {
   State<_AnalysisEditor> createState() => _AnalysisEditorState();
 }
 
+/// [_AnalysisEditor] の状態を管理するクラス。
 class _AnalysisEditorState extends State<_AnalysisEditor> {
   late TextEditingController _controller;
 
@@ -383,10 +399,12 @@ class _AnalysisEditorState extends State<_AnalysisEditor> {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
+            /// 編集をキャンセルするボタン。
             TextButton(
               onPressed: () => widget.provider.toggleEdit(),
               child: const Text("キャンセル"),
             ),
+            /// 自己分析の内容を更新するボタン。
             ElevatedButton(
               onPressed: () async {
                 final historyProvider = context.read<HistoryProvider>();
@@ -403,6 +421,7 @@ class _AnalysisEditorState extends State<_AnalysisEditor> {
   }
 }
 
+/// 各セクションのタイトルを表示するための再利用可能なウィジェット。
 class _SectionTitle extends StatelessWidget {
   final String title;
   const _SectionTitle(this.title);
@@ -418,6 +437,7 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+/// AIによる分析結果（感情の安定度と分析理由）を表示するカードウィジェット。
 class _AIAnalysisCard extends StatelessWidget {
   final DetailProvider provider;
   const _AIAnalysisCard({required this.provider});
@@ -444,6 +464,7 @@ class _AIAnalysisCard extends StatelessWidget {
                 "感情の安定度",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
+              /// AIによる感情の安定度スコア。
               Text(
                 provider.hasAnalysis ? "${record.aiStabilityScore}%" : "--%",
                 style: TextStyle(
@@ -455,6 +476,7 @@ class _AIAnalysisCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          /// AIによる分析理由のテキスト。
           Text(
             record.aiAnalysisReason ?? "分析データはありません",
             style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),

@@ -1,3 +1,5 @@
+// lib/ui/screens/write_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/write_provider.dart';
@@ -8,6 +10,10 @@ import 'write_steps/step1_write.dart';
 import 'write_steps/step2_write.dart';
 import 'write_steps/step3_write.dart';
 
+/// 日記の記録プロセス全体を管理する画面ウィジェット。
+///
+/// ユーザーが気分、出来事、自己分析を入力するための複数のステップを提供し、
+/// 位置情報や気象情報の自動取得、AIによる補助機能を統合します。
 class WriteScreen extends StatefulWidget {
   const WriteScreen({super.key});
 
@@ -15,6 +21,10 @@ class WriteScreen extends StatefulWidget {
   State<WriteScreen> createState() => _WriteScreenState();
 }
 
+/// [WriteScreen] の状態を管理するクラス。
+///
+/// スクロールコントローラー、テキスト入力コントローラー、
+/// ステップごとの入力検証および画面遷移ロジックを扱います。
 class _WriteScreenState extends State<WriteScreen> {
   late ScrollController _scrollController;
   final TextEditingController _eventTextController = TextEditingController();
@@ -24,6 +34,7 @@ class _WriteScreenState extends State<WriteScreen> {
     super.initState();
     _scrollController = ScrollController();
     debugPrint("WriteScreenが表示されました。環境データ取得を開始します。");
+    // ウィジェットが完全にビルドされた後に環境データの取得を開始
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<WriteProvider>().fetchEnvironmentData();
@@ -43,11 +54,23 @@ class _WriteScreenState extends State<WriteScreen> {
     final writeProvider = context.watch<WriteProvider>();
     final settingsProvider = context.read<SettingsProvider>();
 
-    // --- ステップ判定 ---
-    final currentStepIndex = writeProvider.currentStep;
-    final isMoodTagsStep = currentStepIndex == 0; // Step 0がイベントテキスト入力
+    // ステップに応じてタイトルを決定
+    String currentTitle;
+    switch (writeProvider.currentStep) {
+      case 0:
+        currentTitle = '感情を掘り起こす🔨（複数選択可）';
+        break;
+      case 1:
+        currentTitle = '気分を評価し、出来事を採掘する🔨';
+        break;
+      case 2:
+        currentTitle = '原石を磨き、言葉にする💎';
+        break;
+      default:
+        currentTitle = '記録';
+    }
 
-    // _eventTextControllerの初期値をwriteProviderから設定
+    // writeProviderから_eventTextControllerの初期値を設定
     _eventTextController.text = writeProvider.eventText;
     // カーソル位置を末尾に移動（テキスト変更時に先頭に戻るのを防ぐ）
     _eventTextController.selection = TextSelection.fromPosition(
@@ -56,35 +79,28 @@ class _WriteScreenState extends State<WriteScreen> {
 
     return Column(
       children: [
+        /// 現在のステップを示す線形プログレスインジケータ。
         LinearProgressIndicator(value: (writeProvider.currentStep + 1) / 3),
+        /// 現在の位置情報と気象情報を表示するステータスバー。
         const LocationStatusBar(),
-        const SizedBox(height: 20),
-        // 常時表示される「なぜその気分？」（イベントテキスト）フィールド
-        if (isMoodTagsStep) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '今の気分は？（複数選択可）',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+          /// 現在のステップに応じたタイトル。
+          child: Text(
+            currentTitle,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-        ],
+        ),
         Expanded(
+          /// スクロール可能なコンテンツ領域。
           child: Scrollbar(
             controller: _scrollController,
-            thumbVisibility: true, // スクロールバーを常に表示
-            thickness: 6.0, // スクロールバーの太さ
-            radius: const Radius.circular(3.0), // スクロールバーの角の丸み
+            thumbVisibility: true,
+            thickness: 6.0,
+            radius: const Radius.circular(3.0),
             child: SingleChildScrollView(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              // _buildStepのコンテンツをここに入れる
               child: _buildStep(writeProvider.currentStep),
             ),
           ),
@@ -94,6 +110,7 @@ class _WriteScreenState extends State<WriteScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              /// 前のステップに戻るボタン。
               if (writeProvider.currentStep > 0)
                 TextButton(
                   onPressed: writeProvider.previousStep,
@@ -104,7 +121,7 @@ class _WriteScreenState extends State<WriteScreen> {
                 )
               else
                 const SizedBox.shrink(),
-
+              /// 次のステップへ進む、または記録を保存するボタン。
               SizedBox(
                 width: 108,
                 height: 54,
@@ -122,8 +139,7 @@ class _WriteScreenState extends State<WriteScreen> {
                           );
 
                           // --- バリデーションロジック ---
-                          if (isMoodTagsStep) {
-                            // Step 0: ムードタグ選択
+                          if (writeProvider.currentStep == 0) {
                             if (writeProvider.selectedTags.isEmpty) {
                               scaffoldMessenger.showSnackBar(
                                 const SnackBar(
@@ -132,12 +148,7 @@ class _WriteScreenState extends State<WriteScreen> {
                               );
                               return;
                             }
-                          } else if (currentStepIndex == 1) {
-                            // Step 1: ムードスコアと出来事入力
-                            // Validation for eventText moved to Step2Write, but currentStepIndex==1 refers to Step2Write
-                            // So, the eventText validation should happen when currentStepIndex == 1 (Step2Write)
-                            // and the _eventTextController is managed in Step2Write.
-                            // However, eventText is managed in writeProvider.eventText, so the validation remains here.
+                          } else if (writeProvider.currentStep == 1) {
                             if (writeProvider.eventText.trim().isEmpty) {
                               scaffoldMessenger.showSnackBar(
                                 const SnackBar(
@@ -150,7 +161,7 @@ class _WriteScreenState extends State<WriteScreen> {
 
                           // バリデーション通過後
                           if (writeProvider.currentStep < 2) {
-                            // Step 2 (Self-analysis & AI) に進む前にAI質問生成
+                            // 会員の場合、ステップ1の後にAIによる内省質問を準備
                             if (writeProvider.currentStep == 1 &&
                                 settingsProvider.currentTier !=
                                     SubscriptionTier.free) {
@@ -162,20 +173,20 @@ class _WriteScreenState extends State<WriteScreen> {
                               debugPrint("非会員のためAI質問生成をスキップします");
                               writeProvider.reflectionQuestion = "";
                             }
-                            writeProvider.nextStep();
+                            writeProvider.nextStep(); // 次のステップへ
                           } else {
-                            // 最後のステップなら保存
+                            // 最終ステップなら保存
                             await writeProvider.save();
                             if (!context.mounted) return;
                             scaffoldMessenger.showSnackBar(
                               const SnackBar(content: Text('記録を保存しました')),
                             );
-                            // 保存後、履歴画面に遷移
                             context.read<AppStateProvider>().setTab(
                               AppTab.history,
-                            );
+                            ); // 履歴タブへ移動
                           }
                         },
+                  /// 保存中またはAI生成中はインジケータを表示、それ以外は「保存」または「次へ」を表示。
                   child: (writeProvider.isSaving || writeProvider.isGenerating)
                       ? const SizedBox(
                           width: 24,
@@ -198,17 +209,19 @@ class _WriteScreenState extends State<WriteScreen> {
     );
   }
 
-  // 設定に応じて表示するウィジェットを切り替える
+  /// 現在のステップ番号に応じて、表示するステップウィジェットを切り替えます。
+  ///
+  /// [step] 現在のステップ番号 (0, 1, 2)。
   Widget _buildStep(int step) {
     switch (step) {
       case 0:
-        return const Step1Write(); // Step 0がムードタグ
-      case 1:
-        return const Step2Write(); // Step 1がムードスコアと出来事入力
-      case 2:
-        return const Step3Write(); // Step 2が自己分析とAI
-      default:
         return const Step1Write();
+      case 1:
+        return const Step2Write();
+      case 2:
+        return const Step3Write();
+      default:
+        return const Step1Write(); // 未定義の場合はステップ1を表示
     }
   }
 }

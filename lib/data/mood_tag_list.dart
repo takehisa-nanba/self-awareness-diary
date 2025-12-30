@@ -2,10 +2,14 @@
 
 import 'package:flutter/material.dart';
 import '../domain/models/mood_tag.dart';
-import '../providers/settings_provider.dart'; // SubscriptionTierを使用
+import '../providers/settings_provider.dart'; // SubscriptionTier の定義のため
 
+/// アプリケーションで利用可能なすべての気分タグの定義済みリスト。
+///
+/// 各 [MoodTag] は、ラベル、アイコン、色、および関連するサブスクリプションティア
+/// ([SubscriptionTier.free], [SubscriptionTier.tier1], [SubscriptionTier.tier2]) を持ちます。
 const List<MoodTag> allMoodTags = [
-  // --- Freeプラン (15個) ---
+  // --- 無料プラン (15個) ---
   MoodTag(
     label: 'うれしい',
     icon: Icons.sentiment_very_satisfied,
@@ -51,7 +55,7 @@ const List<MoodTag> allMoodTags = [
   MoodTag(
     label: 'だるい',
     icon: Icons.sick,
-    color: Color(0xFF90A4AE),
+    color: Color(0xFF90A4AE), // 独自のカラー定義
     tier: SubscriptionTier.free,
   ),
   MoodTag(
@@ -97,7 +101,7 @@ const List<MoodTag> allMoodTags = [
     tier: SubscriptionTier.free,
   ),
 
-  // --- Tier 1追加分 (15個) ---
+  // --- Tier 1 追加分 (15個) ---
   MoodTag(
     label: '誇らしい',
     icon: Icons.emoji_events,
@@ -189,7 +193,7 @@ const List<MoodTag> allMoodTags = [
     tier: SubscriptionTier.tier1,
   ),
 
-  // --- Tier 2追加分 (20個) ---
+  // --- Tier 2 追加分 (20個) ---
   MoodTag(
     label: '最高！',
     icon: Icons.emoji_emotions,

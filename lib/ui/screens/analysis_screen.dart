@@ -1,14 +1,20 @@
+// lib/ui/screens/analysis_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
-import 'dart:math';
+import 'package:fl_chart/fl_chart.dart'; // グラフ描画ライブラリ
+import 'package:intl/intl.dart'; // 日付フォーマットのため
+import 'dart:math'; // max関数を使うため
 import '../../domain/models/analysis_report.dart';
 import '../../providers/analysis_provider.dart';
-import '../../providers/history_provider.dart';
+import '../../providers/history_provider.dart'; // カレンダーイベント読み込みのため
 import '../../providers/settings_provider.dart';
-import '../widgets/custom_date_range_picker_dialog.dart';
+import '../widgets/custom_date_range_picker_dialog.dart'; // カスタム日付範囲ピッカー
 
+/// 日記データの分析結果を表示する画面ウィジェット。
+///
+/// ユーザーは日付範囲を選択し、その期間の気分推移グラフ、気分分布グラフ、
+/// およびAIによる洞察（Tier 2ユーザーのみ）を視覚的に確認できます。
 class AnalysisScreen extends StatelessWidget {
   const AnalysisScreen({super.key});
 
@@ -19,8 +25,13 @@ class AnalysisScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          /// 分析対象の日付範囲を選択するセレクター。
           _buildDateRangeSelector(context),
           const SizedBox(height: 24),
+          /// [AnalysisProvider] の状態に基づいて、分析結果を表示。
+          ///
+          /// データが読み込み中の場合、データがない場合、
+          /// または分析結果がある場合にそれぞれのUIを表示します。
           Consumer<AnalysisProvider>(
             builder: (context, provider, child) {
               if (provider.isLoading) {
@@ -32,7 +43,7 @@ class AnalysisScreen extends StatelessWidget {
 
               final report = provider.report;
               if (report == null ||
-                  (report.isSingleDay
+                  (report.isSingleDay // 単日表示の場合は時間別スコアを確認
                       ? report.hourlyMoodScores.isEmpty
                       : report.dailyMoodScores.isEmpty)) {
                 return const SizedBox(
@@ -43,8 +54,10 @@ class AnalysisScreen extends StatelessWidget {
 
               return Column(
                 children: [
+                  /// 「ムード推移」セクションのタイトル。
                   _buildSectionTitle(context, 'ムード推移'),
                   const SizedBox(height: 16),
+                  /// 気分推移グラフ（単日か複数日かで表示を切り替え）。
                   SizedBox(
                     height: 300,
                     child: report.isSingleDay
@@ -52,6 +65,7 @@ class AnalysisScreen extends StatelessWidget {
                         : _buildMoodTrendChart(context, report),
                   ),
                   const SizedBox(height: 8),
+                  /// 平均スコアの表示。
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(
@@ -61,14 +75,17 @@ class AnalysisScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 40),
 
+                  /// 「ムードの分布」セクションのタイトル。
                   _buildSectionTitle(context, 'ムードの分布'),
                   const SizedBox(height: 16),
+                  /// 気分タグの分布を示す棒グラフ。
                   SizedBox(
                     height: 250,
                     child: _buildMoodDistributionChart(context, report),
                   ),
 
                   const SizedBox(height: 40),
+                  /// AIによる洞察の表示（Tier 2ユーザーのみ利用可能）。
                   Consumer<SettingsProvider>(
                     builder: (context, settings, child) {
                       if (settings.currentTier != SubscriptionTier.tier2) {
@@ -95,6 +112,7 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
+  /// AI分析機能が利用できない場合に表示されるアップグレード促進用のプレースホルダー。
   Widget _buildUpgradePlaceholder(BuildContext context) {
     return Card(
       elevation: 0,
@@ -127,6 +145,7 @@ class AnalysisScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+            /// プラン確認ボタン（TODO: 課金画面への遷移を実装）。
             FilledButton.tonal(
               onPressed: () {
                 // TODO: 課金画面への遷移を実装
@@ -139,6 +158,10 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
+  /// AIによる洞察を表示するウィジェット。
+  ///
+  /// AIが洞察を生成中の場合はローディング表示を行い、
+  /// 洞察がない場合はメッセージを表示します。
   Widget _buildAiInsights(BuildContext context, AnalysisProvider provider) {
     if (provider.isAiLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -149,7 +172,7 @@ class AnalysisScreen extends StatelessWidget {
 
     return ListView.separated(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(), // ListView自体のスクロールを無効化
       itemCount: provider.aiInsights.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
@@ -188,10 +211,14 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
+  /// 各分析セクションのタイトルを表示するための再利用可能なウィジェット。
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(title, style: Theme.of(context).textTheme.titleLarge);
   }
 
+  /// ユーザーが分析対象の日付範囲を選択するためのウィジェット。
+  ///
+  /// タップするとカスタム日付範囲ピッカーダイアログが表示されます。
   Widget _buildDateRangeSelector(BuildContext context) {
     final provider = context.watch<AnalysisProvider>();
     final dateFormat = DateFormat('yyyy/MM/dd', 'ja_JP');
@@ -238,6 +265,11 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
+  /// 折れ線グラフのタッチ（ツールチップ）データ設定を返します。
+  ///
+  /// [context] ビルドコンテキスト。
+  /// [report] 分析レポート。
+  /// [isHourly] 時間ごとのグラフかどうか。
   LineTouchData _getLineTouchData(
     BuildContext context,
     AnalysisReport report,
@@ -297,6 +329,7 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
+  /// 日ごとの気分推移を示す折れ線グラフを構築します。
   Widget _buildMoodTrendChart(BuildContext context, AnalysisReport report) {
     debugPrint('--- Trend Chart Build Start ---');
     debugPrint(
@@ -309,8 +342,8 @@ class AnalysisScreen extends StatelessWidget {
     }).toList();
 
     final durationDays = report.dateRange.duration.inDays;
-    final bottomLabelInterval = durationDays > 7 ? 7 : 1;
-    final maxX = durationDays.toDouble() + 0.1;
+    final bottomLabelInterval = durationDays > 7 ? 7 : 1; // 7日を超える場合は7日ごとにラベル表示
+    final maxX = durationDays.toDouble() + 0.1; // グラフのmaxXを調整
 
     debugPrint('Duration Days: $durationDays, MaxX: $maxX');
     debugPrint('Daily Mood Scores Map: ${report.dailyMoodScores}');
@@ -325,15 +358,15 @@ class AnalysisScreen extends StatelessWidget {
         lineBarsData: [
           LineChartBarData(
             spots: spots,
-            isCurved: true,
+            isCurved: true, // 線を滑らかに
             curveSmoothness: 0.35,
             color: Theme.of(context).primaryColor,
             barWidth: 3,
             isStrokeCapRound: true,
-            dotData: const FlDotData(show: false),
+            dotData: const FlDotData(show: false), // ドットを非表示
             belowBarData: BarAreaData(
               show: true,
-              color: Theme.of(context).primaryColor.withAlpha(50),
+              color: Theme.of(context).primaryColor.withAlpha(50), // グラフ下の塗りつぶし
             ),
           ),
         ],
@@ -357,7 +390,7 @@ class AnalysisScreen extends StatelessWidget {
                 }
                 return const Text('');
               },
-              reservedSize: 24,
+              reservedSize: 24, // ラベルの予約サイズ
             ),
           ),
           leftTitles: AxisTitles(
@@ -372,20 +405,20 @@ class AnalysisScreen extends StatelessWidget {
                 }
                 return const Text('');
               },
-              reservedSize: 28,
+              reservedSize: 28, // ラベルの予約サイズ
             ),
           ),
           topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
+            sideTitles: SideTitles(showTitles: false), // 上部タイトルを非表示
           ),
           rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
+            sideTitles: SideTitles(showTitles: false), // 右側タイトルを非表示
           ),
         ),
-        borderData: FlBorderData(show: false),
+        borderData: FlBorderData(show: false), // グラフの枠線を非表示
         gridData: FlGridData(
           show: true,
-          drawVerticalLine: false,
+          drawVerticalLine: false, // 縦線を非表示
           horizontalInterval: 2,
           getDrawingHorizontalLine: (value) => FlLine(
             color: Theme.of(context).dividerColor.withAlpha(128),
@@ -393,13 +426,14 @@ class AnalysisScreen extends StatelessWidget {
           ),
         ),
         minX: 0,
-        maxX: durationDays.toDouble() + 0.1,
+        maxX: durationDays.toDouble() + 0.1, // 表示範囲の調整
         minY: 0,
-        maxY: 10,
+        maxY: 10, // スコアは0-10
       ),
     );
   }
 
+  /// 単一日の時間ごとの気分推移を示す折れ線グラフを構築します。
   Widget _buildHourlyMoodTrendChart(
     BuildContext context,
     AnalysisReport report,
@@ -476,13 +510,14 @@ class AnalysisScreen extends StatelessWidget {
           ),
         ),
         minX: 0,
-        maxX: 23,
+        maxX: 23, // 0時から23時
         minY: 0,
         maxY: 10,
       ),
     );
   }
 
+  /// 気分タグの分布を示す棒グラフを構築します。
   Widget _buildMoodDistributionChart(
     BuildContext context,
     AnalysisReport report,
@@ -490,13 +525,13 @@ class AnalysisScreen extends StatelessWidget {
     final distribution = report.moodTagDistribution;
     final primaryColor = Theme.of(context).primaryColor;
 
-    final topItems = distribution.entries.take(5).toList();
+    final topItems = distribution.entries.take(5).toList(); // トップ5のタグを表示
     if (topItems.isEmpty) return const Center(child: Text('データがありません'));
 
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: max(5, (topItems.first.value * 1.2).toDouble()),
+        maxY: max(5, (topItems.first.value * 1.2).toDouble()), // Y軸の最大値を調整
         barTouchData: BarTouchData(
           touchTooltipData: BarTouchTooltipData(
             getTooltipColor: (spot) =>
@@ -550,7 +585,7 @@ class AnalysisScreen extends StatelessWidget {
           ),
         ),
         borderData: FlBorderData(show: false),
-        gridData: const FlGridData(show: false),
+        gridData: const FlGridData(show: false), // グリッド線を非表示
         barGroups: topItems.asMap().entries.map((entry) {
           final index = entry.key;
           final value = entry.value.value;
@@ -560,9 +595,9 @@ class AnalysisScreen extends StatelessWidget {
               BarChartRodData(
                 toY: value.toDouble(),
                 color: primaryColor.withAlpha(
-                  (255 * (0.6 + (index * 0.08))).toInt(),
+                  (255 * (0.6 + (index * 0.08))).toInt(), // タグごとに色を微妙に変化
                 ),
-                width: 16,
+                width: 16, // 棒の幅
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(4),
                   topRight: Radius.circular(4),

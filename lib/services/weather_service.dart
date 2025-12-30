@@ -1,18 +1,28 @@
 // lib/services/weather_service.dart
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart'; // debugPrintに必要です
+import 'package:flutter/foundation.dart';
 
+/// OpenWeatherMap API を利用して天気情報を取得するサービス。
+///
+/// 指定された緯度経度に基づき、現在の天気とその説明、気温を返します。
 class WeatherService {
+  /// OpenWeatherMap API にアクセスするためのAPIキー。
   final String apiKey;
 
+  /// [WeatherService] のコンストラクタ。APIキーを受け取ります。
   WeatherService(this.apiKey);
 
+  /// 指定された緯度と経度から天気情報を非同期で取得します。
+  ///
+  /// 成功した場合は「天気の説明 (気温°C)」形式の文字列を返し、
+  /// 失敗した場合は `null` を返します。
+  /// [lat] 緯度。
+  /// [lon] 経度。
   Future<String?> getWeather(double lat, double lon) async {
     try {
-      // ★ ここが「堂々とした」報告です
       debugPrint("天気スタッフ：座標($lat, $lon)の天気を問い合わせます...");
-
       debugPrint("天気スタッフ：OpenWeatherMap API に接続中...");
       final url = Uri.parse(
         'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=ja',
@@ -40,4 +50,6 @@ class WeatherService {
   }
 }
 
+/// グローバルにアクセス可能な [WeatherService] のインスタンス。
+/// 初期化時に設定されることを想定しています。
 late WeatherService weatherService;

@@ -1,6 +1,7 @@
+// lib/ui/screens/root_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import 'package:provider/provider.dart';
 import '../../providers/app_state_provider.dart';
 import '../../providers/write_provider.dart';
@@ -10,6 +11,10 @@ import 'history_screen.dart';
 import 'analysis_screen.dart';
 import 'settings_screen.dart';
 
+/// アプリケーションのメイン画面であり、ナビゲーションのルートとなるウィジェット。
+///
+/// タブ切り替えによる画面表示、アプリのライフサイクル管理、
+/// およびアプリ終了時の確認ダイアログの表示などを担当します。
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
 
@@ -17,12 +22,13 @@ class RootScreen extends StatefulWidget {
   State<RootScreen> createState() => _RootScreenState();
 }
 
-// 1. WidgetsBindingObserver をミックスインに追加
+/// [RootScreen] の状態を管理するクラス。
+///
+/// [WidgetsBindingObserver] を利用してアプリのライフサイクルイベント（再開時など）を監視し、
+/// 環境データの更新などを行います。
 class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
-  // ポップ（終了）が許可されるかどうかを制御するステート変数。
-  // バックボタンが押された際に確認ダイアログを表示するために、デフォルトでfalseに設定します。
-  // ダイアログ操作後またはキャンセル後にtrue/falseに設定され、ポップの挙動を制御します。
-  bool _canPop = false; // 修正: 初期値をfalseに設定
+  /// アプリのポップ（終了）が許可されるかどうかの制御フラグ。
+  bool _canPop = false;
 
   @override
   void initState() {
@@ -38,12 +44,14 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // アプリの状態変化を検知するメソッド
+  /// アプリケーションのライフサイクル状態が変更されたときに呼び出されます。
+  ///
+  /// アプリがフォアグラウンドに復帰した際に、最新の環境データを再取得します。
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      debugPrint("【生体反応検知】アプリが再開されました。店長、データを更新してください。");
-      // ここで最新の場所と天気を取得し直す
+      debugPrint("【生体反応検知】アプリが再開されました。環境データを更新します。");
+      // 最新の場所と天気を取得し直す
       context.read<WriteProvider>().fetchEnvironmentData();
     }
   }
@@ -54,75 +62,63 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
     final currentTab = appState.currentTab;
 
     return PopScope(
-      canPop: _canPop, // バックナビゲーションが許可されるかを制御します。ステートによって管理されます。
+      canPop: _canPop,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
-        // onPopInvokedWithResultはポップが試行された後に呼び出されます。
-        // canPopがfalseなので、didPopは常にfalseになります。
-        // つまり、このコールバックは常にポップがブロックされた時に呼び出されます。
+        if (didPop) return; // 既にポップされた場合は何もしない
 
-        // ここがダイアログを表示するトリガーです。
+        // 終了確認ダイアログを表示
         final confirmExit = await showDialog<bool>(
-          context: context, // buildメソッドのcontextを使用
+          context: context,
           builder: (BuildContext dialogContext) => AlertDialog(
             title: const Text('終了しますか？'),
             content: const Text('アプリを終了します。よろしいですか？'),
             actions: <Widget>[
               TextButton(
-                onPressed: () =>
-                    Navigator.of(dialogContext).pop(false), // キャンセル
+                onPressed: () => Navigator.of(dialogContext).pop(false),
                 child: const Text('いいえ'),
               ),
               TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true), // 確認
+                onPressed: () => Navigator.of(dialogContext).pop(true),
                 child: const Text('はい'),
               ),
             ],
           ),
         );
 
-        if (confirmExit == true) {
-          if (!context.mounted) return; // 非同期ギャップを越えたBuildContextの使用をガード
+        if (confirmExit == true && context.mounted) {
           // ユーザーが終了を確認
-          // 次回起動時のデフォルトタブを設定
           final appState = Provider.of<AppStateProvider>(
             context,
             listen: false,
           );
-          if (!context.mounted) return; // 非同期ギャップを越えたBuildContextの使用をガード
-          appState.setTab(AppTab.write);
+          appState.setTab(AppTab.write); // アプリ終了前に状態をリセット
 
-          // 終了を完了させるために一時的にポップを有効化します。
+          // アプリを終了
           setState(() {
-            _canPop = true; // ポップを許可
+            _canPop = true;
           });
-          // ブロックされていたポップをプログラム的にトリガーします。
-          if (context.mounted) {
-            SystemNavigator.pop();
-          }
+          SystemNavigator.pop();
         } else {
-          if (!context.mounted) return; // 非同期ギャップを越えたBuildContextの使用をガード
           // ユーザーが終了をキャンセル
-          // ポップをブロックした状態を維持します。
-          // _canPopは既にfalseなので、変更は不要ですが、setStateを呼び出してUIが最新の状態であることを保証します。
           setState(() {
-            _canPop = false; // ポップを許可しない状態を維持
+            _canPop = false;
           });
         }
       },
       child: Scaffold(
-        // 元のScaffoldをラップ
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: AppShell(
           title: _getTitle(currentTab),
           child: _getScreen(currentTab),
         ),
-        // 「記録」ページ以外の時にFABを表示
+        /// 現在のタブが「記録」の場合はFABを非表示にする。
         floatingActionButton: currentTab == AppTab.write
             ? null
             : FloatingActionButton(
                 onPressed: () => appState.setTab(AppTab.write),
                 child: const Icon(Icons.add),
               ),
+        /// 現在のタブが「記録」の場合はナビゲーションバーを非表示にする。
         bottomNavigationBar: currentTab == AppTab.write
             ? null
             : NavigationBar(
@@ -151,7 +147,7 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
     );
   }
 
-  // 選択されたタブのインデックスを取得
+  /// 現在選択されているタブ [AppTab] に対応する [NavigationBar] のインデックスを返します。
   int _getSelectedIndex(AppTab tab) {
     switch (tab) {
       case AppTab.history:
@@ -161,11 +157,11 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
       case AppTab.settings:
         return 2;
       default:
-        return 0;
+        return 0; // デフォルトは履歴タブ
     }
   }
 
-  // 現在のタブに対応する画面ウィジェットを取得
+  /// 現在選択されているタブ [AppTab] に対応する画面ウィジェットを返します。
   Widget _getScreen(AppTab tab) {
     switch (tab) {
       case AppTab.write:
@@ -179,7 +175,7 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
     }
   }
 
-  // 現在のタブに対応するタイトルを取得
+  /// 現在選択されているタブ [AppTab] に対応する画面タイトル文字列を返します。
   String _getTitle(AppTab tab) {
     switch (tab) {
       case AppTab.write:

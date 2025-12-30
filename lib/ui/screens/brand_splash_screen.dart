@@ -1,9 +1,13 @@
+// C:\Users\ramp1\Desktop\self-awareness-diary\lib\ui\screens\brand_splash_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import 'root_screen.dart';
 
+/// ブランドスプラッシュスクリーンを表示するステートフルウィジェット。
+/// アプリ起動時にアニメーションと共にキャッチコピーとアプリ名を表示します。
 class BrandSplashScreen extends StatefulWidget {
   const BrandSplashScreen({super.key});
 
@@ -11,6 +15,8 @@ class BrandSplashScreen extends StatefulWidget {
   State<BrandSplashScreen> createState() => _BrandSplashScreenState();
 }
 
+/// [BrandSplashScreen] の状態を管理するクラス。
+/// テキストアニメーション、自動画面遷移などのロジックを実装します。
 class _BrandSplashScreenState extends State<BrandSplashScreen> {
   final List<String> _lines = [
     'あなたらしさは、あなたの中に。🪨',
@@ -35,6 +41,7 @@ class _BrandSplashScreenState extends State<BrandSplashScreen> {
     super.dispose();
   }
 
+  /// テキストを一行ずつ、一文字ずつ表示するアニメーションを開始します。
   void _startAnimation() {
     _timer = Timer.periodic(const Duration(milliseconds: 120), (timer) {
       if (!mounted) {
@@ -43,6 +50,7 @@ class _BrandSplashScreenState extends State<BrandSplashScreen> {
       }
       setState(() {
         if (_currentLine < 2) {
+          // キャッチコピー1と2
           final runes = _lines[_currentLine].runes.toList();
           if (_currentChar < runes.length) {
             _displayedLines[_currentLine] += String.fromCharCode(
@@ -50,6 +58,7 @@ class _BrandSplashScreenState extends State<BrandSplashScreen> {
             );
             _currentChar++;
           } else {
+            // 次の行へ（タメを入れる）
             _timer?.cancel();
             Timer(const Duration(milliseconds: 500), () {
               if (mounted) {
@@ -60,14 +69,18 @@ class _BrandSplashScreenState extends State<BrandSplashScreen> {
             });
           }
         } else {
+          // アプリ名（最後に表示）
           _displayedLines[2] = _lines[2];
           _timer?.cancel();
+          // すべて表示後、1.5秒待ってから自動遷移
           Timer(const Duration(milliseconds: 1500), _navigateToHome);
         }
       });
     });
   }
 
+  /// [RootScreen] へ画面遷移を実行します。
+  /// 多重遷移を防ぐためのフラグ管理も行います。
   void _navigateToHome() {
     if (_isNavigating || !mounted) return;
     _isNavigating = true;
@@ -90,10 +103,10 @@ class _BrandSplashScreenState extends State<BrandSplashScreen> {
                   opacity: opacity,
                   child: Transform(
                     transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
+                      ..setEntry(3, 2, 0.001) // パース
                       ..rotateY(angle),
                     alignment: Alignment.centerLeft,
-                    child: const _SplashScreenContent(),
+                    child: const _SplashScreenContent(), // 静的コンテンツを使用
                   ),
                 ),
             ],
@@ -105,12 +118,12 @@ class _BrandSplashScreenState extends State<BrandSplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const textColor = Color(0xFF2E7D32);
+    const textColor = Color(0xFF2E7D32); // 深い緑
 
     return GestureDetector(
       onTap: _navigateToHome,
       child: Scaffold(
-        backgroundColor: const Color(0xFF98FB98),
+        backgroundColor: const Color(0xFF98FB98), // ミントグリーン
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -145,6 +158,7 @@ class _BrandSplashScreenState extends State<BrandSplashScreen> {
   }
 }
 
+/// テキストの変更を検知してフェードインアニメーションを適用するウィジェット。
 class _AnimatedText extends StatelessWidget {
   final String text;
   final TextStyle style;
@@ -155,13 +169,21 @@ class _AnimatedText extends StatelessWidget {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 120),
       transitionBuilder: (child, animation) {
-        return FadeTransition(opacity: animation, child: child);
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
       },
-      child: Text(text, key: ValueKey<String>(text), style: style),
+      child: Text(
+        text,
+        key: ValueKey<String>(text),
+        style: style,
+      ),
     );
   }
 }
 
+/// 画面遷移アニメーション中に表示するための静的なスプラッシュスクリーンコンテンツ。
 class _SplashScreenContent extends StatelessWidget {
   const _SplashScreenContent();
 

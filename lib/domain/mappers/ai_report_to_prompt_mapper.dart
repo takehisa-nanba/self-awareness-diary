@@ -1,8 +1,21 @@
+// lib/domain/mappers/ai_report_to_prompt_mapper.dart
+
 import 'package:intl/intl.dart';
 import '../models/analysis_report.dart';
-import '../models/diary_record.dart'; // DiaryRecordも必要なのでインポート
+import '../models/diary_record.dart';
 
+/// [AnalysisReport] オブジェクトを Gemini AI のプロンプトとして使用できる形式の
+/// 文字列に変換する役割を持つユーティリティクラス。
+///
+/// AI が日記の傾向やユーザーの感情を理解し、洞察を生成するための
+/// 要約されたデータを提供します。
 class AiReportToPromptMapper {
+  /// [AnalysisReport] オブジェクトを受け取り、その内容を要約したプロンプト文字列を生成します。
+  ///
+  /// 生成されるプロンプトには、分析期間、平均気分スコア、気分タグの分布、
+  /// 時間別/日別の気分スコア、そして最高・最低スコアの日に関する情報が含まれます。
+  /// [report] プロンプト生成の基となる [AnalysisReport] オブジェクト。
+  /// 戻り値: AI プロンプトとして適した形式の文字列。
   static String toPrompt(AnalysisReport report) {
     final dateFormat = DateFormat('yyyy/MM/dd');
     final summary = StringBuffer();
@@ -40,11 +53,12 @@ class AiReportToPromptMapper {
     // 最高・最低スコアの日の情報を追加
     final allRecords = report.records;
     if (allRecords.isNotEmpty) {
-      // ソートはAnalysisReportの外で行うべきではない（AnalysisReportが持っているべきデータはrecordsのみ）
-      // しかし、ここではAIプロンプト生成のために一時的に使用するため許容する。
-      // 理想的には、AnalysisReportに最高/最低スコアのレコードを取得するgetterを設けるべき。
+      // ソートはAnalysisReportの外で行うべきではない
+      // しかし、ここではAIプロンプト生成のために一時的に使用するため許容する
+      // 理想的には、AnalysisReportに最高/最低スコアのレコードを取得するgetterを設けるべき
       List<DiaryRecord> sortedRecords = List.from(allRecords);
-      sortedRecords.sort((a, b) => a.moodScore.compareTo(b.moodScore));
+      sortedRecords.sort((a, b) => a.moodScore.compareTo(b.moodScore)); // スコアでソート
+
       final lowestScoreRecord = sortedRecords.first;
       final highestScoreRecord = sortedRecords.last;
 

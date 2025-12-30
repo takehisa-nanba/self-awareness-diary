@@ -1,15 +1,25 @@
+// lib/ui/screens/history_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../../domain/models/diary_record.dart'; // polishingLevelエクステンションのためにインポート
+import '../../domain/models/diary_record.dart';
 import '../../providers/history_provider.dart';
-import '../../core/utils/color_helpers.dart'; // color_helpers.dartをインポート
+import '../../core/utils/color_helpers.dart'; // getMoodColor 関数を使用
 import 'record_detail_screen.dart';
 
+/// 過去の日記記録をカレンダー形式とリスト形式で表示する画面ウィジェット。
+///
+/// `table_calendar` を利用してカレンダー機能を提供し、
+/// 選択された日付の日記記録を一覧表示します。
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
-  // 年月ピッカーを表示するメソッド
+  /// 年月ピッカーダイアログを表示し、ユーザーが特定の日付へ素早く移動できるようにします。
+  ///
+  /// [context] ビルドコンテキスト。
+  /// [focusedDay] 現在フォーカスされている日付。
+  /// [provider] [HistoryProvider] のインスタンス。
   Future<void> _showYearMonthPicker(
     BuildContext context,
     DateTime focusedDay,
@@ -18,12 +28,13 @@ class HistoryScreen extends StatelessWidget {
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: focusedDay,
-      firstDate: DateTime(2024),
-      lastDate: DateTime(2030),
-      initialDatePickerMode: DatePickerMode.year, // 初期表示を年選択にする
+      firstDate: DateTime(2024), // 選択可能な最初の日付
+      lastDate: DateTime(2030), // 選択可能な最後の日付
+      initialDatePickerMode: DatePickerMode.year, // 最初は年選択モードで表示
     );
 
     if (pickedDate != null) {
+      // 選択された日付に基づいてカレンダーを更新
       provider.onDaySelected(pickedDate, pickedDate);
     }
   }
@@ -34,56 +45,61 @@ class HistoryScreen extends StatelessWidget {
 
     return Column(
       children: [
+        /// 日記記録を表示するカレンダーウィジェット。
         TableCalendar(
-          locale: Localizations.localeOf(context).toString(),
-          firstDay: DateTime.utc(2024, 1, 1),
-          lastDay: DateTime.utc(2030, 12, 31),
-          focusedDay: provider.focusedDay,
-          selectedDayPredicate: (day) => isSameDay(provider.selectedDay, day),
-          onDaySelected: provider.onDaySelected,
-          // ▼▼▼ 以下、まるっと変更 ▼▼▼
+          locale: Localizations.localeOf(context).toString(), // 現在のロケールを使用
+          firstDay: DateTime.utc(2024, 1, 1), // カレンダーの最初の表示可能日
+          lastDay: DateTime.utc(2030, 12, 31), // カレンダーの最後の表示可能日
+          focusedDay: provider.focusedDay, // 現在フォーカスされている日
+          selectedDayPredicate: (day) => isSameDay(provider.selectedDay, day), // 日が選択されているかどうかの判定
+          onDaySelected: provider.onDaySelected, // 日が選択されたときのコールバック
           eventLoader: (day) =>
-              provider.getEventsForDay(day).isNotEmpty ? [true] : [],
-          calendarFormat: provider.calendarFormat,
-          onFormatChanged: (format) => provider.setCalendarFormat(format),
+              provider.getEventsForDay(day).isNotEmpty ? [true] : [], // イベントのローダー
+          calendarFormat: provider.calendarFormat, // カレンダーの表示形式（月/週）
+          onFormatChanged: (format) => provider.setCalendarFormat(format), // 表示形式が変更されたときのコールバック
           onHeaderTapped: (date) =>
-              _showYearMonthPicker(context, date, provider),
-          daysOfWeekHeight: 30.0, // 曜日の高さを調整
+              _showYearMonthPicker(context, date, provider), // ヘッダーがタップされたときのコールバック（年月ピッカー表示）
+          daysOfWeekHeight: 30.0, // 曜日の表示高さ
           calendarStyle: CalendarStyle(
+            /// 今日の日付のデコレーション。
             todayDecoration: BoxDecoration(
               color: Theme.of(
                 context,
               ).colorScheme.primary.withAlpha((255 * 0.5).round()),
               shape: BoxShape.circle,
             ),
+            /// 選択された日付のデコレーション。
             selectedDecoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
               shape: BoxShape.circle,
             ),
+            /// 選択された日付のテキストスタイル。
             selectedTextStyle: TextStyle(
               color: Theme.of(context).colorScheme.onPrimary,
               fontSize: 16.0,
             ),
-            // ドットマーカーの設定
+            /// イベントがある日のマーカーデコレーション。
             markerDecoration: BoxDecoration(
               color: Theme.of(context).colorScheme.secondary,
               shape: BoxShape.circle,
             ),
           ),
+          /// 利用可能なカレンダー表示形式。
           availableCalendarFormats: const {
             CalendarFormat.month: '月',
             CalendarFormat.week: '週',
           },
+          /// カレンダーヘッダーのスタイル設定。
           headerStyle: const HeaderStyle(
-            formatButtonVisible: true, // フォーマットボタンを表示
-            titleCentered: true,
+            formatButtonVisible: true, // 形式変更ボタンの表示
+            titleCentered: true, // タイトルの中央寄せ
           ),
-          // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
         ),
         const Divider(),
+        /// 選択された日の日記記録をリスト表示。
         Expanded(
           child: provider.selectedDayRecords.isEmpty
-              ? const Center(child: Text('この日の記録はありません。'))
+              ? const Center(child: Text('この日の記録はありません。')) // 記録がない場合のメッセージ
               : ListView.builder(
                   padding: const EdgeInsets.all(8.0),
                   itemCount: provider.selectedDayRecords.length,
@@ -116,6 +132,7 @@ class HistoryScreen extends StatelessWidget {
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
+                        /// カードをタップすると詳細画面へ遷移。
                         onTap: () {
                           Navigator.push(
                             context,
@@ -132,11 +149,12 @@ class HistoryScreen extends StatelessWidget {
                             children: [
                               Row(
                                 children: [
+                                  /// 気分スコアの円形アバター。
                                   CircleAvatar(
                                     radius: 24,
                                     backgroundColor: getMoodColor(
                                       record.moodScore,
-                                    ), // グローバルな関数を使用
+                                    ),
                                     child: Text(
                                       '${record.moodScore}',
                                       style: const TextStyle(
@@ -152,6 +170,7 @@ class HistoryScreen extends StatelessWidget {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
+                                        /// 出来事のテキスト。
                                         Text(
                                           record.eventText,
                                           style: Theme.of(context)
@@ -164,6 +183,7 @@ class HistoryScreen extends StatelessWidget {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),
+                                        /// 時刻と天気情報。
                                         Text(
                                           "${record.timeString} / ${record.weather ?? '天気情報なし'}",
                                           style: Theme.of(
@@ -173,6 +193,7 @@ class HistoryScreen extends StatelessWidget {
                                       ],
                                     ),
                                   ),
+                                  /// 詳細画面への誘導アイコン。
                                   Icon(
                                     Icons.chevron_right,
                                     color: Theme.of(
@@ -182,7 +203,6 @@ class HistoryScreen extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              // 研磨度ステータス行
                               Padding(
                                 padding: const EdgeInsets.only(
                                   left: 4.0,
@@ -190,12 +210,14 @@ class HistoryScreen extends StatelessWidget {
                                 ),
                                 child: Row(
                                   children: [
+                                    /// 自己分析の研磨度アイコン。
                                     Text(
                                       record.polishingIcon,
                                       style: const TextStyle(fontSize: 16),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
+                                      /// 自己分析の研磨度メッセージまたはパーセンテージ。
                                       child: isSelfAnalysisEmpty
                                           ? Text(
                                               record.polishingMessage,
@@ -216,6 +238,7 @@ class HistoryScreen extends StatelessWidget {
                                   ],
                                 ),
                               ),
+                              /// 記録された気分タグがあれば表示。
                               if (record.moodTags.isNotEmpty) ...[
                                 const SizedBox(height: 10),
                                 Wrap(

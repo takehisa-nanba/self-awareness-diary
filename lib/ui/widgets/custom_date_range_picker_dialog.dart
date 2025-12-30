@@ -1,9 +1,17 @@
+// lib/ui/widgets/custom_date_range_picker_dialog.dart
+
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../domain/models/diary_record.dart';
 
+/// ユーザーが日付範囲を選択するためのカスタムダイアログウィジェット。
+///
+/// `table_calendar` パッケージを使用して、カレンダー形式で日付選択機能を提供します。
 class CustomDateRangePickerDialog extends StatefulWidget {
+  /// ダイアログ表示時に初期選択される日付範囲。
   final DateTimeRange initialDateRange;
+
+  /// カレンダーにイベントとして表示する日記レコードのリスト。
   final List<DiaryRecord> events;
 
   const CustomDateRangePickerDialog({
@@ -17,6 +25,9 @@ class CustomDateRangePickerDialog extends StatefulWidget {
       _CustomDateRangePickerDialogState();
 }
 
+/// [CustomDateRangePickerDialog] の状態を管理するクラス。
+///
+/// カレンダーの表示状態、選択された日付範囲、イベントの読み込みなどを制御します。
 class _CustomDateRangePickerDialogState
     extends State<CustomDateRangePickerDialog> {
   late DateTime _focusedDay;
@@ -27,14 +38,17 @@ class _CustomDateRangePickerDialogState
   @override
   void initState() {
     super.initState();
-    // タイムゾーンをローカルに統一
+    // 初期日付範囲をローカルタイムに変換して設定
     _focusedDay = widget.initialDateRange.start.toLocal();
     _rangeStart = widget.initialDateRange.start.toLocal();
     _rangeEnd = widget.initialDateRange.end.toLocal();
   }
 
+  /// 特定の日に対応するイベント（日記レコード）のリストを返します。
+  ///
+  /// [day] イベントを取得する対象の日。
   List<DiaryRecord> _getEventsForDay(DateTime day) {
-    // isSameDayはUTC/Localを考慮しないため、ここで日付を比較する
+    // isSameDayはUTC/Localを考慮しないため、ここで日付を比較
     return widget.events.where((event) {
       final localEventDate = event.recordDate.toLocal();
       return localEventDate.year == day.year &&

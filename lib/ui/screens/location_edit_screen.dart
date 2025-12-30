@@ -5,7 +5,11 @@ import 'package:provider/provider.dart';
 import '../../domain/models/location_setting.dart';
 import '../../providers/settings_provider.dart';
 
+/// 登録された場所の詳細を編集および削除するための画面ウィジェット。
+///
+/// ユーザーは場所のラベルを変更したり、場所の登録自体を削除したりできます。
 class LocationEditScreen extends StatefulWidget {
+  /// 編集対象となる [LocationSetting] オブジェクト。
   final LocationSetting location;
 
   const LocationEditScreen({super.key, required this.location});
@@ -14,6 +18,9 @@ class LocationEditScreen extends StatefulWidget {
   State<LocationEditScreen> createState() => _LocationEditScreenState();
 }
 
+/// [LocationEditScreen] の状態を管理するクラス。
+///
+/// 場所のラベル入力用のテキストコントローラーを管理します。
 class _LocationEditScreenState extends State<LocationEditScreen> {
   late final TextEditingController _labelController;
 
@@ -29,8 +36,11 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
     super.dispose();
   }
 
+  /// 現在表示している場所の登録を削除します。
+  ///
+  /// ユーザーに削除の確認ダイアログを表示し、承認された場合に削除を実行します。
   Future<void> _deleteLocation() async {
-    // contextを非同期ギャップを越えて使用しないように、先に取得しておく
+    // 非同期処理の前にcontextを取得
     final navigator = Navigator.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
@@ -55,13 +65,13 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
       ),
     );
 
-    if (!mounted) return;
+    if (!mounted) return; // ダイアログが閉じられた後にウィジェットが破棄されている可能性を考慮
 
     if (confirmed == true) {
       await context.read<SettingsProvider>().deleteLocation(widget.location.id);
       if (!mounted) return;
 
-      navigator.pop();
+      navigator.pop(); // 画面を閉じる
       scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('場所を削除しました。')),
       );
@@ -74,6 +84,7 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
       appBar: AppBar(
         title: const Text('場所の編集'),
         actions: [
+          /// 場所を削除するためのアイコンボタン。
           IconButton(
             icon: Icon(
               Icons.delete_outline,
@@ -88,6 +99,7 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            /// 場所のラベルを編集するためのテキストフィールド。
             TextField(
               controller: _labelController,
               decoration: const InputDecoration(
@@ -96,6 +108,7 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            /// 場所の住所を表示するテキストフィールド（読み取り専用）。
             TextField(
               readOnly: true,
               controller: TextEditingController(text: widget.location.address),
@@ -105,16 +118,16 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
                 fillColor: Theme.of(context).colorScheme.surfaceContainer,
                 filled: true,
               ),
-              maxLines: null,
+              maxLines: null, // 住所が長い場合に複数行で表示
             ),
             const SizedBox(height: 32),
+            /// 変更を保存するためのボタン。
             ElevatedButton.icon(
               icon: const Icon(Icons.save),
               label: const Text('保存'),
               onPressed: () async {
                 final newLabel = _labelController.text;
                 if (newLabel.isNotEmpty) {
-                  // contextを非同期ギャップを越えて使用しないように、先に取得しておく
                   final settingsProvider = context.read<SettingsProvider>();
                   final navigator = Navigator.of(context);
                   final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -125,7 +138,7 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
                   );
                   if (!mounted) return;
 
-                  navigator.pop();
+                  navigator.pop(); // 画面を閉じる
                   scaffoldMessenger.showSnackBar(
                     const SnackBar(content: Text('場所のラベルを更新しました。')),
                   );

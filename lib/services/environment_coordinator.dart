@@ -1,16 +1,28 @@
+// lib/services/environment_coordinator.dart
+
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/foundation.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart'; // Isar サービスが準備完了か確認するため
 import 'location_service.dart';
 import 'weather_service.dart';
 import 'isar_service.dart';
 
-// 返却用のデータ構造
+/// 現在の場所、天気、緯度、経度を含む環境データのデータ構造。
+///
+/// このクラスは、取得した環境情報をカプセル化し、他の部分に渡すために使用されます。
 class EnvironmentData {
+  /// 現在の場所の表示名（例：「自宅」「東京タワー」）。
   final String location;
+
+  /// 現在の天気情報（例：「晴れ (25.0°C)」）。
   final String? weather;
+
+  /// 現在地の緯度。
   final double? latitude;
+
+  /// 現在地の経度。
   final double? longitude;
+
   EnvironmentData({
     required this.location,
     this.weather,
@@ -19,71 +31,81 @@ class EnvironmentData {
   });
 }
 
-// lib/services/environment_coordinator.dart
-
+/// デバイスの現在の環境情報（位置情報、天気）を取得、キャッシュ、および調整するサービス。
+///
+/// 登録済みの場所との照合を行い、よりユーザーフレンドリーな場所情報を提供します。
 class EnvironmentCoordinator {
-  final LocationService _locationStaff;
-  final WeatherService _weatherStaff;
-  final IsarService _isarStaff;
+  final LocationService _locationService;
+  final WeatherService _weatherService;
+  final IsarService _isarService;
 
-  // --- キャッシュ機能の追加 ---
+  // キャッシュ機能
+  /// 環境データのキャッシュ。一定時間内は再利用されます。
   EnvironmentData? _cachedData;
-  DateTime? _lastFetchTime;
-  static const int _refreshThresholdMinutes = 20;
-  // --------------------------
 
+  /// 最後にデータを取得した日時。
+  DateTime? _lastFetchTime;
+
+  /// キャッシュを更新するまでのしきい値時間（分）。
+  static const int _refreshThresholdMinutes = 20;
+
+  /// [EnvironmentCoordinator] のコンストラクタ。
+  ///
+  /// 依存する位置情報サービス、天気サービス、Isarサービスを受け取ります。
   EnvironmentCoordinator(
-    this._locationStaff,
-    this._weatherStaff,
-    this._isarStaff,
+    this._locationService,
+    this._weatherService,
+    this._isarService,
   );
 
+  /// 現在の環境情報（場所、天気）を非同期で取得します。
+  ///
+  /// 既存のキャッシュが有効な場合はキャッシュされたデータを返し、
+  /// そうでない場合は、デバイスの位置情報、天気情報、および登録地点との照合を行います。
   Future<EnvironmentData> fetchFullData() async {
-    // --- キャッシュチェックロジック ---
+    // キャッシュの鮮度をチェック
     if (_cachedData != null && _lastFetchTime != null) {
       final diff = DateTime.now().difference(_lastFetchTime!);
       if (diff.inMinutes < _refreshThresholdMinutes) {
-        debugPrint("店長：キャッシュが有効です。以前の情報を利用します。");
+        debugPrint("EnvironmentCoordinator: キャッシュが有効なため、以前の情報を返します。");
         return _cachedData!;
       }
-      debugPrint("店長：キャッシュが古いため（${diff.inMinutes}分経過）、情報を再取得します。");
+      debugPrint(
+        "EnvironmentCoordinator: キャッシュが古いため（${diff.inMinutes}分経過）、情報を再取得します。",
+      );
     }
-    // ---------------------------------
 
     try {
-      // ★ 店長による点呼：DBスタッフが準備できるまで待機
+      // Isarが準備できるまで待機
       int retry = 0;
       while (Isar.instanceNames.isEmpty && retry < 30) {
-        debugPrint("店長：スタッフの準備を待っています... (${retry + 1})");
-        await Future.delayed(const Duration(milliseconds: 200)); // 0.2秒ずつ確認
+        debugPrint("EnvironmentCoordinator: Isarの準備を待っています... (${retry + 1})");
+        await Future.delayed(const Duration(milliseconds: 200));
         retry++;
       }
+      debugPrint("EnvironmentCoordinator: サービスの準備が完了しました。業務を開始します。");
 
-      debugPrint("店長：全員揃ったな。業務を開始する！");
-
-      // ここから初めて位置情報の取得（スタッフへの指示）を開始
-      debugPrint("店長：位置情報スタッフ、現在の座標を教えてくれ！");
-      final pos = await _locationStaff.getCurrentPosition();
+      // 位置情報の取得
+      final pos = await _locationService.getCurrentPosition();
       if (pos == null) {
         return EnvironmentData(location: "位置情報取得失敗");
       }
-      debugPrint("店長：現在の座標は (${pos.latitude}, ${pos.longitude}) だな。");
+      debugPrint(
+        "EnvironmentCoordinator: 現在の座標を取得しました (${pos.latitude}, ${pos.longitude})。",
+      );
 
-      await Future.delayed(const Duration(seconds: 3)); // 少し待機してから次の業務へ
+      await Future.delayed(const Duration(seconds: 3)); // 天気情報の取得前に少し待機
 
-      // 3. 【修正】確定した座標を使って、天気スタッフに問い合わせる
-      debugPrint("店長：天気スタッフ、現在の天気を教えてくれ！");
-      final weather = await _weatherStaff.getWeather(
+      // 天気情報の取得
+      final weather = await _weatherService.getWeather(
         pos.latitude,
         pos.longitude,
       );
-
       final displayWeather = weather ?? "取得失敗（オフライン）";
-      debugPrint("店長：天気は「$displayWeather」だな。");
+      debugPrint("EnvironmentCoordinator: 天気を取得しました「$displayWeather」。");
 
-      // 4. 登録地点（Isar）との照合
-      debugPrint("店長：DBスタッフ、登録地点を確認してくれ！");
-      final savedLocations = await _isarStaff.getLocations();
+      // 登録地点との照合
+      final savedLocations = await _isarService.getLocations();
       for (var loc in savedLocations) {
         if (loc.latitude != null && loc.longitude != null) {
           double distance = Geolocator.distanceBetween(
@@ -92,22 +114,23 @@ class EnvironmentCoordinator {
             loc.latitude!,
             loc.longitude!,
           );
-          debugPrint("店長：登録地点「${loc.label}」までの距離は $distance m だな。");
+          debugPrint(
+            "EnvironmentCoordinator: 登録地点「${loc.label}」までの距離は $distance mです。",
+          );
 
           if (distance <= 30.0) {
-            debugPrint("【節約】登録地点と一致: ${loc.label}");
+            debugPrint("EnvironmentCoordinator: 登録地点と一致しました: ${loc.label}");
             final data = EnvironmentData(location: loc.label, weather: weather);
-            _cachedData = data; // キャッシュを更新
-            _lastFetchTime = DateTime.now(); // 取得時刻を更新
+            _cachedData = data;
+            _lastFetchTime = DateTime.now();
             return data;
           }
         }
       }
-      debugPrint("店長：登録地点には一致しなかったな。");
+      debugPrint("EnvironmentCoordinator: 登録地点には一致しませんでした。");
 
-      // 5. 登録地点になければ住所を取得（Google API）
-      debugPrint("店長：位置情報スタッフ、住所を教えてくれ！");
-      final address = await _locationStaff.getAddressFromLatLng(
+      // 住所の取得
+      final address = await _locationService.getAddressFromLatLng(
         pos.latitude,
         pos.longitude,
       );
@@ -118,14 +141,16 @@ class EnvironmentCoordinator {
         latitude: pos.latitude,
         longitude: pos.longitude,
       );
-      _cachedData = data; // キャッシュを更新
-      _lastFetchTime = DateTime.now(); // 取得時刻を更新
+      _cachedData = data;
+      _lastFetchTime = DateTime.now();
       return data;
     } catch (e) {
-      debugPrint("店長業務エラー: $e");
-      return EnvironmentData(location: "識別エラー");
+      debugPrint("EnvironmentCoordinator: 業務エラー: $e");
+      return EnvironmentData(location: "識別エラー"); // エラー発生時は汎用エラーを返す
     }
   }
 }
 
+/// グローバルにアクセス可能な [EnvironmentCoordinator] のインスタンス。
+/// アプリケーションの初期化時に設定されることを想定しています。
 late EnvironmentCoordinator environmentCoordinator;

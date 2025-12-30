@@ -6,6 +6,9 @@ import '../../providers/settings_provider.dart';
 import 'developer_mode_screen.dart';
 import 'location_edit_screen.dart';
 
+/// アプリケーション全体の設定を管理する画面ウィジェット。
+///
+/// 一般設定、よく訪れる場所の登録と管理、開発者モードへのアクセス機能を提供します。
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -13,10 +16,14 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
+/// [SettingsScreen] の状態を管理するクラス。
+///
+/// 入力フィールドのコントローラー、バージョンタップカウント、
+/// および場所登録・編集に関するロジックを扱います。
 class _SettingsScreenState extends State<SettingsScreen> {
   final _labelController = TextEditingController();
   final _addressController = TextEditingController();
-  int _versionTapCount = 0;
+  int _versionTapCount = 0; // 開発者モードを有効にするためのタップカウント
 
   @override
   Widget build(BuildContext context) {
@@ -27,11 +34,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          /// 「一般設定」セクションのタイトル。
           const Text(
             '一般設定',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
+          /// 「出来事から書き始める」設定のスイッチ。
+          ///
+          /// オンにすると、日記作成画面が気分選択ではなく出来事入力から始まります。
           Card(
             elevation: 0,
             color: Theme.of(
@@ -50,10 +61,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 32),
 
+          /// 「よく行く場所の登録」セクションのタイトル。
           const Text(
             'よく行く場所の登録',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
+          /// 場所登録に関する補足説明。
           Text(
             '登録した住所が自動的にラベル（自宅など）に変換されます。',
             style: TextStyle(
@@ -63,6 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
 
+          /// 場所登録フォーム。
           Card(
             elevation: 0,
             color: Theme.of(
@@ -72,6 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  /// ラベル入力フィールド（例：自宅、職場）。
                   TextField(
                     controller: _labelController,
                     decoration: const InputDecoration(
@@ -83,6 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
+                      /// 住所入力フィールド。
                       Expanded(
                         child: TextField(
                           controller: _addressController,
@@ -93,6 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      /// 現在地を住所として自動入力するボタン。
                       IconButton.filledTonal(
                         onPressed: provider.isLoading
                             ? null
@@ -118,6 +135,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  /// 場所を登録するボタン。
+                  ///
+                  /// ラベルと住所が入力されている場合のみ有効化され、
+                  /// 過去の日記に関連する場所が見つかれば、更新の確認ダイアログが表示されます。
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -132,7 +153,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           return;
                         }
 
-                        // contextを非同期ギャップを越えて使用しないように、先に取得しておく
                         final scaffoldMessenger = ScaffoldMessenger.of(context);
                         final navigator = Navigator.of(context);
                         final label = _labelController.text;
@@ -205,12 +225,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           const SizedBox(height: 32),
+          /// 登録済み場所一覧のタイトル。
           const Text(
             '登録済み一覧',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const Divider(),
 
+          /// 登録された場所がない場合に表示されるメッセージ。
           provider.locations.isEmpty
               ? Padding(
                   padding: const EdgeInsets.symmetric(vertical: 32),
@@ -223,6 +245,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 )
+              /// 登録された場所をリスト表示。
+              ///
+              /// 各項目をタップすると、その場所の編集画面へ遷移します。
               : ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -253,13 +278,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 32),
           const Divider(),
+          /// バージョン情報と開発者モード有効化のための GestureDetector。
+          ///
+          /// バージョン表示部分を7回タップすると開発者モード画面へ遷移します。
           GestureDetector(
             onTap: () {
               setState(() {
                 _versionTapCount++;
               });
               if (_versionTapCount >= 7) {
-                _versionTapCount = 0;
+                _versionTapCount = 0; // カウントをリセット
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const DeveloperModeScreen(),
@@ -273,7 +301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               trailing: Text(
-                '1.0.0-dev', // Replace with actual version later if needed
+                '1.0.0-dev', // 必要に応じて実際のバージョンに置き換える
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),

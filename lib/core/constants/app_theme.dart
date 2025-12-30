@@ -2,32 +2,24 @@
 
 import 'package:flutter/material.dart';
 
-// アプリのライトテーマを定義
+/// アプリケーションのライトテーマを定義します。
+///
+/// Material 3 のデザインシステムを使用し、カスタムの [ColorScheme] と [AppBarTheme] を設定します。
 final ThemeData lightTheme = ThemeData(
-  useMaterial3: true,
+  useMaterial3: true, // Material 3 のデザインを有効化
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF98FB98), // ミントグリーン
-    brightness: Brightness.light,
+    seedColor: const Color(0xFF98FB98), // ミントグリーンをシードカラーとして使用
+    brightness: Brightness.light, // ライトテーマ
   ),
   appBarTheme: AppBarTheme(
-    centerTitle: true,
-    elevation: 0,
-    backgroundColor: Colors.transparent, // AppBarの背景を透明にする
-    foregroundColor: Colors.black87, // AppBarのアイコンやアクションボタンの色
+    centerTitle: true, // アプリバーのタイトルを中央に配置
+    elevation: 0, // アプリバーの影をなくす
+    backgroundColor: Colors.transparent, // 背景色を透明に
+    foregroundColor: Colors.black87, // 前景色（アイコンやテキストの色）
     titleTextStyle: TextStyle(
-      // タイトルテキストのスタイルを定義
-      color: ThemeData.light().colorScheme.onSurface, // テーマの文字色を使用
+      color: ThemeData.light().colorScheme.onSurface,
       fontSize: 18,
       fontWeight: FontWeight.bold,
     ),
   ),
 );
-
-// ダークテーマが必要な場合はここに追加
-// final ThemeData darkTheme = ThemeData(
-//   useMaterial3: true,
-//   colorScheme: ColorScheme.fromSeed(
-//     seedColor: const Color(0xFFA8D6B7),
-//     brightness: Brightness.dark,
-//   ),
-// );

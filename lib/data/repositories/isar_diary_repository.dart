@@ -1,11 +1,18 @@
+// lib/data/repositories/isar_diary_repository.dart
+
 import 'package:isar/isar.dart';
 import '../../domain/models/diary_record.dart';
-import '../../domain/repositories/diary_repository.dart';
-import '../../services/isar_service.dart';
+import '../../domain/repositories/diary_repository.dart'; // 抽象クラスのインポート
+import '../../services/isar_service.dart'; // IsarService のインポート
 
+/// Isar データベースを使用して日記データを永続化する [DiaryRepository] インターフェースの実装。
+///
+/// データベースとの具体的なやり取りをカプセル化し、ドメイン層からデータベースの詳細を隠蔽します。
 class IsarDiaryRepository implements DiaryRepository {
+  /// Isar データベースサービスへの参照。
   final IsarService _isarService;
 
+  /// [IsarDiaryRepository] のコンストラクタ。
   IsarDiaryRepository(this._isarService);
 
   @override
@@ -33,7 +40,7 @@ class IsarDiaryRepository implements DiaryRepository {
     DateTime startDate,
     DateTime endDate,
   ) {
-    // startDateをその日の始まりに、endDateをその日の終わりに設定する
+    // startDateをその日の始まりに、endDateをその日の終わりに設定
     final startOfRange = DateTime(
       startDate.year,
       startDate.month,
@@ -51,8 +58,8 @@ class IsarDiaryRepository implements DiaryRepository {
 
     return _isarService.isar.diaryRecords
         .filter()
-        .recordDateBetween(startOfRange, endOfRange) // 開始日と終了日を両方とも含める
-        .sortByRecordDateDesc()
+        .recordDateBetween(startOfRange, endOfRange)
+        .sortByRecordDateDesc() // 記録日時の降順でソート
         .findAll();
   }
 }

@@ -1,54 +1,95 @@
-import 'package:flutter/material.dart';
+// lib/providers/write_provider.dart
+
+import 'package:flutter/material.dart'; // ChangeNotifierのために必要
 import 'package:uuid/uuid.dart';
 import '../../domain/models/diary_record.dart';
 import 'history_provider.dart';
-import 'settings_provider.dart'; // SettingsProviderをインポート
+import 'settings_provider.dart';
 import '../services/environment_coordinator.dart';
 import '../services/gemini_service.dart';
 import '../../domain/repositories/diary_repository.dart';
 
+/// 日記作成プロセス全体の状態を管理するプロバイダークラス。
+///
+/// ユーザーの入力データ、ステップの進行状況、環境データの取得、
+/// AIとの連携（深掘り質問生成、心の安定度分析）、および日記の保存を担当します。
 class WriteProvider with ChangeNotifier {
+  /// 現在の日記作成ステップ (0:タグ選択, 1:気分/出来事入力, 2:自己分析)。
   int _currentStep = 0;
   int get currentStep => _currentStep;
 
   // 連携するProvider
+  /// 履歴プロバイダーへの参照。日記保存後に履歴を更新するために使用。
   HistoryProvider? _historyProvider;
+
+  /// 設定プロバイダーへの参照。サブスクリプションティアの確認などに使用。
   SettingsProvider? _settingsProvider;
 
+  /// 環境データ（位置情報、天気）を調整するためのコーディネーターサービス。
   final EnvironmentCoordinator _environmentCoordinator;
+
+  /// Gemini AIサービス。深掘り質問の生成や心の安定度分析に使用。
   final GeminiService _geminiService;
+
+  /// 日記レコードを保存するためのリポジトリ。
   final DiaryRepository _diaryRepository;
 
   // 入力データ
+  /// ユーザーが選択した気分のスコア。
   int moodScore = 5;
+
+  /// ユーザーが選択した気分タグのリスト。
   List<String> selectedTags = [];
+
+  /// ユーザーが入力した出来事のテキスト。
   String eventText = "";
+
+  /// ユーザーが入力した自己分析のテキスト。
   String selfAnalysisText = "";
+
+  /// AIによって生成された深掘り質問。
   String reflectionQuestion = "";
 
   // 位置・天気データ
+  /// 一時的に格納される現在の場所情報。
   String? tempLocation;
+
+  /// 一時的に格納される現在の天気情報。
   String? tempWeather;
+
+  /// 一時的に格納される現在の緯度。
   double? tempLat;
+
+  /// 一時的に格納される現在の経度。
   double? tempLng;
 
+  /// AIが深掘り質問を生成中かどうかを示すフラグ。
   bool isGenerating = false;
+
+  /// 日記を保存中かどうかを示すフラグ。
   bool isSaving = false;
 
+  /// [WriteProvider] のコンストラクタ。
+  ///
+  /// 依存する環境コーディネーター、Geminiサービス、日記リポジトリを受け取ります。
   WriteProvider(
     this._environmentCoordinator,
     this._geminiService,
     this._diaryRepository,
   );
 
-  // UI更新用（連携Providerの更新）
+  /// 連携する他のプロバイダー ([HistoryProvider], [SettingsProvider]) を登録します。
+  ///
+  /// 主に [MultiProvider] の `builder` 関数から呼び出されます。
   void updateProviders(HistoryProvider history, SettingsProvider settings) {
     _historyProvider = history;
     _settingsProvider = settings;
     notifyListeners();
   }
 
-  // 環境データの取得（店長への依頼）
+  /// 環境コーディネーターを通じて、最新の位置情報と天気データを取得します。
+  ///
+  /// データ取得中はローディング表示を行い、完了後にUIを更新します。
   Future<void> fetchEnvironmentData() async {
     // UIに「取得中」と表示するのは、まだデータが何もない初回のみ
     if (tempLocation == null) {
@@ -56,7 +97,7 @@ class WriteProvider with ChangeNotifier {
       notifyListeners();
     }
 
-    // 常に店長（Coordinator）に問い合わせる。キャッシュ管理は店長の責任。
+    // Coordinatorに問い合わせる。キャッシュ管理はCoordinatorの責任。
     try {
       final data = await _environmentCoordinator.fetchFullData();
 
@@ -73,7 +114,7 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
-  // ステップ制御
+  /// 日記作成の次のステップへ進みます。
   void nextStep() {
     if (_currentStep < 2) {
       _currentStep++;
@@ -81,6 +122,7 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
+  /// 日記作成の前のステップへ戻ります。
   void previousStep() {
     if (_currentStep > 0) {
       _currentStep--;
@@ -88,7 +130,9 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
-  // Geminiによる深掘り質問の生成
+  /// Gemini AIを使用して、ユーザーの出来事とタグに基づいた深掘り質問を生成します。
+  ///
+  /// 生成中は `isGenerating` フラグを `true` に設定し、UIにローディング状態を通知します。
   Future<void> prepareReflection() async {
     if (eventText.isEmpty) return;
 
@@ -101,7 +145,7 @@ class WriteProvider with ChangeNotifier {
         tags: selectedTags.join(', '),
       );
     } catch (e) {
-      reflectionQuestion = "その出来事は、あなたにとってどんな意味がありましたか？";
+      reflectionQuestion = "その出来事は、あなたにとってどんな意味がありましたか？"; // エラー時のフォールバック
       debugPrint("Gemini Error: $e");
     } finally {
       isGenerating = false;
@@ -109,7 +153,10 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
-  // 保存処理
+  /// 入力されたデータと取得した環境データ、AI分析結果（Tier 2ユーザーのみ）を統合して、
+  /// 新しい日記レコードとして永続ストレージに保存します。
+  ///
+  /// 保存中は `isSaving` フラグを `true` に設定し、完了後に履歴画面を更新します。
   Future<void> save() async {
     isSaving = true;
     notifyListeners();
@@ -134,9 +181,9 @@ class WriteProvider with ChangeNotifier {
 
       // DiaryRecordモデルの作成
       final record = DiaryRecord(
-        recordId: const Uuid().v4(),
+        recordId: const Uuid().v4(), // 一意なIDを生成
         recordDate: DateTime.now(),
-        moodTags: List.from(selectedTags),
+        moodTags: List.from(selectedTags), // リストはコピーして保存
         moodScore: moodScore,
         eventText: eventText,
         selfAnalysis: selfAnalysisText,
@@ -155,14 +202,14 @@ class WriteProvider with ChangeNotifier {
       // 履歴画面をリフレッシュ
       _historyProvider?.refreshHistory();
 
-      _reset();
+      _reset(); // フォームをリセット
     } finally {
       isSaving = false;
       notifyListeners();
     }
   }
 
-  // 入力リセット（場所・天気・座標はあえて残す）
+  /// 日記作成フォームのすべての入力状態を初期値にリセットします。
   void _reset() {
     _currentStep = 0;
     moodScore = 5;
@@ -174,6 +221,7 @@ class WriteProvider with ChangeNotifier {
     debugPrint("WriteProvider：入力内容はリセット（場所情報はCoordinatorのキャッシュに依存）");
   }
 
+  /// リスナーに状態の変更を通知します。
   void notify() {
     notifyListeners();
   }

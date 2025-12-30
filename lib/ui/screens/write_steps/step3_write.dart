@@ -1,10 +1,13 @@
-// lib/ui/screens/write_steps/step3_write.dart
+// C:\Users\ramp1\Desktop\self-awareness-diary\lib\ui\screens\write_steps\step3_write.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/write_provider.dart';
 import '../../../providers/settings_provider.dart';
 
+/// 日記作成プロセスにおけるステップ3のUIを構築するウィジェット。
+/// ユーザーに自己分析や内省を促すテキスト入力フィールドを提供します。
+/// AIによる質問や、入力フィールドのガイダンスメッセージも表示します。
 class Step3Write extends StatelessWidget {
   const Step3Write({super.key});
 
@@ -20,14 +23,14 @@ class Step3Write extends StatelessWidget {
           : provider.reflectionQuestion;
     } else {
       message = provider.reflectionQuestion.isEmpty
-          ? "この出来事から、どんなことを感じましたか？\n原石を磨く時間です。"
+          ? "気分を深掘りして、採掘した原石を磨きましょう 🪨\n（忙しい時はそのまま保存しても、後から磨けます）"
           : provider.reflectionQuestion;
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start, // 左寄せにして読みやすく
+      crossAxisAlignment: CrossAxisAlignment.start, // 左寄せで読みやすく
       children: [
-        // AIからの問いかけ部分
+        // AIからの問いかけ
         if (provider.isGenerating)
           const Center(child: CircularProgressIndicator())
         else
@@ -51,7 +54,7 @@ class Step3Write extends StatelessWidget {
 
         const SizedBox(height: 12),
 
-        // 案内メッセージ
+        // ガイダンスメッセージ
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
@@ -67,7 +70,7 @@ class Step3Write extends StatelessWidget {
         const SizedBox(height: 12),
 
         TextField(
-          maxLines: 8, // 少し広めにして、書く時の没頭感を確保
+          maxLines: 8, // 書くスペースを広めに確保
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             hintText: '今の気持ちや、気づいたこと（任意）',

@@ -1,19 +1,30 @@
 // lib/services/gemini_service.dart
-import 'package:google_generative_ai/google_generative_ai.dart';
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
 
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'dart:convert'; // JSONエンコード・デコードのため
+import 'package:flutter/foundation.dart'; // debugPrintのため
+
+/// グローバルにアクセス可能な [GeminiService] のインスタンス。
+/// アプリケーションの初期化時に設定されることを想定しています。
 late GeminiService geminiService;
 
+/// Google Gemini API を使用して、AI関連の機能を提供するサービス。
+///
+/// AIチャット、感情安定度分析、内省質問生成、分析洞察生成などを行います。
 class GeminiService {
+  /// Gemini API と通信するための GenerativeModel インスタンス。
   final GenerativeModel _model;
+
+  /// 現在アクティブなチャットセッション。
   ChatSession? _chatSession; // チャットセッションを保持
 
+  /// [GeminiService] のコンストラクタ。API キーを受け取り、GenerativeModel を初期化します。
   GeminiService(String apiKey)
     : _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: apiKey);
 
   /// 新しいチャットセッションを開始またはリセットします。
-  /// オプションで初期コンテキストを設定できます。
+  ///
+  /// [initialContext] オプションで初期コンテキストを設定できます。
   void startNewChatSession({String? initialContext}) {
     _chatSession = _model.startChat();
     if (initialContext != null && initialContext.isNotEmpty) {
@@ -22,6 +33,9 @@ class GeminiService {
   }
 
   /// チャットセッションにメッセージを送信し、AIの応答を返します。
+  ///
+  /// セッションが開始されていない場合は自動的に開始します。
+  /// [message] AIに送信するメッセージ。
   Future<String?> sendMessage(String message) async {
     if (_chatSession == null) {
       // セッションが開始されていない場合は自動的に開始
@@ -37,7 +51,10 @@ class GeminiService {
     }
   }
 
-  // 分析用
+  /// 指定された日記の内容を分析し、感情の安定度を数値（0-100%）と理由として返します。
+  ///
+  /// AIからの応答は必ずJSON形式で、`score` と `reason` を含みます。
+  /// [text] 分析する日記のテキスト。
   Future<Map<String, dynamic>> analyzeStability(String text) async {
     final prompt =
         '''
@@ -56,14 +73,17 @@ class GeminiService {
           ?.replaceAll('```json', '')
           .replaceAll('```', '')
           .trim();
-      return jsonDecode(jsonStr ?? '{"score": 50, "reason": "分析失敗"}');
+      return jsonDecode(jsonStr ?? '{"score": 50, "reason": "分析失敗"}'); // JSON解析失敗時のフォールバック
     } catch (e) {
       debugPrint('AI分析エラー: $e');
-      return {"score": 50, "reason": "AI通信エラー"};
+      return {"score": 50, "reason": "AI通信エラー"}; // AI通信エラー時のフォールバック
     }
   }
 
-  // 内省質問生成用
+  /// 出来事と感情タグに基づいて、内省を深掘りする質問を1つ生成します。
+  ///
+  /// [eventText] ユーザーが記録した出来事のテキスト。
+  /// [tags] ユーザーが選択した感情タグ（カンマ区切り）。
   Future<String> generateReflectionQuestion({
     required String eventText,
     required String tags,
@@ -72,14 +92,17 @@ class GeminiService {
 
     try {
       final response = await _model.generateContent([Content.text(prompt)]);
-      return response.text ?? 'その時、どんな感覚がありましたか？';
+      return response.text ?? 'その時、どんな感覚がありましたか？'; // 応答がない場合のフォールバック
     } catch (e) {
       debugPrint('質問生成エラー: $e');
-      return 'その出来事について、もっと詳しく教えてください。';
+      return 'その出来事について、もっと詳しく教えてください。'; // エラー時のフォールバック
     }
   }
 
-  /// 分析レポートからAIの洞察を生成する
+  /// 分析レポートのサマリーに基づいて、ユーザーへの洞察や質問を3つ生成します。
+  ///
+  /// 各提案は「||」で区切られた簡潔な形式で、データに基づいた新たな視点を提供します。
+  /// [reportSummary] 分析レポートの要約テキスト。
   Future<List<String>> generateAnalysisInsights(String reportSummary) async {
     final prompt =
         '''
@@ -112,11 +135,11 @@ class GeminiService {
       return text
           .split('||')
           .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
+          .where((s) => s.isNotEmpty) // 空の文字列を除外
           .toList();
     } catch (e) {
       debugPrint('AI洞察生成エラー: $e');
-      return ['AIとの通信中にエラーが発生しました。'];
+      return ['AIとの通信中にエラーが発生しました。']; // エラー時のフォールバック
     }
   }
 }
