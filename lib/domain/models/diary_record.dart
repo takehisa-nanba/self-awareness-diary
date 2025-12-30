@@ -79,25 +79,64 @@ class DiaryRecord {
 /// [DiaryRecord] の分析関連ロジックをまとめた拡張。
 extension DiaryRecordAnalysis on DiaryRecord {
   /// 自己分析の深さを示す「研磨度」を計算して返します (0-100)。
-  /// テキストの長さと選択された気分タグの数（焦点の絞り具合）に基づいて算出されます。
+  ///
+  /// テキストの長さ、句点の数（文章の密度）、気分タグや出来事の言及、
+  /// そして未来志向のキーワードの有無など、複数の要素から総合的に評価します。
   int get polishingLevel {
     if (selfAnalysis == null || selfAnalysis!.isEmpty) {
-      return 0;
+      return 0; // 自己分析がなければ0点
     }
 
-    final textLength = selfAnalysis!.length;
-    final double focusMultiplier;
+    double score = 10; // 基礎点
 
-    if (moodTags.length <= 2) {
-      focusMultiplier = 3.0; // 焦点が絞られている
-    } else if (moodTags.length == 3) {
-      focusMultiplier = 1.8;
-    } else {
-      focusMultiplier = 1.0; // 焦点が分散
+    // 1. テキストの長さボーナス (最大30点)
+    // テキストが長いほど、深く内省している可能性が高いと評価します。
+    score += (selfAnalysis!.length * 0.2).clamp(0, 30);
+
+    // 2. 句点（。）の数による密度ボーナス (最大15点)
+    // 句点の数は、文章の構造と密度を示唆します。複数の文で構成されているほど、より整理された思考と見なします。
+    final sentenceCount = '。'.allMatches(selfAnalysis!).length;
+    score += (sentenceCount * 5.0).clamp(0, 15);
+
+    // 3. 気分タグ言及ボーナス (最大20点)
+    // ユーザーが選択した気分タグについて言及している場合、感情と向き合っている証拠として加点します。
+    int tagMentions = 0;
+    for (var tag in moodTags) {
+      if (selfAnalysis!.contains(tag)) {
+        tagMentions++;
+      }
+    }
+    score += (tagMentions * 5.0).clamp(0, 20);
+
+    // 4. 出来事言及ボーナス (最大15点)
+    // 記録した「出来事」のキーワード（3文字以上）が自己分析に含まれているか評価します。
+    // 出来事と内省を結びつけているほど、より深い分析と見なします。
+    final eventWords = eventText
+        .split(RegExp(r'\s+')) // スペースや改行で単語に分割
+        .where((word) => word.length >= 3) // 3文字以上の単語を抽出
+        .toSet(); // 重複を除外
+    int eventWordMentions = 0;
+    for (var word in eventWords) {
+      if (selfAnalysis!.contains(word)) {
+        eventWordMentions++;
+      }
+    }
+    score += (eventWordMentions * 3.0).clamp(0, 15);
+
+    // 5. 未来志向ボーナス（気分スコアが低い時のみ、最大20点）
+    // 気分が落ち込んでいる時に、次への行動や感謝、学びの言葉がある場合、
+    // 回復力や前向きな姿勢の表れとして大きく加点します。
+    if (moodScore < 40) {
+      final futureKeywords = ['次は', 'やってみる', '感謝', '学んだ', '成長'];
+      for (var keyword in futureKeywords) {
+        if (selfAnalysis!.contains(keyword)) {
+          score += 20; // 大幅ボーナス
+          break; // いずれかのキーワードが含まれていれば一度だけ加点
+        }
+      }
     }
 
-    final score = textLength * 0.3 * focusMultiplier;
-    return score.round().clamp(0, 100);
+    return score.round().clamp(0, 100); // 最終スコアを0-100の範囲に丸めて返す
   }
 
   /// 研磨度に応じた絵文字アイコンを返します。

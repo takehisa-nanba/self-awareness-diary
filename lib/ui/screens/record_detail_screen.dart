@@ -160,59 +160,77 @@ class _DetailBody extends StatelessWidget {
   /// 自己分析セクションを構築するウィジェット。
   ///
   /// 研磨度に応じたアイコンとパーセンテージ、自己分析テキストを表示します。
+  /// 自己分析が未記入の場合、アイコンを大きく表示し、セクション全体をタップ可能にして
+  /// 編集を促す視覚的なガイドを提供します。
   Widget _buildSelfAnalysisSection(BuildContext context, DiaryRecord record) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // セクションタイトル
-            const _SectionTitle("振り返り（セルフアナリシス）"),
-            Row(
-              children: [
-                // 自己分析の研磨度に応じたアイコン
-                Text(record.polishingIcon, style: const TextStyle(fontSize: 18)),
-                const SizedBox(width: 4),
-                // 研磨度が表示可能であればパーセンテージを表示
-                if (record.polishingLevel > 0)
-                  Text(
-                    '研磨度: ${record.polishingLevel}%',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        // 自己分析の内容表示コンテナ
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant),
+    bool isEmpty = record.selfAnalysis?.isEmpty ?? true;
+
+    return InkWell(
+      // タップで編集画面に遷移
+      onTap: () {
+        final writeProvider = context.read<WriteProvider>();
+        writeProvider.initForEdit(record);
+        context.read<AppStateProvider>().setTab(AppTab.write);
+        Navigator.of(context).pop();
+      },
+      borderRadius: BorderRadius.circular(12), // InkWellの波紋効果の範囲をコンテナに合わせる
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // セクションタイトル
+              const _SectionTitle("振り返り（セルフアナリシス）"),
+              Row(
+                children: [
+                  // 自己分析が未記入の場合はアイコンを大きく表示して強調
+                  Text(record.polishingIcon,
+                      style: TextStyle(fontSize: isEmpty ? 24 : 18)),
+                  const SizedBox(width: 4),
+                  // 研磨度が表示可能であればパーセンテージを表示
+                  if (record.polishingLevel > 0)
+                    Text(
+                      '研磨度: ${record.polishingLevel}%',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                ],
+              ),
+            ],
           ),
-          child: Text(
-            record.selfAnalysis?.isEmpty ?? true
-                ? "この記録はまだ研磨されていません。"
-                : record.selfAnalysis!,
-            style: TextStyle(
-              fontSize: 16,
-              color: record.selfAnalysis?.isEmpty ?? true
-                  ? Theme.of(context).colorScheme.onSurfaceVariant
-                  : Theme.of(context).colorScheme.onSurface,
-              height: 1.5,
+          const SizedBox(height: 8),
+          // 自己分析の内容表示コンテナ
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isEmpty
+                  ? Theme.of(context)
+                      .colorScheme
+                      .surfaceContainerLowest
+                      .withAlpha(150)
+                  : Theme.of(context).colorScheme.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
+            ),
+            child: Text(
+              isEmpty ? record.polishingMessage : record.selfAnalysis!, // polishingMessageを使用
+              style: TextStyle(
+                fontSize: 16,
+                color: isEmpty
+                    ? Theme.of(context).colorScheme.onSurfaceVariant
+                    : Theme.of(context).colorScheme.onSurface,
+                height: 1.5,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

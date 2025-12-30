@@ -121,24 +121,11 @@ class _Step3WriteState extends State<Step3Write> {
           maxLines: 8,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
-            hintText: '書くことは、自分を客観的に見つめる鏡になります...', // モチベーションを高めるヒントテキスト
+            // ヒントテキストにガイダンスを統合し、ユーザーに安心感を与える
+            hintText: '書くことは自分を見つめる鏡です...\n（忙しい時は空欄のまま保存しても、後からゆっくり書き足せます）',
             alignLabelWithHint: true,
           ),
           onChanged: (v) => provider.selfAnalysisText = v, // 入力変更をプロバイダーに通知
-        ),
-        const SizedBox(height: 12),
-
-        // ガイダンスメッセージ
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            "※忙しい時は空欄のまま保存しても大丈夫です。\n後ほど「履歴」からゆっくりと書き足せます。",
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              height: 1.5,
-            ),
-          ),
         ),
       ],
     );
