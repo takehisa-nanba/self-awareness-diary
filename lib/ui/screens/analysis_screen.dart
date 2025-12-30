@@ -85,6 +85,25 @@ class AnalysisScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 40),
+
+                  _buildSectionTitle(context, '研磨の軌跡'),
+                  const SizedBox(height: 16),
+                  _buildPolishingTrajectory(context, report),
+
+                  const SizedBox(height: 40),
+
+                  _buildSectionTitle(context, '自分と環境'),
+                  const SizedBox(height: 16),
+                  _buildEnvironmentCorrelation(context, report),
+
+                  const SizedBox(height: 40),
+
+                  _buildSectionTitle(context, '感情の癖'),
+                  const SizedBox(height: 16),
+                  _buildEmotionalHabits(context, report),
+
+                  const SizedBox(height: 40),
+
                   /// AIによる洞察の表示（Tier 2ユーザーのみ利用可能）。
                   Consumer<SettingsProvider>(
                     builder: (context, settings, child) {
@@ -607,6 +626,120 @@ class AnalysisScreen extends StatelessWidget {
           );
         }).toList(),
       ),
+    );
+  }
+
+  Widget _buildPolishingTrajectory(BuildContext context, AnalysisReport report) {
+    final distribution = report.polishingDistribution;
+    final sortedKeys = distribution.keys.toList()
+      ..sort((a, b) {
+        const order = ['🪨', '🔨', '🔶', '🌟', '✨', '💎'];
+        return order.indexOf(a).compareTo(order.indexOf(b));
+      });
+
+    if (distribution.isEmpty) {
+      return const Center(child: Text('データがありません。'));
+    }
+
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Wrap(
+          spacing: 24,
+          runSpacing: 16,
+          alignment: WrapAlignment.center,
+          children: sortedKeys.map((icon) {
+            final count = distribution[icon]!;
+            return Column(
+              children: [
+                Text(icon, style: const TextStyle(fontSize: 24)),
+                const SizedBox(height: 4),
+                Text(
+                  '$count 回',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEnvironmentCorrelation(
+      BuildContext context, AnalysisReport report) {
+    final correlation = report.weatherCorrelation;
+    if (correlation.isEmpty) {
+      return const Center(child: Text('天気の記録があるデータが不足しています。'));
+    }
+
+    // スコアの差が大きい順にソート
+    final sortedEntries = correlation.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    // 平均との差を計算
+    final overallAverage = report.averageMoodScore;
+
+    return Column(
+      children: sortedEntries.map((entry) {
+        final difference = entry.value - overallAverage;
+        final color =
+            difference >= 0 ? Colors.green.shade700 : Colors.red.shade700;
+        final sign = difference >= 0 ? '+' : '';
+
+        return Card(
+          elevation: 0,
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          child: ListTile(
+            leading: const Icon(Icons.wb_sunny_outlined),
+            title: Text(entry.key,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(
+              '平均より ${sign}${difference.toStringAsFixed(1)} ポイント',
+              style: TextStyle(color: color),
+            ),
+            trailing: Text(
+              '平均 ${entry.value.toStringAsFixed(1)}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildEmotionalHabits(BuildContext context, AnalysisReport report) {
+    final pairs = report.tagPairs;
+    if (pairs.isEmpty) {
+      return const Center(child: Text('感情の組み合わせデータがありません。'));
+    }
+
+    // 上位5件に絞る
+    final topPairs = pairs.entries.take(5);
+
+    return Column(
+      children: topPairs.map((pair) {
+        return Card(
+          elevation: 0,
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          child: ListTile(
+            leading: const Icon(Icons.link),
+            title: Text(
+              pair.key,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            trailing: Text(
+              '${pair.value} 回',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
