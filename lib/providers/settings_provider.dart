@@ -83,7 +83,10 @@ class SettingsProvider extends ChangeNotifier {
   /// [value] 新しい設定値。
   Future<void> setStartFromStep2(bool value) async {
     _startFromStep2 = value;
-    await _isarService.saveSetting('startFromStep2', value.toString()); // データベースに保存
+    await _isarService.saveSetting(
+      'startFromStep2',
+      value.toString(),
+    ); // データベースに保存
     notifyListeners();
   }
 
@@ -92,7 +95,10 @@ class SettingsProvider extends ChangeNotifier {
   /// [tier] 新しいサブスクリプションティア。
   Future<void> setSubscriptionTier(SubscriptionTier tier) async {
     _currentTier = tier;
-    await _isarService.saveSetting('subscriptionTier', tier.index.toString()); // データベースに保存
+    await _isarService.saveSetting(
+      'subscriptionTier',
+      tier.index.toString(),
+    ); // データベースに保存
     notifyListeners();
   }
 }

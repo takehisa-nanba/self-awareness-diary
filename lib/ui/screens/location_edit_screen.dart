@@ -132,7 +132,8 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
               onPressed: () async {
                 final newLabel = _labelController.text;
                 if (newLabel.isNotEmpty) {
-                  final locationProvider = context.read<LocationProvider>(); // LocationProviderを取得
+                  final locationProvider = context
+                      .read<LocationProvider>(); // LocationProviderを取得
                   final navigator = Navigator.of(context);
                   final scaffoldMessenger = ScaffoldMessenger.of(context);
 
@@ -145,7 +146,9 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
 
                   navigator.pop(); // 画面を閉じる
                   scaffoldMessenger.showSnackBar(
-                    const SnackBar(content: Text('場所のラベルを更新しました。')), // 更新完了メッセージ
+                    const SnackBar(
+                      content: Text('場所のラベルを更新しました。'),
+                    ), // 更新完了メッセージ
                   );
                 }
               },

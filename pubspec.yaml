@@ -46,6 +46,7 @@ dependencies:
     sdk: flutter
   flutter_speed_dial: ^7.0.0
   collection: ^1.19.1
+  flutter_svg: ^2.2.3
 
 dev_dependencies:
   flutter_test:
@@ -76,6 +77,7 @@ flutter:
   # 以下のように assets セクションを追加します:
   assets: # ★★★ 追記/修正 ★★★
     - .env # 環境変数ファイルを追加
+    - assets/images/ # SVGアセットを追加
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

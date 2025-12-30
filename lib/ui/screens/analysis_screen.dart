@@ -592,7 +592,10 @@ class AnalysisScreen extends StatelessWidget {
                       : DateFormat('M/d').format(
                           report.dateRange.start.add(Duration(days: day)),
                         );
-                  return Text(text, style: const TextStyle(fontSize: 10)); // ラベルスタイル
+                  return Text(
+                    text,
+                    style: const TextStyle(fontSize: 10),
+                  ); // ラベルスタイル
                 }
                 return const Text('');
               },

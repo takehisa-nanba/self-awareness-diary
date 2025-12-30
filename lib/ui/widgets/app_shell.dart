@@ -47,8 +47,10 @@ class AppShell extends StatelessWidget {
         ),
       ),
       body: child, // メインコンテンツ
-      floatingActionButton: floatingActionButton, // 受け取ったFloatingActionButtonを配置
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat, // FABの配置位置
+      floatingActionButton:
+          floatingActionButton, // 受け取ったFloatingActionButtonを配置
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.endFloat, // FABの配置位置
     );
   }
 }

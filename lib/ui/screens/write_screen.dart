@@ -180,7 +180,10 @@ class _WriteScreenNavigation extends StatelessWidget {
               onPressed: writeProvider.isSaving || writeProvider.isGenerating
                   ? null // 保存中またはAI生成中はボタンを無効化
                   : () => _onNextPressed(
-                      context, writeProvider, settingsProvider), // ボタン押下時の処理
+                      context,
+                      writeProvider,
+                      settingsProvider,
+                    ), // ボタン押下時の処理
               // 保存中またはAI生成中はインジケータを表示、それ以外は「保存」または「次へ」を表示
               child: (writeProvider.isSaving || writeProvider.isGenerating)
                   ? const SizedBox(
@@ -191,7 +194,9 @@ class _WriteScreenNavigation extends StatelessWidget {
                   : Text(
                       writeProvider.currentStep == 2 ? '保存' : '次へ',
                       style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
             ),
           ),
@@ -203,21 +208,26 @@ class _WriteScreenNavigation extends StatelessWidget {
   /// 「次へ」または「保存」ボタンが押された際の処理。
   ///
   /// 現在のステップに応じて入力のバリデーションを行い、次のステップへ進むか、日記を保存します。
-  void _onNextPressed(BuildContext context, WriteProvider writeProvider,
-      SettingsProvider settingsProvider) async {
+  void _onNextPressed(
+    BuildContext context,
+    WriteProvider writeProvider,
+    SettingsProvider settingsProvider,
+  ) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     // --- バリデーションロジック ---
     if (writeProvider.currentStep == 0) {
       if (writeProvider.selectedTags.isEmpty) {
-        scaffoldMessenger
-            .showSnackBar(const SnackBar(content: Text('今の気分を一つ以上選んでくださいね。')));
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(content: Text('今の気分を一つ以上選んでくださいね。')),
+        );
         return;
       }
     } else if (writeProvider.currentStep == 1) {
       if (writeProvider.eventText.trim().isEmpty) {
         scaffoldMessenger.showSnackBar(
-            const SnackBar(content: Text('何があったか、短くても良いので教えてください。')));
+          const SnackBar(content: Text('何があったか、短くても良いので教えてください。')),
+        );
         return;
       }
     }
@@ -239,7 +249,9 @@ class _WriteScreenNavigation extends StatelessWidget {
       // 最終ステップ（自己分析）なら保存処理を実行
       await writeProvider.save();
       if (!context.mounted) return;
-      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('記録を保存しました')));
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(content: Text('記録を保存しました')),
+      );
       // 記録保存後、履歴タブへ移動
       context.read<AppStateProvider>().setTab(AppTab.history);
     }

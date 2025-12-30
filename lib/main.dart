@@ -84,8 +84,10 @@ void main() async {
         // LocationProviderを追加。HistoryProviderに依存するためChangeNotifierProxyProviderを使用。
         ChangeNotifierProxyProvider<HistoryProvider, LocationProvider>(
           create: (context) => LocationProvider(isarService),
-          update: (_, history, location) =>
-              location!..setHistoryProvider(history), // LocationProviderにHistoryProviderを注入
+          update: (_, history, location) => location!
+            ..setHistoryProvider(
+              history,
+            ), // LocationProviderにHistoryProviderを注入
         ),
         ChangeNotifierProvider(
           create: (context) =>

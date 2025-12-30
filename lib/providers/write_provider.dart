@@ -207,7 +207,9 @@ class WriteProvider with ChangeNotifier {
       DiaryRecord record;
       if (isarId != null) {
         // 更新モードの場合: 既存のレコードをデータベースから取得し、変更されたフィールドを更新する
-        final existingRecord = await _diaryRepository.getRecordByIsarId(isarId!);
+        final existingRecord = await _diaryRepository.getRecordByIsarId(
+          isarId!,
+        );
         if (existingRecord != null) {
           // 既存レコードのIDと記録日時を維持しつつ、編集された内容で新しいDiaryRecordオブジェクトを作成
           record = DiaryRecord(

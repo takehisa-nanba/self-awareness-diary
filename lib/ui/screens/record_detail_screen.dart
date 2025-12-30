@@ -100,8 +100,7 @@ class _DetailBody extends StatelessWidget {
   }
 
   /// 環境情報（場所、天気、日時）を表示し、未登録の場合は場所登録ボタンを表示するウィジェット。
-  Widget _buildEnvironmentInfo(
-      BuildContext context, DetailProvider provider) {
+  Widget _buildEnvironmentInfo(BuildContext context, DetailProvider provider) {
     return FutureBuilder<bool>(
       future: provider.isLocationUnregistered(),
       builder: (context, snapshot) {
@@ -113,8 +112,8 @@ class _DetailBody extends StatelessWidget {
               child: Text(
                 provider.environmentInfo,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
             // 場所が未登録の場合に「場所を登録」ボタンを表示
@@ -147,12 +146,14 @@ class _DetailBody extends StatelessWidget {
       spacing: 8.0,
       runSpacing: 4.0,
       children: record.moodTags
-          .map((tag) => Chip(
-                label: Text(tag),
-                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                labelStyle: const TextStyle(fontSize: 12),
-              ))
+          .map(
+            (tag) => Chip(
+              label: Text(tag),
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              labelStyle: const TextStyle(fontSize: 12),
+            ),
+          )
           .toList(),
     );
   }
@@ -186,17 +187,18 @@ class _DetailBody extends StatelessWidget {
               Row(
                 children: [
                   // 自己分析が未記入の場合はアイコンを大きく表示して強調
-                  Text(record.polishingIcon,
-                      style: TextStyle(fontSize: isEmpty ? 24 : 18)),
+                  Text(
+                    record.polishingIcon,
+                    style: TextStyle(fontSize: isEmpty ? 24 : 18),
+                  ),
                   const SizedBox(width: 4),
                   // 研磨度が表示可能であればパーセンテージを表示
                   if (record.polishingLevel > 0)
                     Text(
                       '研磨度: ${record.polishingLevel}%',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                 ],
               ),
@@ -209,17 +211,19 @@ class _DetailBody extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: isEmpty
-                  ? Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerLowest
-                      .withAlpha(150)
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerLowest.withAlpha(150)
                   : Theme.of(context).colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant),
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             child: Text(
-              isEmpty ? record.polishingMessage : record.selfAnalysis!, // polishingMessageを使用
+              isEmpty
+                  ? record.polishingMessage
+                  : record.selfAnalysis!, // polishingMessageを使用
               style: TextStyle(
                 fontSize: 16,
                 color: isEmpty
@@ -236,7 +240,9 @@ class _DetailBody extends StatelessWidget {
 
   /// AI分析結果またはアップグレードのプレースホルダーを表示するウィジェット。
   Widget _buildAIAnalysisSection(
-      BuildContext context, DetailProvider provider) {
+    BuildContext context,
+    DetailProvider provider,
+  ) {
     return Consumer<SettingsProvider>(
       builder: (context, settings, _) {
         // サブスクリプションティアに応じてAI分析カードまたはアップグレードのプレースホルダーを表示
@@ -282,7 +288,10 @@ class _LocationDialogState extends State<_LocationDialog> {
           const SizedBox(height: 10),
           // 過去の記録更新チェックボックス
           CheckboxListTile(
-            title: const Text("過去の同じ場所の記録も書き換える", style: TextStyle(fontSize: 12)),
+            title: const Text(
+              "過去の同じ場所の記録も書き換える",
+              style: TextStyle(fontSize: 12),
+            ),
             value: _updatePast,
             onChanged: (val) => setState(() => _updatePast = val!),
             controlAffinity: ListTileControlAffinity.leading,
@@ -338,20 +347,21 @@ class _LocationDialogState extends State<_LocationDialog> {
 
     // LocationProviderを介して新しい場所を登録し、過去の関連レコードを更新する
     await locationProvider.addNewLocationAndUpdateRecords(
-          label: label,
-          address: widget.provider.record.location!,
-          lat: lat,
-          lng: lng,
-          updatePast: doUpdatePast,
-        );
+      label: label,
+      address: widget.provider.record.location!,
+      lat: lat,
+      lng: lng,
+      updatePast: doUpdatePast,
+    );
     // 現在のレコードの場所名を更新
     await widget.provider.updateLocationName(label);
     // 履歴をリフレッシュ
     historyProvider.refreshHistory();
 
     navigator.pop(); // ダイアログを閉じる
-    scaffoldMessenger
-        .showSnackBar(SnackBar(content: Text('「$label」を登録しました'))); // 登録完了メッセージ
+    scaffoldMessenger.showSnackBar(
+      SnackBar(content: Text('「$label」を登録しました')),
+    ); // 登録完了メッセージ
   }
 }
 
@@ -367,7 +377,9 @@ class _ConfirmDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text("過去記録の一括更新"), // ダイアログのタイトル
-      content: Text("同じ場所の記録が $count 件見つかりました。\nこれらもすべて「$label」に変更しますか？"), // 確認メッセージ
+      content: Text(
+        "同じ場所の記録が $count 件見つかりました。\nこれらもすべて「$label」に変更しますか？",
+      ), // 確認メッセージ
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false), // キャンセルボタン
@@ -392,10 +404,9 @@ class _UpgradePlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Theme.of(context)
-          .colorScheme
-          .tertiaryContainer
-          .withAlpha((255 * 0.5).toInt()),
+      color: Theme.of(
+        context,
+      ).colorScheme.tertiaryContainer.withAlpha((255 * 0.5).toInt()),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -411,9 +422,9 @@ class _UpgradePlaceholder extends StatelessWidget {
             Text(
               'AIによる高度な分析',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onTertiaryContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Theme.of(context).colorScheme.onTertiaryContainer,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             // 説明文
@@ -421,13 +432,12 @@ class _UpgradePlaceholder extends StatelessWidget {
               'アップグレードすると、AIがあなたの記録を分析し、パーソナライズされた洞察を提供します。',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onTertiaryContainer,
-                  ),
+                color: Theme.of(context).colorScheme.onTertiaryContainer,
+              ),
             ),
             const SizedBox(height: 24),
             // プラン確認ボタン
-            FilledButton.tonal(
-                onPressed: () {}, child: const Text('プランを確認する')),
+            FilledButton.tonal(onPressed: () {}, child: const Text('プランを確認する')),
           ],
         ),
       ),
@@ -445,9 +455,9 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       title,
       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
     );
   }
 }
@@ -477,12 +487,18 @@ class _AIAnalysisCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("感情の安定度", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                "感情の安定度",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               // AIによる感情の安定度スコア
               Text(
                 provider.hasAnalysis ? "${record.aiStabilityScore}%" : "--%",
                 style: TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.bold, color: color),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
             ],
           ),

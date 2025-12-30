@@ -38,28 +38,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // --- 一般設定セクション ---
-          const Text('一般設定',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text(
+            '一般設定',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           _buildGeneralSettings(context, settingsProvider), // 一般設定UIの構築
 
           const SizedBox(height: 32),
 
           // --- よく行く場所の登録セクション ---
-          const Text('よく行く場所の登録',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          Text('登録した住所が自動的にラベル（自宅など）に変換されます。',
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 12)),
+          const Text(
+            'よく行く場所の登録',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            '登録した住所が自動的にラベル（自宅など）に変換されます。',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
           const SizedBox(height: 16),
           _buildLocationForm(context, locationProvider), // 場所登録フォームUIの構築
 
           const SizedBox(height: 32),
 
           // --- 登録済み場所一覧セクション ---
-          const Text('登録済み一覧',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text(
+            '登録済み一覧',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           const Divider(),
           _buildLocationList(context, locationProvider), // 登録場所リストUIの構築
 
@@ -76,11 +85,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// 一般設定セクションのUIを構築するウィジェット。
   Widget _buildGeneralSettings(
-      BuildContext context, SettingsProvider provider) {
+    BuildContext context,
+    SettingsProvider provider,
+  ) {
     return Card(
       elevation: 0,
-      color:
-          Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(80),
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withAlpha(80),
       child: SwitchListTile(
         title: const Text('「出来事」から書き始める'), // 設定項目タイトル
         subtitle: const Text('オンにすると、日記を書き始める画面が「出来事の入力」からになります。'), // 設定項目の説明
@@ -94,12 +106,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   /// 場所登録フォームのUIを構築するウィジェット。
-  Widget _buildLocationForm(
-      BuildContext context, LocationProvider provider) {
+  Widget _buildLocationForm(BuildContext context, LocationProvider provider) {
     return Card(
       elevation: 0,
-      color:
-          Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(80),
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withAlpha(80),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -108,9 +120,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextField(
               controller: _labelController,
               decoration: const InputDecoration(
-                  labelText: 'ラベル',
-                  hintText: '例：自宅、職場',
-                  prefixIcon: Icon(Icons.label_outline)),
+                labelText: 'ラベル',
+                hintText: '例：自宅、職場',
+                prefixIcon: Icon(Icons.label_outline),
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -120,8 +133,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: TextField(
                     controller: _addressController,
                     decoration: const InputDecoration(
-                        labelText: '住所',
-                        prefixIcon: Icon(Icons.place_outlined)),
+                      labelText: '住所',
+                      prefixIcon: Icon(Icons.place_outlined),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -130,17 +144,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onPressed: provider.isLoading
                       ? null // 位置情報取得中はボタンを無効化
                       : () async {
-                          final addr =
-                              await provider.getCurrentLocationAddress(); // 現在地住所を取得
+                          final addr = await provider
+                              .getCurrentLocationAddress(); // 現在地住所を取得
                           if (addr != null) {
-                            setState(() => _addressController.text = addr); // 取得した住所を入力フィールドに設定
+                            setState(
+                              () => _addressController.text = addr,
+                            ); // 取得した住所を入力フィールドに設定
                           }
                         },
                   icon: provider.isLoading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2)) // ローディングインジケータ
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ) // ローディングインジケータ
                       : const Icon(Icons.my_location), // 現在地アイコン
                 ),
               ],
@@ -150,7 +167,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => _onRegisterLocationPressed(context, provider), // ボタン押下時の処理
+                onPressed: () =>
+                    _onRegisterLocationPressed(context, provider), // ボタン押下時の処理
                 icon: const Icon(Icons.add),
                 label: const Text('登録する'),
               ),
@@ -162,16 +180,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   /// 登録済み場所一覧のUIを構築するウィジェット。
-  Widget _buildLocationList(
-      BuildContext context, LocationProvider provider) {
+  Widget _buildLocationList(BuildContext context, LocationProvider provider) {
     if (provider.locations.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
         child: Center(
-            child: Text('登録された場所はありません',
-                style: TextStyle(
-                    color:
-                        Theme.of(context).colorScheme.onSurfaceVariant))), // 登録場所がない場合のメッセージ
+          child: Text(
+            '登録された場所はありません',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ), // 登録場所がない場合のメッセージ
       );
     }
     return ListView.builder(
@@ -181,12 +201,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       itemBuilder: (context, index) {
         final loc = provider.locations[index];
         return ListTile(
-          leading: const CircleAvatar(child: Icon(Icons.place, size: 20)), // 場所アイコン
+          leading: const CircleAvatar(
+            child: Icon(Icons.place, size: 20),
+          ), // 場所アイコン
           title: Text(loc.label), // 場所のラベル
-          subtitle: Text(loc.address,
-              maxLines: 1, overflow: TextOverflow.ellipsis), // 場所の住所
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => LocationEditScreen(location: loc))), // タップで編集画面へ遷移
+          subtitle: Text(
+            loc.address,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ), // 場所の住所
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => LocationEditScreen(location: loc),
+            ),
+          ), // タップで編集画面へ遷移
         );
       },
     );
@@ -201,14 +229,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() => _versionTapCount++); // タップカウントをインクリメント
         if (_versionTapCount >= 7) {
           _versionTapCount = 0; // カウントをリセット
-          Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => const DeveloperModeScreen())); // 開発者モード画面へ遷移
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const DeveloperModeScreen(),
+            ),
+          ); // 開発者モード画面へ遷移
         }
       },
       child: ListTile(
         title: Text('Version', style: Theme.of(context).textTheme.bodySmall),
-        trailing: Text('1.0.0-dev', // 必要に応じて実際のバージョンに置き換える
-            style: Theme.of(context).textTheme.bodySmall),
+        trailing: Text(
+          '1.0.0-dev', // 必要に応じて実際のバージョンに置き換える
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
       ),
     );
   }
@@ -218,14 +251,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// ラベルと住所のバリデーション、過去の記録更新の確認、場所の登録、
   /// およびUIのフィードバック（スナックバー）を行います。
   void _onRegisterLocationPressed(
-      BuildContext context, LocationProvider provider) async {
+    BuildContext context,
+    LocationProvider provider,
+  ) async {
     final label = _labelController.text;
     final address = _addressController.text;
 
     // 入力値のバリデーション
     if (label.isEmpty || address.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ラベルと住所の両方を入力してください。')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ラベルと住所の両方を入力してください。')));
       return;
     }
 
@@ -238,21 +274,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bool updatePast = false; // 過去の記録を更新するかのフラグ
 
     if (lat != null && lng != null) {
-      final nearbyRecords =
-          await isarService.findNearbyRecords(lat, lng); // 近くの記録を検索
+      final nearbyRecords = await isarService.findNearbyRecords(
+        lat,
+        lng,
+      ); // 近くの記録を検索
       if (context.mounted && nearbyRecords.isNotEmpty) {
         final bool? confirmed = await showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('過去の日記の更新'),
-            content: Text('近くに${nearbyRecords.length}件の日記が見つかりました。場所を「$label」に更新しますか？'),
+            content: Text(
+              '近くに${nearbyRecords.length}件の日記が見つかりました。場所を「$label」に更新しますか？',
+            ),
             actions: [
               TextButton(
-                  onPressed: () => navigator.pop(false),
-                  child: const Text('いいえ')),
+                onPressed: () => navigator.pop(false),
+                child: const Text('いいえ'),
+              ),
               ElevatedButton(
-                  onPressed: () => navigator.pop(true),
-                  child: const Text('はい、更新します')),
+                onPressed: () => navigator.pop(true),
+                child: const Text('はい、更新します'),
+              ),
             ],
           ),
         );
@@ -272,10 +314,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (!context.mounted) return;
-    scaffoldMessenger.showSnackBar(SnackBar(
-        content: Text(updatePast
-            ? '場所を登録し、過去の記録も更新しました。'
-            : '場所を登録しました。'))); // 結果をスナックバーで通知
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        content: Text(updatePast ? '場所を登録し、過去の記録も更新しました。' : '場所を登録しました。'),
+      ),
+    ); // 結果をスナックバーで通知
 
     _labelController.clear(); // 入力フィールドをクリア
     _addressController.clear();
