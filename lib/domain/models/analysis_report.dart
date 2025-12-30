@@ -42,6 +42,24 @@ class AnalysisReport {
   /// タグのペア(`Set<String>`) -> 出現回数(int)
   late final Map<String, int> tagPairs = _calculateTagPairs();
 
+  // --- 新しい分析データのgetter ---
+  /// 期間中の最高スコアのレコード
+  late final DiaryRecord? highestScoreRecord =
+      _records.isEmpty ? null : _records.reduce((a, b) => a.moodScore > b.moodScore ? a : b);
+
+  /// 期間中の最低スコアのレコード
+  late final DiaryRecord? lowestScoreRecord =
+      _records.isEmpty ? null : _records.reduce((a, b) => a.moodScore < b.moodScore ? a : b);
+
+  /// 気圧の時系列データ
+  late final Map<DateTime, double> pressureData = _extractWeatherData('pressure');
+
+  /// 気温の時系列データ
+  late final Map<DateTime, double> temperatureData = _extractWeatherData('temperature');
+
+  /// 研磨度の時系列データ
+  late final Map<DateTime, int> polishingLevelData = _calculatePolishingLevelData();
+
   // --- privateな計算メソッド ---
 
   Map<DateTime, double> _calculateDailyMoodScores() {
@@ -145,5 +163,36 @@ class AnalysisReport {
     final sortedEntries = pairCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     return Map.fromEntries(sortedEntries);
+  }
+
+  /// 気圧または気温の時系列データを抽出します。
+  Map<DateTime, double> _extractWeatherData(String type) {
+    final Map<DateTime, double> data = {};
+    for (final record in _records) {
+      if (record.weather != null) {
+        RegExp regExp;
+        if (type == 'pressure') {
+          // 例: "曇り (15.5°C / 1012hPa)" -> 1012
+          regExp = RegExp(r'(\d+)hPa');
+        } else {
+          // 例: "曇り (15.5°C / 1012hPa)" -> 15.5
+          regExp = RegExp(r'(-?\d+\.\d+)°C');
+        }
+        final match = regExp.firstMatch(record.weather!);
+        if (match != null && match.group(1) != null) {
+          data[record.recordDate] = double.tryParse(match.group(1)!) ?? 0.0;
+        }
+      }
+    }
+    return data;
+  }
+
+  /// 研磨度の時系列データを計算します。
+  Map<DateTime, int> _calculatePolishingLevelData() {
+    final Map<DateTime, int> data = {};
+    for (final record in _records) {
+      data[record.recordDate] = record.polishingLevel;
+    }
+    return data;
   }
 }

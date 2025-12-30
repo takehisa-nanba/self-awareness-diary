@@ -6,6 +6,9 @@ import '../domain/repositories/diary_repository.dart';
 import '../services/gemini_service.dart';
 import '../domain/mappers/ai_report_to_prompt_mapper.dart';
 
+/// 分析グラフに表示するデータの種類を定義する列挙型。
+enum AnalysisDataType { mood, pressure, temperature, polishing }
+
 /// 分析画面の状態管理を行うプロバイダー。
 ///
 /// 日付範囲の指定、日記データの集計、分析レポートの生成、
@@ -13,6 +16,10 @@ import '../domain/mappers/ai_report_to_prompt_mapper.dart';
 class AnalysisProvider extends ChangeNotifier {
   final DiaryRepository _diaryRepository;
   final GeminiService _geminiService;
+
+  // --- 状態 ---
+  /// 現在グラフに表示すべきデータの種類の集合。
+  final Set<AnalysisDataType> activeDataTypes = {AnalysisDataType.mood};
 
   /// [AnalysisProvider] のコンストラクタ。
   ///
@@ -91,6 +98,19 @@ class AnalysisProvider extends ChangeNotifier {
     final insights = await _geminiService.generateAnalysisInsights(summary);
     _aiInsights = insights;
     _isAiLoading = false;
+    notifyListeners();
+  }
+
+  /// グラフに表示するデータタイプを切り替えます。
+  void toggleDataType(AnalysisDataType dataType) {
+    if (activeDataTypes.contains(dataType)) {
+      // moodは常に必要なので削除しない
+      if (dataType != AnalysisDataType.mood) {
+        activeDataTypes.remove(dataType);
+      }
+    } else {
+      activeDataTypes.add(dataType);
+    }
     notifyListeners();
   }
 }

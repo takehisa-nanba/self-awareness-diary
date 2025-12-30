@@ -27,6 +27,8 @@ class AnalysisScreen extends StatelessWidget {
         children: [
           /// 分析対象の日付範囲を選択するセレクター。
           _buildDateRangeSelector(context),
+          const SizedBox(height: 16),
+          _buildDataTypeSelector(context),
           const SizedBox(height: 24),
           /// [AnalysisProvider] の状態に基づいて、分析結果を表示。
           ///
@@ -60,9 +62,7 @@ class AnalysisScreen extends StatelessWidget {
                   /// 気分推移グラフ（単日か複数日かで表示を切り替え）。
                   SizedBox(
                     height: 300,
-                    child: report.isSingleDay
-                        ? _buildHourlyMoodTrendChart(context, report)
-                        : _buildMoodTrendChart(context, report),
+                    child: _buildLayeredMoodTrendChart(context, report, provider.activeDataTypes),
                   ),
                   const SizedBox(height: 8),
                   /// 平均スコアの表示。
@@ -284,6 +284,40 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
+  /// データタイプ選択のためのFilterChip群を構築するウィジェット。
+  Widget _buildDataTypeSelector(BuildContext context) {
+    final provider = context.watch<AnalysisProvider>();
+    final activeTypes = provider.activeDataTypes;
+
+    return Wrap(
+      spacing: 8.0,
+      runSpacing: 4.0,
+      children: AnalysisDataType.values.map((type) {
+        return FilterChip(
+          label: Text(_getDataTypeLabel(type)),
+          selected: activeTypes.contains(type),
+          onSelected: (bool selected) {
+            provider.toggleDataType(type);
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  /// AnalysisDataTypeのラベルを取得するヘルパーメソッド。
+  String _getDataTypeLabel(AnalysisDataType type) {
+    switch (type) {
+      case AnalysisDataType.mood:
+        return '気分';
+      case AnalysisDataType.pressure:
+        return '気圧';
+      case AnalysisDataType.temperature:
+        return '気温';
+      case AnalysisDataType.polishing:
+        return '研磨度';
+    }
+  }
+
   /// 折れ線グラフのタッチ（ツールチップ）データ設定を返します。
   ///
   /// [context] ビルドコンテキスト。
@@ -348,148 +382,169 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
-  /// 日ごとの気分推移を示す折れ線グラフを構築します。
-  Widget _buildMoodTrendChart(BuildContext context, AnalysisReport report) {
-    debugPrint('--- Trend Chart Build Start ---');
-    debugPrint(
-      'Date Range: ${report.dateRange.start} - ${report.dateRange.end}',
-    );
+  /// データを0-10の範囲に正規化するヘルパー関数
+  List<FlSpot> _normalizeData(
+    Map<dynamic, num> data,
+    DateTime firstDate,
+    bool isHourly,
+  ) {
+    if (data.isEmpty) return [];
 
-    final spots = report.dailyMoodScores.entries.map((entry) {
-      final daysFromStart = entry.key.difference(report.dateRange.start).inDays;
-      return FlSpot(daysFromStart.toDouble(), entry.value);
+    final values = data.values.map((e) => e.toDouble());
+    final minVal = values.reduce(min);
+    final maxVal = values.reduce(max);
+    final range = maxVal - minVal;
+
+    // 範囲が0の場合は、中央値5に正規化
+    if (range == 0) {
+      return data.entries.map((entry) {
+        final double x;
+        if (isHourly) {
+          x = (entry.key as int).toDouble();
+        } else {
+          x = (entry.key as DateTime).difference(firstDate).inDays.toDouble();
+        }
+        return FlSpot(x, 5.0);
+      }).toList();
+    }
+
+    return data.entries.map((entry) {
+      final double x;
+      if (isHourly) {
+        x = (entry.key as int).toDouble();
+      } else {
+        x = (entry.key as DateTime).difference(firstDate).inDays.toDouble();
+      }
+      final normalizedY = (entry.value.toDouble() - minVal) * 10 / range;
+      return FlSpot(x, normalizedY);
     }).toList();
-
-    final durationDays = report.dateRange.duration.inDays;
-    final bottomLabelInterval = durationDays > 7 ? 7 : 1; // 7日を超える場合は7日ごとにラベル表示
-    final maxX = durationDays.toDouble() + 0.1; // グラフのmaxXを調整
-
-    debugPrint('Duration Days: $durationDays, MaxX: $maxX');
-    debugPrint('Daily Mood Scores Map: ${report.dailyMoodScores}');
-    debugPrint(
-      'Generated Spots: ${spots.map((s) => '(${s.x}, ${s.y})').join(', ')}',
-    );
-    debugPrint('--- Trend Chart Build End ---');
-
-    return LineChart(
-      LineChartData(
-        lineTouchData: _getLineTouchData(context, report, false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true, // 線を滑らかに
-            curveSmoothness: 0.35,
-            color: Theme.of(context).primaryColor,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: const FlDotData(show: false), // ドットを非表示
-            belowBarData: BarAreaData(
-              show: true,
-              color: Theme.of(context).primaryColor.withAlpha(50), // グラフ下の塗りつぶし
-            ),
-          ),
-        ],
-        titlesData: FlTitlesData(
-          show: true,
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                // X軸の最大値（終端）はfl_chartに任せるか、描画しない
-                if (value == meta.max) {
-                  return const Text('');
-                }
-                final day = value.toInt();
-                if (day % bottomLabelInterval == 0) {
-                  final date = report.dateRange.start.add(Duration(days: day));
-                  return Text(
-                    DateFormat('M/d').format(date),
-                    style: const TextStyle(fontSize: 10),
-                  );
-                }
-                return const Text('');
-              },
-              reservedSize: 24, // ラベルの予約サイズ
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                if (value.toInt() % 2 == 0) {
-                  return Text(
-                    value.toInt().toString(),
-                    style: const TextStyle(fontSize: 10),
-                  );
-                }
-                return const Text('');
-              },
-              reservedSize: 28, // ラベルの予約サイズ
-            ),
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false), // 上部タイトルを非表示
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false), // 右側タイトルを非表示
-          ),
-        ),
-        borderData: FlBorderData(show: false), // グラフの枠線を非表示
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false, // 縦線を非表示
-          horizontalInterval: 2,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: Theme.of(context).dividerColor.withAlpha(128),
-            strokeWidth: 0.5,
-          ),
-        ),
-        minX: 0,
-        maxX: durationDays.toDouble() + 0.1, // 表示範囲の調整
-        minY: 0,
-        maxY: 10, // スコアは0-10
-      ),
-    );
   }
 
-  /// 単一日の時間ごとの気分推移を示す折れ線グラフを構築します。
-  Widget _buildHourlyMoodTrendChart(
+  /// 選択されたデータタイプに基づいてレイヤー化された気分推移グラフを構築します。
+  Widget _buildLayeredMoodTrendChart(
     BuildContext context,
     AnalysisReport report,
+    Set<AnalysisDataType> activeTypes,
   ) {
-    final spots = report.hourlyMoodScores.entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), entry.value);
-    }).toList();
+    final bool isHourly = report.isSingleDay;
+    final Map<dynamic, double> mainData =
+        isHourly ? report.hourlyMoodScores : report.dailyMoodScores;
+
+    final List<LineChartBarData> lineBarsData = [];
+
+    // 1. Mood (主軸)
+    if (activeTypes.contains(AnalysisDataType.mood)) {
+      final spots = mainData.entries.map((entry) {
+        final double x = isHourly
+            ? entry.key.toDouble()
+            : (entry.key as DateTime)
+                .difference(report.dateRange.start)
+                .inDays
+                .toDouble();
+        return FlSpot(x, entry.value.toDouble());
+      }).toList();
+
+      lineBarsData.add(
+        LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          curveSmoothness: 0.35,
+          color: Theme.of(context).primaryColor,
+          barWidth: 4,
+          isStrokeCapRound: true,
+          dotData: const FlDotData(show: false),
+          belowBarData: BarAreaData(
+            show: true,
+            color: Theme.of(context).primaryColor.withAlpha(80),
+          ),
+        ),
+      );
+    }
+
+    // 2. Pressure (副データ)
+    if (activeTypes.contains(AnalysisDataType.pressure)) {
+      final spots = _normalizeData(
+        report.pressureData,
+        report.dateRange.start,
+        isHourly,
+      );
+      lineBarsData.add(
+        LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          curveSmoothness: 0.35,
+          color: Colors.orange.withAlpha(150),
+          barWidth: 2,
+          isStrokeCapRound: true,
+          dotData: const FlDotData(show: false),
+          dashArray: [5, 5], // 点線
+        ),
+      );
+    }
+
+    // 3. Temperature (副データ)
+    if (activeTypes.contains(AnalysisDataType.temperature)) {
+      final spots = _normalizeData(
+        report.temperatureData,
+        report.dateRange.start,
+        isHourly,
+      );
+      lineBarsData.add(
+        LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          curveSmoothness: 0.35,
+          color: Colors.redAccent.withAlpha(150),
+          barWidth: 2,
+          isStrokeCapRound: true,
+          dotData: const FlDotData(show: false),
+          dashArray: [5, 5],
+        ),
+      );
+    }
+    
+    // 4. Polishing (副データ)
+    if (activeTypes.contains(AnalysisDataType.polishing)) {
+      final spots = _normalizeData(
+        report.polishingLevelData,
+        report.dateRange.start,
+        isHourly,
+      );
+      lineBarsData.add(
+        LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          curveSmoothness: 0.35,
+          color: Colors.purple.withAlpha(150),
+          barWidth: 2,
+          isStrokeCapRound: true,
+          dotData: const FlDotData(show: false),
+          dashArray: [5, 5],
+        ),
+      );
+    }
+
+    final double duration = isHourly ? 23 : report.dateRange.duration.inDays.toDouble();
+    final double bottomLabelInterval = isHourly ? 6 : (duration > 7 ? 7 : 1);
 
     return LineChart(
       LineChartData(
-        lineTouchData: _getLineTouchData(context, report, true),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            curveSmoothness: 0.35,
-            color: Theme.of(context).primaryColor,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(
-              show: true,
-              color: Theme.of(context).primaryColor.withAlpha(50),
-            ),
-          ),
-        ],
+        lineTouchData: _getLineTouchData(context, report, isHourly),
+        lineBarsData: lineBarsData,
         titlesData: FlTitlesData(
           show: true,
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                if (value.toInt() % 6 == 0) {
-                  return Text(
-                    '${value.toInt()}時',
-                    style: const TextStyle(fontSize: 10),
-                  );
+                if (value == meta.max) return const Text('');
+                final day = value.toInt();
+                if (day % bottomLabelInterval == 0) {
+                  final String text = isHourly
+                      ? '${day}時'
+                      : DateFormat('M/d')
+                          .format(report.dateRange.start.add(Duration(days: day)));
+                  return Text(text, style: const TextStyle(fontSize: 10));
                 }
                 return const Text('');
               },
@@ -501,22 +556,16 @@ class AnalysisScreen extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 if (value.toInt() % 2 == 0) {
-                  return Text(
-                    value.toInt().toString(),
-                    style: const TextStyle(fontSize: 10),
-                  );
+                  return Text(value.toInt().toString(),
+                      style: const TextStyle(fontSize: 10));
                 }
                 return const Text('');
               },
               reservedSize: 28,
             ),
           ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: false),
         gridData: FlGridData(
@@ -529,7 +578,7 @@ class AnalysisScreen extends StatelessWidget {
           ),
         ),
         minX: 0,
-        maxX: 23, // 0時から23時
+        maxX: duration + 0.1,
         minY: 0,
         maxY: 10,
       ),

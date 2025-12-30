@@ -51,17 +51,10 @@ class AiReportToPromptMapper {
     }
 
     // 最高・最低スコアの日の情報を追加
-    final allRecords = report.records;
-    if (allRecords.isNotEmpty) {
-      // ソートはAnalysisReportの外で行うべきではない
-      // しかし、ここではAIプロンプト生成のために一時的に使用するため許容する
-      // 理想的には、AnalysisReportに最高/最低スコアのレコードを取得するgetterを設けるべき
-      List<DiaryRecord> sortedRecords = List.from(allRecords);
-      sortedRecords.sort((a, b) => a.moodScore.compareTo(b.moodScore)); // スコアでソート
+    final lowestScoreRecord = report.lowestScoreRecord;
+    final highestScoreRecord = report.highestScoreRecord;
 
-      final lowestScoreRecord = sortedRecords.first;
-      final highestScoreRecord = sortedRecords.last;
-
+    if (lowestScoreRecord != null) {
       summary.writeln('\n期間中の最低スコアの日:');
       summary.writeln(
         '- 日時: ${dateFormat.format(lowestScoreRecord.recordDate)}',
@@ -69,7 +62,9 @@ class AiReportToPromptMapper {
       summary.writeln('- スコア: ${lowestScoreRecord.moodScore}');
       summary.writeln('- タグ: ${lowestScoreRecord.moodTags.join(', ')}');
       summary.writeln('- 出来事: ${lowestScoreRecord.eventText}');
+    }
 
+    if (highestScoreRecord != null) {
       summary.writeln('\n期間中の最高スコアの日:');
       summary.writeln(
         '- 日時: ${dateFormat.format(highestScoreRecord.recordDate)}',
