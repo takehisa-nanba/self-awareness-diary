@@ -35,8 +35,9 @@ class WeatherService {
         final data = json.decode(response.body);
         final description = data['weather'][0]['description'];
         final temp = data['main']['temp'];
+        final pressure = data['main']['pressure']; // 気圧データを取得
 
-        final result = "$description (${temp.toStringAsFixed(1)}°C)";
+        final result = "$description (${temp.toStringAsFixed(1)}°C / ${pressure}hPa)"; // 気圧を追加
         debugPrint("天気スタッフ：取得完了！ $result");
         return result;
       } else {
