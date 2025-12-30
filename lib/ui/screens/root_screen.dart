@@ -111,6 +111,7 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
           title: _getTitle(currentTab),
           child: _getScreen(currentTab),
         ),
+
         /// 現在のタブが「記録」の場合はFABを非表示にする。
         floatingActionButton: currentTab == AppTab.write
             ? null
@@ -118,6 +119,7 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
                 onPressed: () => appState.setTab(AppTab.write),
                 child: const Icon(Icons.add),
               ),
+
         /// 現在のタブが「記録」の場合はナビゲーションバーを非表示にする。
         bottomNavigationBar: currentTab == AppTab.write
             ? null

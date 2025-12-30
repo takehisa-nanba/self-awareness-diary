@@ -30,7 +30,8 @@ class Step1Write extends StatelessWidget {
               radius: const Radius.circular(3.0),
               child: GridView.builder(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(), // GridView自体のスクロールを無効化
+                physics:
+                    const NeverScrollableScrollPhysics(), // GridView自体のスクロールを無効化
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2, // 2列表示
                   childAspectRatio: 4.0, // 各アイテムのアスペクト比

@@ -30,12 +30,14 @@ class DeveloperModeScreen extends StatelessWidget {
             /// 「サブスクリプション設定」セクションのタイトル。
             Text('サブスクリプション設定', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
+
             /// サブスクリプション設定に関する説明。
             Text(
               'アプリのサブスクリプションの状態を強制的に切り替えます。',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
+
             /// サブスクリプションティアを切り替えるセグメントボタン。
             SegmentedButton<SubscriptionTier>(
               segments: const <ButtonSegment<SubscriptionTier>>[
@@ -57,19 +59,26 @@ class DeveloperModeScreen extends StatelessWidget {
               ],
               selected: {settingsProvider.currentTier}, // 現在選択されているティア
               onSelectionChanged: (Set<SubscriptionTier> newSelection) {
-                settingsProvider.setSubscriptionTier(newSelection.first); // 選択されたティアを設定
+                settingsProvider.setSubscriptionTier(
+                  newSelection.first,
+                ); // 選択されたティアを設定
               },
               showSelectedIcon: false, // 選択アイコンを非表示
               style: ButtonStyle(
                 fixedSize: WidgetStateProperty.all(
-                  Size(MediaQuery.of(context).size.width / 3.5, 48), // ボタンの固定サイズ
+                  Size(
+                    MediaQuery.of(context).size.width / 3.5,
+                    48,
+                  ), // ボタンの固定サイズ
                 ),
               ),
             ),
             const SizedBox(height: 32),
+
             /// 「データ生成」セクションのタイトル。
             Text('データ生成', style: Theme.of(context).textTheme.titleLarge),
             const Divider(),
+
             /// テストデータ生成カード。
             ///
             /// 生成中は進捗インジケータとカウントを表示し、
@@ -125,9 +134,11 @@ class DeveloperModeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
+
             /// 「起動シーケンス」セクションのタイトル。
             Text('起動シーケンス', style: Theme.of(context).textTheme.titleLarge),
             const Divider(),
+
             /// 初回起動フラグをリセットするカード。
             ///
             /// 次回アプリ起動時にBrandSplashScreenが表示されるようになります。
@@ -149,6 +160,7 @@ class DeveloperModeScreen extends StatelessWidget {
                 },
               ),
             ),
+
             /// スプラッシュ画面をプレビューするカード。
             Card(
               elevation: 0,
@@ -162,7 +174,8 @@ class DeveloperModeScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const BrandSplashScreen(), // スプラッシュ画面へ遷移
+                      builder: (context) =>
+                          const BrandSplashScreen(), // スプラッシュ画面へ遷移
                     ),
                   );
                 },

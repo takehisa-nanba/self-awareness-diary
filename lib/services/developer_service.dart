@@ -55,7 +55,9 @@ class DeveloperService with ChangeNotifier {
           ),
         );
         final moodScore = random.nextInt(10) + 1; // 1から10のランダムな気分スコア
-        final selfAnalysis = random.nextDouble() > 0.7 // 30%の確率で自己分析を追加
+        final selfAnalysis =
+            random.nextDouble() >
+                0.7 // 30%の確率で自己分析を追加
             ? 'これはテスト用の自己分析です。No.${i + 1}'
             : '';
 

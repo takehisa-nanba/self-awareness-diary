@@ -37,18 +37,21 @@ class ExtendedFabNavigator extends StatelessWidget {
           label: '記録',
           onTap: () => _changeTab(context, AppTab.write),
         ),
+
         /// 「履歴」画面への遷移ボタン。
         SpeedDialChild(
           child: const Icon(Icons.history),
           label: '履歴',
           onTap: () => _changeTab(context, AppTab.history),
         ),
+
         /// 「分析」画面への遷移ボタン。
         SpeedDialChild(
           child: const Icon(Icons.analytics_outlined),
           label: '分析',
           onTap: () => _changeTab(context, AppTab.analysis),
         ),
+
         /// 「設定」画面への遷移ボタン。
         SpeedDialChild(
           child: const Icon(Icons.settings),

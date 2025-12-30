@@ -169,16 +169,9 @@ class _AnimatedText extends StatelessWidget {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 120),
       transitionBuilder: (child, animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
+        return FadeTransition(opacity: animation, child: child);
       },
-      child: Text(
-        text,
-        key: ValueKey<String>(text),
-        style: style,
-      ),
+      child: Text(text, key: ValueKey<String>(text), style: style),
     );
   }
 }

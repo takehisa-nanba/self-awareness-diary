@@ -78,8 +78,10 @@ void main() async {
         ChangeNotifierProxyProvider<HistoryProvider, SettingsProvider>(
           create: (context) =>
               SettingsProvider(isarService, context.read<DiaryRepository>()),
-          update: (_, history, settings) =>
-              settings!..setHistoryProvider(history), // HistoryProviderをSettingsProviderに注入
+          update: (_, history, settings) => settings!
+            ..setHistoryProvider(
+              history,
+            ), // HistoryProviderをSettingsProviderに注入
         ),
         ChangeNotifierProvider(
           create: (context) =>
@@ -95,8 +97,8 @@ void main() async {
             geminiService,
             context.read<DiaryRepository>(),
           ),
-          update: (_, history, settings, write) =>
-              write!..updateProviders(history, settings), // 連携ProviderをWriteProviderに注入
+          update: (_, history, settings, write) => write!
+            ..updateProviders(history, settings), // 連携ProviderをWriteProviderに注入
         ),
         // 開発者向けサービス
         ChangeNotifierProvider(
@@ -125,7 +127,10 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('en', ''), Locale('ja', '')], // サポートするロケール
+      supportedLocales: const [
+        Locale('en', ''),
+        Locale('ja', ''),
+      ], // サポートするロケール
       home: const InitialScreenWrapper(), // アプリの最初の画面
     );
   }
@@ -144,7 +149,9 @@ class InitialScreenWrapper extends StatelessWidget {
         // _loadSettingsが完了するのを待つ
         if (settings.isLoading) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()), // 設定読み込み中はローディングを表示
+            body: Center(
+              child: CircularProgressIndicator(),
+            ), // 設定読み込み中はローディングを表示
           );
         }
         // 初回起動かどうかで表示画面を切り替え

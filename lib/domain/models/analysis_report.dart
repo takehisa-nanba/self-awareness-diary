@@ -44,21 +44,44 @@ class AnalysisReport {
 
   // --- 新しい分析データのgetter ---
   /// 期間中の最高スコアのレコード
-  late final DiaryRecord? highestScoreRecord =
-      _records.isEmpty ? null : _records.reduce((a, b) => a.moodScore > b.moodScore ? a : b);
+  late final DiaryRecord? highestScoreRecord = _records.isEmpty
+      ? null
+      : _records.reduce((a, b) => a.moodScore > b.moodScore ? a : b);
 
   /// 期間中の最低スコアのレコード
-  late final DiaryRecord? lowestScoreRecord =
-      _records.isEmpty ? null : _records.reduce((a, b) => a.moodScore < b.moodScore ? a : b);
+  late final DiaryRecord? lowestScoreRecord = _records.isEmpty
+      ? null
+      : _records.reduce((a, b) => a.moodScore < b.moodScore ? a : b);
 
   /// 気圧の時系列データ
-  late final Map<DateTime, double> pressureData = _extractWeatherData('pressure');
+  late final Map<DateTime, double> pressureData = _extractWeatherData(
+    'pressure',
+  );
 
   /// 気温の時系列データ
-  late final Map<DateTime, double> temperatureData = _extractWeatherData('temperature');
+  late final Map<DateTime, double> temperatureData = _extractWeatherData(
+    'temperature',
+  );
 
   /// 研磨度の時系列データ
-  late final Map<DateTime, int> polishingLevelData = _calculatePolishingLevelData();
+
+  late final Map<DateTime, int> polishingLevelData =
+      _calculatePolishingLevelData();
+
+  /// 時間ごとの気圧データ
+
+  late final Map<int, double> hourlyPressureScores =
+      _calculateHourlyPressureScores();
+
+  /// 時間ごとの気温データ
+
+  late final Map<int, double> hourlyTemperatureScores =
+      _calculateHourlyTemperatureScores();
+
+  /// 時間ごとの研磨度データ
+
+  late final Map<int, double> hourlyPolishingLevelData =
+      _calculateHourlyPolishingLevelData();
 
   // --- privateな計算メソッド ---
 
@@ -194,5 +217,68 @@ class AnalysisReport {
       data[record.recordDate] = record.polishingLevel;
     }
     return data;
+  }
+
+  Map<int, double> _calculateHourlyPressureScores() {
+    if (!isSingleDay) return {};
+    final Map<int, List<double>> hourlyValues = {};
+    for (final record in _records) {
+      if (record.weather != null) {
+        final match = RegExp(r'(\d+)hPa').firstMatch(record.weather!);
+        if (match != null && match.group(1) != null) {
+          final value = double.tryParse(match.group(1)!) ?? 0.0;
+          final hour = record.recordDate.hour;
+          if (hourlyValues.containsKey(hour)) {
+            hourlyValues[hour]!.add(value);
+          } else {
+            hourlyValues[hour] = [value];
+          }
+        }
+      }
+    }
+    return hourlyValues.map((hour, values) {
+      final average = values.reduce((a, b) => a + b) / values.length;
+      return MapEntry(hour, average);
+    });
+  }
+
+  Map<int, double> _calculateHourlyTemperatureScores() {
+    if (!isSingleDay) return {};
+    final Map<int, List<double>> hourlyValues = {};
+    for (final record in _records) {
+      if (record.weather != null) {
+        final match = RegExp(r'(-?\d+\.\d+)°C').firstMatch(record.weather!);
+        if (match != null && match.group(1) != null) {
+          final value = double.tryParse(match.group(1)!) ?? 0.0;
+          final hour = record.recordDate.hour;
+          if (hourlyValues.containsKey(hour)) {
+            hourlyValues[hour]!.add(value);
+          } else {
+            hourlyValues[hour] = [value];
+          }
+        }
+      }
+    }
+    return hourlyValues.map((hour, values) {
+      final average = values.reduce((a, b) => a + b) / values.length;
+      return MapEntry(hour, average);
+    });
+  }
+
+  Map<int, double> _calculateHourlyPolishingLevelData() {
+    if (!isSingleDay) return {};
+    final Map<int, List<int>> hourlyValues = {};
+    for (final record in _records) {
+      final hour = record.recordDate.hour;
+      if (hourlyValues.containsKey(hour)) {
+        hourlyValues[hour]!.add(record.polishingLevel);
+      } else {
+        hourlyValues[hour] = [record.polishingLevel];
+      }
+    }
+    return hourlyValues.map((hour, values) {
+      final average = values.reduce((a, b) => a + b) / values.length;
+      return MapEntry(hour, average);
+    });
   }
 }

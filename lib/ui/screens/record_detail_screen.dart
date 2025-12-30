@@ -89,11 +89,14 @@ class _DetailBody extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
+
           /// 「起きたこと」セクションのタイトル。
           const _SectionTitle("起きたこと"),
           const SizedBox(height: 8),
+
           /// 記録された出来事のテキスト。
           Text(record.eventText, style: const TextStyle(fontSize: 18)),
+
           /// 記録された気分タグがあれば表示。
           if (record.moodTags.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -128,6 +131,7 @@ class _DetailBody extends StatelessWidget {
                     style: const TextStyle(fontSize: 18),
                   ),
                   const SizedBox(width: 4),
+
                   /// 研磨度が表示可能であればパーセンテージを表示。
                   if (record.polishingLevel > 0)
                     Text(
@@ -141,6 +145,7 @@ class _DetailBody extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
+
           /// 自己分析の表示または編集UI。
           if (provider.isEditing)
             _AnalysisEditor(provider: provider)
@@ -152,6 +157,7 @@ class _DetailBody extends StatelessWidget {
           /// 「AI分析結果」セクションのタイトル。
           const _SectionTitle("AI分析結果"),
           const SizedBox(height: 12),
+
           /// ユーザーの購読ティアに応じてAI分析カードまたはアップグレードのプレースホルダーを表示。
           Consumer<SettingsProvider>(
             builder: (context, settings, _) {
@@ -200,6 +206,7 @@ class _DetailBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+
             /// プラン確認ボタン（実際の機能は未実装）。
             FilledButton.tonal(onPressed: () {}, child: const Text('プランを確認する')),
           ],
@@ -404,6 +411,7 @@ class _AnalysisEditorState extends State<_AnalysisEditor> {
               onPressed: () => widget.provider.toggleEdit(),
               child: const Text("キャンセル"),
             ),
+
             /// 自己分析の内容を更新するボタン。
             ElevatedButton(
               onPressed: () async {
@@ -464,6 +472,7 @@ class _AIAnalysisCard extends StatelessWidget {
                 "感情の安定度",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
+
               /// AIによる感情の安定度スコア。
               Text(
                 provider.hasAnalysis ? "${record.aiStabilityScore}%" : "--%",
@@ -476,6 +485,7 @@ class _AIAnalysisCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+
           /// AIによる分析理由のテキスト。
           Text(
             record.aiAnalysisReason ?? "分析データはありません",

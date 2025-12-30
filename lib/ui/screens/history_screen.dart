@@ -51,14 +51,20 @@ class HistoryScreen extends StatelessWidget {
           firstDay: DateTime.utc(2024, 1, 1), // カレンダーの最初の表示可能日
           lastDay: DateTime.utc(2030, 12, 31), // カレンダーの最後の表示可能日
           focusedDay: provider.focusedDay, // 現在フォーカスされている日
-          selectedDayPredicate: (day) => isSameDay(provider.selectedDay, day), // 日が選択されているかどうかの判定
+          selectedDayPredicate: (day) =>
+              isSameDay(provider.selectedDay, day), // 日が選択されているかどうかの判定
           onDaySelected: provider.onDaySelected, // 日が選択されたときのコールバック
-          eventLoader: (day) =>
-              provider.getEventsForDay(day).isNotEmpty ? [true] : [], // イベントのローダー
+          eventLoader: (day) => provider.getEventsForDay(day).isNotEmpty
+              ? [true]
+              : [], // イベントのローダー
           calendarFormat: provider.calendarFormat, // カレンダーの表示形式（月/週）
-          onFormatChanged: (format) => provider.setCalendarFormat(format), // 表示形式が変更されたときのコールバック
-          onHeaderTapped: (date) =>
-              _showYearMonthPicker(context, date, provider), // ヘッダーがタップされたときのコールバック（年月ピッカー表示）
+          onFormatChanged: (format) =>
+              provider.setCalendarFormat(format), // 表示形式が変更されたときのコールバック
+          onHeaderTapped: (date) => _showYearMonthPicker(
+            context,
+            date,
+            provider,
+          ), // ヘッダーがタップされたときのコールバック（年月ピッカー表示）
           daysOfWeekHeight: 30.0, // 曜日の表示高さ
           calendarStyle: CalendarStyle(
             /// 今日の日付のデコレーション。
@@ -68,27 +74,32 @@ class HistoryScreen extends StatelessWidget {
               ).colorScheme.primary.withAlpha((255 * 0.5).round()),
               shape: BoxShape.circle,
             ),
+
             /// 選択された日付のデコレーション。
             selectedDecoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
               shape: BoxShape.circle,
             ),
+
             /// 選択された日付のテキストスタイル。
             selectedTextStyle: TextStyle(
               color: Theme.of(context).colorScheme.onPrimary,
               fontSize: 16.0,
             ),
+
             /// イベントがある日のマーカーデコレーション。
             markerDecoration: BoxDecoration(
               color: Theme.of(context).colorScheme.secondary,
               shape: BoxShape.circle,
             ),
           ),
+
           /// 利用可能なカレンダー表示形式。
           availableCalendarFormats: const {
             CalendarFormat.month: '月',
             CalendarFormat.week: '週',
           },
+
           /// カレンダーヘッダーのスタイル設定。
           headerStyle: const HeaderStyle(
             formatButtonVisible: true, // 形式変更ボタンの表示
@@ -96,6 +107,7 @@ class HistoryScreen extends StatelessWidget {
           ),
         ),
         const Divider(),
+
         /// 選択された日の日記記録をリスト表示。
         Expanded(
           child: provider.selectedDayRecords.isEmpty
@@ -132,6 +144,7 @@ class HistoryScreen extends StatelessWidget {
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
+
                         /// カードをタップすると詳細画面へ遷移。
                         onTap: () {
                           Navigator.push(
@@ -183,6 +196,7 @@ class HistoryScreen extends StatelessWidget {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),
+
                                         /// 時刻と天気情報。
                                         Text(
                                           "${record.timeString} / ${record.weather ?? '天気情報なし'}",
@@ -193,6 +207,7 @@ class HistoryScreen extends StatelessWidget {
                                       ],
                                     ),
                                   ),
+
                                   /// 詳細画面への誘導アイコン。
                                   Icon(
                                     Icons.chevron_right,
@@ -238,6 +253,7 @@ class HistoryScreen extends StatelessWidget {
                                   ],
                                 ),
                               ),
+
                               /// 記録された気分タグがあれば表示。
                               if (record.moodTags.isNotEmpty) ...[
                                 const SizedBox(height: 10),

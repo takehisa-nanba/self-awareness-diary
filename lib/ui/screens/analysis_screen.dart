@@ -392,42 +392,10 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
-  /// データを0-10の範囲に正規化するヘルパー関数
-  List<FlSpot> _normalizeData(
-    Map<dynamic, num> data,
-    DateTime firstDate,
-    bool isHourly,
-  ) {
-    if (data.isEmpty) return [];
-
-    final values = data.values.map((e) => e.toDouble());
-    final minVal = values.reduce(min);
-    final maxVal = values.reduce(max);
-    final range = maxVal - minVal;
-
-    // 範囲が0の場合は、中央値5に正規化
-    if (range == 0) {
-      return data.entries.map((entry) {
-        final double x;
-        if (isHourly) {
-          x = (entry.key as int).toDouble();
-        } else {
-          x = (entry.key as DateTime).difference(firstDate).inDays.toDouble();
-        }
-        return FlSpot(x, 5.0);
-      }).toList();
-    }
-
-    return data.entries.map((entry) {
-      final double x;
-      if (isHourly) {
-        x = (entry.key as int).toDouble();
-      } else {
-        x = (entry.key as DateTime).difference(firstDate).inDays.toDouble();
-      }
-      final normalizedY = (entry.value.toDouble() - minVal) * 10 / range;
-      return FlSpot(x, normalizedY);
-    }).toList();
+  /// データを0-10の範囲に安全に正規化するヘルパー関数
+  double _safeScale(double value, double min, double max) {
+    if (max == min) return 5.0; // 範囲が0の場合は中央値を返す
+    return ((value - min) / (max - min)) * 10;
   }
 
   /// 選択されたデータタイプに基づいてレイヤー化された気分推移グラフを構築します。
@@ -437,24 +405,61 @@ class AnalysisScreen extends StatelessWidget {
     Set<AnalysisDataType> activeTypes,
   ) {
     final bool isHourly = report.isSingleDay;
-    final Map<dynamic, double> mainData = isHourly
+    final List<LineChartBarData> lineBarsData = [];
+
+    // --- データセットの準備 ---
+    final moodData = isHourly
         ? report.hourlyMoodScores
         : report.dailyMoodScores;
+    final pressureData = isHourly
+        ? report.hourlyPressureScores
+        : report.pressureData;
+    final tempData = isHourly
+        ? report.hourlyTemperatureScores
+        : report.temperatureData;
+    final polishingData = isHourly
+        ? report.hourlyPolishingLevelData
+        : report.polishingLevelData;
 
-    final List<LineChartBarData> lineBarsData = [];
+    // --- 正規化のための最小・最大値計算 ---
+    final pressureValues = pressureData.values
+        .where((v) => v > 0)
+        .map((e) => e.toDouble());
+    final tempValues = tempData.values
+        .where((v) => v > 0)
+        .map((e) => e.toDouble());
+    final polishingValues = polishingData.values
+        .where((v) => v > 0)
+        .map((e) => e.toDouble());
+
+    final minPressure = pressureValues.isNotEmpty
+        ? pressureValues.reduce(min)
+        : 0.0;
+    final maxPressure = pressureValues.isNotEmpty
+        ? pressureValues.reduce(max)
+        : 1.0;
+    final minTemp = tempValues.isNotEmpty ? tempValues.reduce(min) : 0.0;
+    final maxTemp = tempValues.isNotEmpty ? tempValues.reduce(max) : 1.0;
+    final minPolishing = polishingValues.isNotEmpty
+        ? polishingValues.reduce(min)
+        : 0.0;
+    final maxPolishing = polishingValues.isNotEmpty
+        ? polishingValues.reduce(max)
+        : 1.0;
+
+    // --- LineChartBarDataの生成 ---
 
     // 1. Mood (主軸)
     if (activeTypes.contains(AnalysisDataType.mood)) {
-      final spots = mainData.entries.map((entry) {
+      final spots = moodData.entries.map((entry) {
         final double x = isHourly
-            ? entry.key.toDouble()
+            ? (entry.key as int).toDouble()
             : (entry.key as DateTime)
                   .difference(report.dateRange.start)
                   .inDays
                   .toDouble();
         return FlSpot(x, entry.value.toDouble());
       }).toList();
-
       lineBarsData.add(
         LineChartBarData(
           spots: spots,
@@ -474,11 +479,21 @@ class AnalysisScreen extends StatelessWidget {
 
     // 2. Pressure (副データ)
     if (activeTypes.contains(AnalysisDataType.pressure)) {
-      final spots = _normalizeData(
-        report.pressureData,
-        report.dateRange.start,
-        isHourly,
-      );
+      final spots = pressureData.entries.map((entry) {
+        final double x;
+        if (isHourly) {
+          x = (entry.key as int).toDouble();
+        } else {
+          x = (entry.key as DateTime)
+              .difference(report.dateRange.start)
+              .inDays
+              .toDouble();
+        }
+        return FlSpot(
+          x,
+          _safeScale(entry.value.toDouble(), minPressure, maxPressure),
+        );
+      }).toList();
       lineBarsData.add(
         LineChartBarData(
           spots: spots,
@@ -488,18 +503,25 @@ class AnalysisScreen extends StatelessWidget {
           barWidth: 2,
           isStrokeCapRound: true,
           dotData: const FlDotData(show: false),
-          dashArray: [5, 5], // 点線
+          dashArray: [5, 5],
         ),
       );
     }
 
     // 3. Temperature (副データ)
     if (activeTypes.contains(AnalysisDataType.temperature)) {
-      final spots = _normalizeData(
-        report.temperatureData,
-        report.dateRange.start,
-        isHourly,
-      );
+      final spots = tempData.entries.map((entry) {
+        final double x;
+        if (isHourly) {
+          x = (entry.key as int).toDouble();
+        } else {
+          x = (entry.key as DateTime)
+              .difference(report.dateRange.start)
+              .inDays
+              .toDouble();
+        }
+        return FlSpot(x, _safeScale(entry.value.toDouble(), minTemp, maxTemp));
+      }).toList();
       lineBarsData.add(
         LineChartBarData(
           spots: spots,
@@ -516,11 +538,21 @@ class AnalysisScreen extends StatelessWidget {
 
     // 4. Polishing (副データ)
     if (activeTypes.contains(AnalysisDataType.polishing)) {
-      final spots = _normalizeData(
-        report.polishingLevelData,
-        report.dateRange.start,
-        isHourly,
-      );
+      final spots = polishingData.entries.map((entry) {
+        final double x;
+        if (isHourly) {
+          x = (entry.key as int).toDouble();
+        } else {
+          x = (entry.key as DateTime)
+              .difference(report.dateRange.start)
+              .inDays
+              .toDouble();
+        }
+        return FlSpot(
+          x,
+          _safeScale(entry.value.toDouble(), minPolishing, maxPolishing),
+        );
+      }).toList();
       lineBarsData.add(
         LineChartBarData(
           spots: spots,

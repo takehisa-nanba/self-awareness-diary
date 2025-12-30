@@ -81,10 +81,12 @@ class _WriteScreenState extends State<WriteScreen> {
       children: [
         /// 現在のステップを示す線形プログレスインジケータ。
         LinearProgressIndicator(value: (writeProvider.currentStep + 1) / 3),
+
         /// 現在の位置情報と気象情報を表示するステータスバー。
         const LocationStatusBar(),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+
           /// 現在のステップに応じたタイトル。
           child: Text(
             currentTitle,
@@ -121,6 +123,7 @@ class _WriteScreenState extends State<WriteScreen> {
                 )
               else
                 const SizedBox.shrink(),
+
               /// 次のステップへ進む、または記録を保存するボタン。
               SizedBox(
                 width: 108,
@@ -186,6 +189,7 @@ class _WriteScreenState extends State<WriteScreen> {
                             ); // 履歴タブへ移動
                           }
                         },
+
                   /// 保存中またはAI生成中はインジケータを表示、それ以外は「保存」または「次へ」を表示。
                   child: (writeProvider.isSaving || writeProvider.isGenerating)
                       ? const SizedBox(

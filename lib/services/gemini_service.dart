@@ -73,7 +73,9 @@ class GeminiService {
           ?.replaceAll('```json', '')
           .replaceAll('```', '')
           .trim();
-      return jsonDecode(jsonStr ?? '{"score": 50, "reason": "分析失敗"}'); // JSON解析失敗時のフォールバック
+      return jsonDecode(
+        jsonStr ?? '{"score": 50, "reason": "分析失敗"}',
+      ); // JSON解析失敗時のフォールバック
     } catch (e) {
       debugPrint('AI分析エラー: $e');
       return {"score": 50, "reason": "AI通信エラー"}; // AI通信エラー時のフォールバック

@@ -40,6 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
+
           /// 「出来事から書き始める」設定のスイッチ。
           ///
           /// オンにすると、日記作成画面が気分選択ではなく出来事入力から始まります。
@@ -66,6 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'よく行く場所の登録',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
+
           /// 場所登録に関する補足説明。
           Text(
             '登録した住所が自動的にラベル（自宅など）に変換されます。',
@@ -109,6 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
+
                       /// 現在地を住所として自動入力するボタン。
                       IconButton.filledTonal(
                         onPressed: provider.isLoading
@@ -135,6 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
+
                   /// 場所を登録するボタン。
                   ///
                   /// ラベルと住所が入力されている場合のみ有効化され、
@@ -225,6 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           const SizedBox(height: 32),
+
           /// 登録済み場所一覧のタイトル。
           const Text(
             '登録済み一覧',
@@ -278,6 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 32),
           const Divider(),
+
           /// バージョン情報と開発者モード有効化のための GestureDetector。
           ///
           /// バージョン表示部分を7回タップすると開発者モード画面へ遷移します。

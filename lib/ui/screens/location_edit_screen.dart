@@ -108,6 +108,7 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
             /// 場所の住所を表示するテキストフィールド（読み取り専用）。
             TextField(
               readOnly: true,
@@ -121,6 +122,7 @@ class _LocationEditScreenState extends State<LocationEditScreen> {
               maxLines: null, // 住所が長い場合に複数行で表示
             ),
             const SizedBox(height: 32),
+
             /// 変更を保存するためのボタン。
             ElevatedButton.icon(
               icon: const Icon(Icons.save),

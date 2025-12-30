@@ -174,7 +174,9 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: distance == 0
-                          ? _getMoodColor(widget.currentMood).withAlpha(26) // 選択項目は背景色を薄く
+                          ? _getMoodColor(widget.currentMood).withAlpha(
+                              26,
+                            ) // 選択項目は背景色を薄く
                           : Colors.transparent,
                       border: Border.all(
                         color: scoreBaseColor.withAlpha(128),
