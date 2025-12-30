@@ -2,7 +2,6 @@
 
 import 'package:intl/intl.dart';
 import '../models/analysis_report.dart';
-import '../models/diary_record.dart';
 
 /// [AnalysisReport] オブジェクトを Gemini AI のプロンプトとして使用できる形式の
 /// 文字列に変換する役割を持つユーティリティクラス。

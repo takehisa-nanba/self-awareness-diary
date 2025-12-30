@@ -30,6 +30,7 @@ class AnalysisScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildDataTypeSelector(context),
           const SizedBox(height: 24),
+
           /// [AnalysisProvider] の状態に基づいて、分析結果を表示。
           ///
           /// データが読み込み中の場合、データがない場合、
@@ -45,7 +46,8 @@ class AnalysisScreen extends StatelessWidget {
 
               final report = provider.report;
               if (report == null ||
-                  (report.isSingleDay // 単日表示の場合は時間別スコアを確認
+                  (report
+                          .isSingleDay // 単日表示の場合は時間別スコアを確認
                       ? report.hourlyMoodScores.isEmpty
                       : report.dailyMoodScores.isEmpty)) {
                 return const SizedBox(
@@ -59,12 +61,18 @@ class AnalysisScreen extends StatelessWidget {
                   /// 「ムード推移」セクションのタイトル。
                   _buildSectionTitle(context, 'ムード推移'),
                   const SizedBox(height: 16),
+
                   /// 気分推移グラフ（単日か複数日かで表示を切り替え）。
                   SizedBox(
                     height: 300,
-                    child: _buildLayeredMoodTrendChart(context, report, provider.activeDataTypes),
+                    child: _buildLayeredMoodTrendChart(
+                      context,
+                      report,
+                      provider.activeDataTypes,
+                    ),
                   ),
                   const SizedBox(height: 8),
+
                   /// 平均スコアの表示。
                   Align(
                     alignment: Alignment.centerRight,
@@ -78,6 +86,7 @@ class AnalysisScreen extends StatelessWidget {
                   /// 「ムードの分布」セクションのタイトル。
                   _buildSectionTitle(context, 'ムードの分布'),
                   const SizedBox(height: 16),
+
                   /// 気分タグの分布を示す棒グラフ。
                   SizedBox(
                     height: 250,
@@ -164,6 +173,7 @@ class AnalysisScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+
             /// プラン確認ボタン（TODO: 課金画面への遷移を実装）。
             FilledButton.tonal(
               onPressed: () {
@@ -427,8 +437,9 @@ class AnalysisScreen extends StatelessWidget {
     Set<AnalysisDataType> activeTypes,
   ) {
     final bool isHourly = report.isSingleDay;
-    final Map<dynamic, double> mainData =
-        isHourly ? report.hourlyMoodScores : report.dailyMoodScores;
+    final Map<dynamic, double> mainData = isHourly
+        ? report.hourlyMoodScores
+        : report.dailyMoodScores;
 
     final List<LineChartBarData> lineBarsData = [];
 
@@ -438,9 +449,9 @@ class AnalysisScreen extends StatelessWidget {
         final double x = isHourly
             ? entry.key.toDouble()
             : (entry.key as DateTime)
-                .difference(report.dateRange.start)
-                .inDays
-                .toDouble();
+                  .difference(report.dateRange.start)
+                  .inDays
+                  .toDouble();
         return FlSpot(x, entry.value.toDouble());
       }).toList();
 
@@ -502,7 +513,7 @@ class AnalysisScreen extends StatelessWidget {
         ),
       );
     }
-    
+
     // 4. Polishing (副データ)
     if (activeTypes.contains(AnalysisDataType.polishing)) {
       final spots = _normalizeData(
@@ -524,7 +535,9 @@ class AnalysisScreen extends StatelessWidget {
       );
     }
 
-    final double duration = isHourly ? 23 : report.dateRange.duration.inDays.toDouble();
+    final double duration = isHourly
+        ? 23
+        : report.dateRange.duration.inDays.toDouble();
     final double bottomLabelInterval = isHourly ? 6 : (duration > 7 ? 7 : 1);
 
     return LineChart(
@@ -541,9 +554,10 @@ class AnalysisScreen extends StatelessWidget {
                 final day = value.toInt();
                 if (day % bottomLabelInterval == 0) {
                   final String text = isHourly
-                      ? '${day}時'
-                      : DateFormat('M/d')
-                          .format(report.dateRange.start.add(Duration(days: day)));
+                      ? '$day時'
+                      : DateFormat('M/d').format(
+                          report.dateRange.start.add(Duration(days: day)),
+                        );
                   return Text(text, style: const TextStyle(fontSize: 10));
                 }
                 return const Text('');
@@ -556,16 +570,22 @@ class AnalysisScreen extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 if (value.toInt() % 2 == 0) {
-                  return Text(value.toInt().toString(),
-                      style: const TextStyle(fontSize: 10));
+                  return Text(
+                    value.toInt().toString(),
+                    style: const TextStyle(fontSize: 10),
+                  );
                 }
                 return const Text('');
               },
               reservedSize: 28,
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         borderData: FlBorderData(show: false),
         gridData: FlGridData(
@@ -678,7 +698,10 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPolishingTrajectory(BuildContext context, AnalysisReport report) {
+  Widget _buildPolishingTrajectory(
+    BuildContext context,
+    AnalysisReport report,
+  ) {
     final distribution = report.polishingDistribution;
     final sortedKeys = distribution.keys.toList()
       ..sort((a, b) {
@@ -705,10 +728,7 @@ class AnalysisScreen extends StatelessWidget {
               children: [
                 Text(icon, style: const TextStyle(fontSize: 24)),
                 const SizedBox(height: 4),
-                Text(
-                  '$count 回',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                Text('$count 回', style: Theme.of(context).textTheme.bodySmall),
               ],
             );
           }).toList(),
@@ -718,7 +738,9 @@ class AnalysisScreen extends StatelessWidget {
   }
 
   Widget _buildEnvironmentCorrelation(
-      BuildContext context, AnalysisReport report) {
+    BuildContext context,
+    AnalysisReport report,
+  ) {
     final correlation = report.weatherCorrelation;
     if (correlation.isEmpty) {
       return const Center(child: Text('天気の記録があるデータが不足しています。'));
@@ -734,8 +756,9 @@ class AnalysisScreen extends StatelessWidget {
     return Column(
       children: sortedEntries.map((entry) {
         final difference = entry.value - overallAverage;
-        final color =
-            difference >= 0 ? Colors.green.shade700 : Colors.red.shade700;
+        final color = difference >= 0
+            ? Colors.green.shade700
+            : Colors.red.shade700;
         final sign = difference >= 0 ? '+' : '';
 
         return Card(
@@ -743,8 +766,10 @@ class AnalysisScreen extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainer,
           child: ListTile(
             leading: const Icon(Icons.wb_sunny_outlined),
-            title: Text(entry.key,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              entry.key,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(
               '平均より $sign${difference.toStringAsFixed(1)} ポイント',
               style: TextStyle(color: color),
