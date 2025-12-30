@@ -39,7 +39,7 @@ class AnalysisReport {
   late final Map<String, double> weatherCorrelation =
       _calculateWeatherCorrelation();
 
-  /// タグのペア(Set<String>) -> 出現回数(int)
+  /// タグのペア(`Set<String>`) -> 出現回数(int)
   late final Map<String, int> tagPairs = _calculateTagPairs();
 
   // --- privateな計算メソッド ---
@@ -96,6 +96,7 @@ class AnalysisReport {
     return total / _records.length;
   }
 
+  /// 期間内の日記の研磨度アイコンごとの出現回数を計算します。
   Map<String, int> _calculatePolishingDistribution() {
     final Map<String, int> distribution = {};
     for (final record in _records) {
@@ -105,6 +106,7 @@ class AnalysisReport {
     return distribution;
   }
 
+  /// 天気ごとの平均ムードスコアを計算します。
   Map<String, double> _calculateWeatherCorrelation() {
     final Map<String, List<int>> scoresByWeather = {};
     for (final record in _records) {
@@ -125,6 +127,7 @@ class AnalysisReport {
     });
   }
 
+  /// 同時に記録された気分タグのペアの出現頻度を計算し、ランキング形式で返します。
   Map<String, int> _calculateTagPairs() {
     final Map<String, int> pairCounts = {};
     for (final record in _records) {

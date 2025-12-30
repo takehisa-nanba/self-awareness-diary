@@ -697,7 +697,7 @@ class AnalysisScreen extends StatelessWidget {
             title: Text(entry.key,
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(
-              '平均より ${sign}${difference.toStringAsFixed(1)} ポイント',
+              '平均より $sign${difference.toStringAsFixed(1)} ポイント',
               style: TextStyle(color: color),
             ),
             trailing: Text(
