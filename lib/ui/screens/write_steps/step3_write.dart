@@ -1,4 +1,4 @@
-// C:\Users\ramp1\Desktop\self-awareness-diary\lib\ui\screens\write_steps\step3_write.dart
+// lib/ui/screens/write_steps/step3_write.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

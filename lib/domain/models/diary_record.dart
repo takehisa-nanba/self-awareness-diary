@@ -1,4 +1,4 @@
-// C:\Users\ramp1\Desktop\self-awareness-diary\lib\domain\models\diary_record.dart
+// lib/domain/models/diary_record.dart
 
 import 'package:isar/isar.dart';
 part 'diary_record.g.dart';

@@ -1,4 +1,4 @@
-// C:\Users\ramp1\Desktop\self-awareness-diary\lib\domain\repositories\diary_repository.dart
+// lib/domain/repositories/diary_repository.dart
 
 import '../models/diary_record.dart';
 

@@ -1,4 +1,4 @@
-// C:\Users\ramp1\Desktop\self-awareness-diary\lib\providers\analysis_provider.dart
+// lib/providers/analysis_provider.dart
 
 import 'package:flutter/material.dart';
 import '../domain/models/analysis_report.dart';

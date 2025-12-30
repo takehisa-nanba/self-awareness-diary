@@ -1,4 +1,4 @@
-// C:\Users\ramp1\Desktop\self-awareness-diary\lib\domain\models\location_setting.dart
+// lib/domain/models/location_setting.dart
 
 import 'package:isar/isar.dart';
 

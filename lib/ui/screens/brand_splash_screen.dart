@@ -1,4 +1,4 @@
-// C:\Users\ramp1\Desktop\self-awareness-diary\lib\ui\screens\brand_splash_screen.dart
+// lib/ui/screens/brand_splash_screen.dart
 
 import 'dart:async';
 import 'package:flutter/material.dart';
