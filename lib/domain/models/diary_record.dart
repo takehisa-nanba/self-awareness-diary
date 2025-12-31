@@ -74,6 +74,39 @@ class DiaryRecord {
   /// 記録日時を "HH:MM" 形式の文字列で返します。
   String get timeString =>
       "${recordDate.hour.toString().padLeft(2, '0')}:${recordDate.minute.toString().padLeft(2, '0')}";
+
+  /// 特定のフィールドを更新した新しい [DiaryRecord] インスタンスを作成します。
+  DiaryRecord copyWith({
+    int? isarId,
+    String? recordId,
+    DateTime? recordDate,
+    List<String>? moodTags,
+    int? moodScore,
+    String? eventText,
+    String? selfAnalysis,
+    int? aiStabilityScore,
+    String? aiAnalysisReason,
+    String? location,
+    String? weather,
+    double? latitude,
+    double? longitude,
+  }) {
+    return DiaryRecord(
+      isarId: isarId ?? this.isarId,
+      recordId: recordId ?? this.recordId,
+      recordDate: recordDate ?? this.recordDate,
+      moodTags: moodTags ?? this.moodTags,
+      moodScore: moodScore ?? this.moodScore,
+      eventText: eventText ?? this.eventText,
+      selfAnalysis: selfAnalysis ?? this.selfAnalysis,
+      aiStabilityScore: aiStabilityScore ?? this.aiStabilityScore,
+      aiAnalysisReason: aiAnalysisReason ?? this.aiAnalysisReason,
+      location: location ?? this.location,
+      weather: weather ?? this.weather,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+    );
+  }
 }
 
 /// [DiaryRecord] の分析関連ロジックをまとめた拡張。

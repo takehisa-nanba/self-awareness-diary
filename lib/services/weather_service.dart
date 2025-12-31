@@ -50,6 +50,24 @@ class WeatherService {
       return null;
     }
   }
+
+  /// 指定された過去の日付の天気情報を非同期で取得します（ダミー実装）。
+  ///
+  /// [lat] 緯度。
+  /// [lon] 経度。
+  /// [date] 過去の日付。
+  Future<String> getHistoricalWeather(
+    double lat,
+    double lon,
+    DateTime date,
+  ) async {
+    // API未契約のため、2秒待ってからダミーデータを返す
+    await Future.delayed(const Duration(seconds: 2));
+    debugPrint(
+      "天気スタッフ (過去): 座標($lat, $lon) の ${date.toIso8601String()} の天気を問い合わせます (ダミー)",
+    );
+    return "晴れ (22.5°C) [Historical/Dummy]";
+  }
 }
 
 /// グローバルにアクセス可能な [WeatherService] のインスタンス。

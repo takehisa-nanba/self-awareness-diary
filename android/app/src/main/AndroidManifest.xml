@@ -9,7 +9,11 @@
         android:label="myapp"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:enableOnBackInvokedCallback="true"> ```
+        android:enableOnBackInvokedCallback="true">
+        <!-- Google Mobile Ads SDK の App ID を設定 (テスト用) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713"/>
         <meta-data
         android:name="flutter.enable_impeller"
         android:value="false" />

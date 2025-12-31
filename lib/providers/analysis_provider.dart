@@ -1,6 +1,8 @@
 // lib/providers/analysis_provider.dart
 
 import 'package:flutter/material.dart';
+import 'package:myapp/domain/models/diary_record.dart';
+import 'package:myapp/providers/settings_provider.dart';
 import '../domain/models/analysis_report.dart';
 import '../domain/repositories/diary_repository.dart';
 import '../services/gemini_service.dart';
@@ -16,6 +18,7 @@ enum AnalysisDataType { mood, pressure, temperature, polishing }
 class AnalysisProvider extends ChangeNotifier {
   final DiaryRepository _diaryRepository;
   final GeminiService _geminiService;
+  SettingsProvider? _settingsProvider; // SettingsProviderへの参照
 
   // --- 状態 ---
   /// 現在グラフに表示すべきデータの種類の集合。
@@ -37,6 +40,11 @@ class AnalysisProvider extends ChangeNotifier {
 
     final initialRange = DateTimeRange(start: startOfPeriod, end: endOfToday);
     changeDateRange(initialRange);
+  }
+
+  /// SettingsProviderのインスタンスを更新します。
+  void updateSettings(SettingsProvider settings) {
+    _settingsProvider = settings;
   }
 
   DateTimeRange _dateRange = DateTimeRange(
@@ -64,6 +72,32 @@ class AnalysisProvider extends ChangeNotifier {
 
   /// AIによって生成された洞察のリスト。
   List<String> get aiInsights => _aiInsights;
+
+  /// 手動で特定の記録のAI安定度分析を実行します。
+  Future<DiaryRecord> performManualAnalysis(DiaryRecord record) async {
+    if (record.selfAnalysis == null || record.selfAnalysis!.isEmpty) {
+      throw Exception("分析対象のテキストがありません。");
+    }
+
+    final analysisResult = await _geminiService.analyzeStability(
+      record.selfAnalysis!,
+    );
+
+    // レコードを更新
+    final updatedRecord = record.copyWith(
+      aiStabilityScore: analysisResult['score'],
+      aiAnalysisReason: analysisResult['reason'],
+    );
+
+    // DBに保存
+    await _diaryRepository.saveRecord(updatedRecord);
+
+    // 利用回数を記録
+    await _settingsProvider?.recordManualAnalysis();
+
+    notifyListeners(); // データ更新をUIに通知
+    return updatedRecord;
+  }
 
   /// 分析対象の新しい日付範囲を設定し、データの再集計とAIの洞察取得を行います。
   Future<void> changeDateRange(DateTimeRange newRange) async {

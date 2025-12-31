@@ -2,11 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart'; // 日付のローカライズを初期化するために必要
 import 'package:myapp/providers/location_provider.dart';
 import 'package:myapp/providers/mood_tag_provider.dart';
+import 'services/ad_service.dart';
 import 'services/environment_coordinator.dart';
 import 'services/isar_service.dart';
 import 'services/gemini_service.dart';
@@ -36,6 +38,7 @@ void main() async {
   };
 
   WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize(); // Google Mobile Ads SDKを初期化
   await initializeDateFormatting(); // 日付フォーマットのローカライズを初期化
 
   // .envファイルから環境変数を読み込み
@@ -45,6 +48,7 @@ void main() async {
   final geminiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
 
   // サービスのインスタンス化と初期化
+  final adService = AdService(); // AdServiceをインスタンス化
   isarService = IsarService();
   await isarService.init(); // Isar データベースの初期化
 
@@ -72,14 +76,16 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => HistoryProvider(context.read<DiaryRepository>()),
         ),
-        ChangeNotifierProvider(
-          create: (context) =>
-              AnalysisProvider(context.read<DiaryRepository>(), geminiService),
-        ),
-        // SettingsProviderの提供方法を変更。HistoryProviderへの依存を削除。
+        // SettingsProviderを先に定義
         ChangeNotifierProvider(
           create: (context) =>
               SettingsProvider(isarService, context.read<DiaryRepository>()),
+        ),
+        ChangeNotifierProxyProvider<SettingsProvider, AnalysisProvider>(
+          create: (context) =>
+              AnalysisProvider(context.read<DiaryRepository>(), geminiService),
+          update: (_, settings, analysis) =>
+              analysis!..updateSettings(settings),
         ),
         // LocationProviderを追加。HistoryProviderに依存するためChangeNotifierProxyProviderを使用。
         ChangeNotifierProxyProvider<HistoryProvider, LocationProvider>(
@@ -102,6 +108,7 @@ void main() async {
             environmentCoordinator,
             geminiService,
             context.read<DiaryRepository>(),
+            adService, // AdServiceを注入
           ),
           update: (_, history, settings, write) => write!
             ..updateProviders(history, settings), // 連携ProviderをWriteProviderに注入

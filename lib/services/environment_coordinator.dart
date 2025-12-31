@@ -149,6 +149,17 @@ class EnvironmentCoordinator {
       return EnvironmentData(location: "識別エラー"); // エラー発生時は汎用エラーを返す
     }
   }
+
+  /// 指定された過去の日付の天気情報を取得します。
+  ///
+  /// 内部で [WeatherService] のメソッドを呼び出します。
+  Future<String> getHistoricalWeather(
+    double lat,
+    double lon,
+    DateTime date,
+  ) async {
+    return await _weatherService.getHistoricalWeather(lat, lon, date);
+  }
 }
 
 /// グローバルにアクセス可能な [EnvironmentCoordinator] のインスタンス。

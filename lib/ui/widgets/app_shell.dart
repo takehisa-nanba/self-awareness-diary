@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'extended_fab_navigator.dart';
+import 'banner_ad_wrapper.dart'; // BannerAdWrapperをインポート
 
 /// アプリケーションの共通のレイアウト（シェル）を提供するウィジェット。
 ///
@@ -17,11 +18,15 @@ class AppShell extends StatelessWidget {
   /// フローティングアクションボタン。
   final FloatingActionButton? floatingActionButton;
 
+  /// 広告を表示しない「聖域」かどうか。
+  final bool isSanctuary;
+
   const AppShell({
     super.key,
     required this.child,
     required this.title,
-    this.floatingActionButton, // FloatingActionButtonを受け取るように変更
+    this.floatingActionButton,
+    this.isSanctuary = false, // isSanctuaryプロパティを追加
   });
 
   @override
@@ -46,7 +51,12 @@ class AppShell extends StatelessWidget {
           child: ExtendedFabNavigator(),
         ),
       ),
-      body: child, // メインコンテンツ
+      body: Column(
+        children: [
+          Expanded(child: child), // メインコンテンツ
+          BannerAdWrapper(isSanctuary: isSanctuary), // isSanctuaryを渡す
+        ],
+      ),
       floatingActionButton:
           floatingActionButton, // 受け取ったFloatingActionButtonを配置
       floatingActionButtonLocation:

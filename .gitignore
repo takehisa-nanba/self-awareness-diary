@@ -48,3 +48,6 @@ app.*.map.json
 .env
 
 .tmp.driveupload/
+
+# App Icons generated files
+leef.svg

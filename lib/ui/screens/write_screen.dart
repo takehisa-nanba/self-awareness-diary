@@ -31,7 +31,14 @@ class _WriteScreenState extends State<WriteScreen> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    // 環境データ取得は必要に応じてWriteProvider内で実行される
+    // 画面構築後、新規作成フローの場合のみ環境データの取得を開始
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final writeProvider = context.read<WriteProvider>();
+      // 新規の日記作成時（編集や過去の記録でない場合）のみ現在地の環境データを取得
+      if (writeProvider.isarId == null && !writeProvider.isHistoricalFlow) {
+        writeProvider.fetchCurrentEnvironmentData();
+      }
+    });
   }
 
   @override
@@ -42,14 +49,14 @@ class _WriteScreenState extends State<WriteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       children: [
         // ヘッダー部分 (プログレスバー、場所/天気、タイトル)
-        _WriteScreenHeader(),
+        const _WriteScreenHeader(),
         // メインコンテンツ部分 (ステップごとの入力フォーム)
-        _WriteScreenContent(),
+        _WriteScreenContent(scrollController: _scrollController),
         // ナビゲーション部分 (戻る、次へ/保存ボタン)
-        _WriteScreenNavigation(),
+        const _WriteScreenNavigation(),
       ],
     );
   }
@@ -57,7 +64,8 @@ class _WriteScreenState extends State<WriteScreen> {
 
 /// 日記作成ステップに応じたコンテンツを表示するウィジェット。
 class _WriteScreenContent extends StatelessWidget {
-  const _WriteScreenContent();
+  final ScrollController scrollController;
+  const _WriteScreenContent({required this.scrollController});
 
   @override
   Widget build(BuildContext context) {
@@ -65,11 +73,13 @@ class _WriteScreenContent extends StatelessWidget {
 
     return Expanded(
       child: Scrollbar(
+        controller: scrollController,
         // スクロールバーの表示設定
         thumbVisibility: true,
         thickness: 6.0,
         radius: const Radius.circular(3.0),
         child: SingleChildScrollView(
+          controller: scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           // 現在のステップに応じたウィジェットを表示
           child: _buildStep(writeProvider.currentStep),

@@ -13,7 +13,7 @@ import 'settings_provider.dart';
 /// 場所の登録状態判定などを担当します。
 class DetailProvider with ChangeNotifier {
   /// 現在表示または編集している日記レコード。
-  final DiaryRecord record;
+  DiaryRecord record;
 
   /// Gemini AIサービス。心の安定度分析などに使用。
   final GeminiService _geminiService;
@@ -23,6 +23,12 @@ class DetailProvider with ChangeNotifier {
 
   /// [DetailProvider] のコンストラクタ。
   DetailProvider(this.record, this._geminiService, this._settingsProvider);
+
+  /// レコードを更新し、UIに変更を通知します。
+  void updateRecord(DiaryRecord newRecord) {
+    record = newRecord;
+    notifyListeners();
+  }
 
   // 編集モードの管理
   /// 自己分析の編集モードに入っているかどうかを示すフラグ。

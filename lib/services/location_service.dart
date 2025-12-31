@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:geocoding/geocoding.dart' as geocoding;
 
 /// デバイスの位置情報（GPS座標）およびその座標から住所を取得するサービス。
 ///
@@ -74,6 +75,20 @@ class LocationService {
     }
     // 住所が取得できない場合は緯度経度を返す
     return "${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}";
+  }
+
+  /// 住所文字列から緯度・経度を取得します。
+  Future<geocoding.Location?> getLatLngFromAddress(String address) async {
+    try {
+      final locations = await geocoding.locationFromAddress(address);
+      if (locations.isNotEmpty) {
+        return locations.first;
+      }
+      return null;
+    } catch (e) {
+      debugPrint("住所からの緯度経度取得エラー: $e");
+      return null;
+    }
   }
 }
 

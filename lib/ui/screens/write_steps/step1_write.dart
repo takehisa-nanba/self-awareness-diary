@@ -24,56 +24,51 @@ class Step1Write extends StatelessWidget {
         Consumer<WriteProvider>(
           builder: (context, writeProvider, child) {
             final moodTags = moodTagProvider.availableMoodTags;
-            return Scrollbar(
-              thumbVisibility: true,
-              thickness: 6.0,
-              radius: const Radius.circular(3.0),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics:
-                    const NeverScrollableScrollPhysics(), // GridView自体のスクロールを無効化
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // 2列表示
-                  childAspectRatio: 4.0, // 各アイテムのアスペクト比
-                  crossAxisSpacing: 8, // 列間のスペース
-                  mainAxisSpacing: 8, // 行間のスペース
-                ),
-                itemCount: moodTags.length,
-                itemBuilder: (context, index) {
-                  final tag = moodTags[index];
-                  final isSelected = writeProvider.selectedTags.contains(
-                    tag.label,
-                  );
-                  return SizedBox(
-                    width: 120.0, // チップの幅
-                    child: FilterChip(
-                      label: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              tag.label,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis, // 長いテキストは省略
-                            ),
-                          ),
-                        ],
-                      ),
-                      avatar: Icon(tag.icon, size: 18), // タグのアイコン
-                      selected: isSelected, // 選択状態
-                      selectedColor: tag.color.withAlpha(80), // 選択時の色
-                      onSelected: (val) {
-                        if (val) {
-                          writeProvider.selectedTags.add(tag.label); // タグを追加
-                        } else {
-                          writeProvider.selectedTags.remove(tag.label); // タグを削除
-                        }
-                        writeProvider.notify(); // 状態更新を通知
-                      },
-                    ),
-                  );
-                },
+            return GridView.builder(
+              shrinkWrap: true,
+              physics:
+                  const NeverScrollableScrollPhysics(), // GridView自体のスクロールを無効化
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2, // 2列表示
+                childAspectRatio: 4.0, // 各アイテムのアスペクト比
+                crossAxisSpacing: 8, // 列間のスペース
+                mainAxisSpacing: 8, // 行間のスペース
               ),
+              itemCount: moodTags.length,
+              itemBuilder: (context, index) {
+                final tag = moodTags[index];
+                final isSelected = writeProvider.selectedTags.contains(
+                  tag.label,
+                );
+                return SizedBox(
+                  width: 120.0, // チップの幅
+                  child: FilterChip(
+                    label: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            tag.label,
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis, // 長いテキストは省略
+                          ),
+                        ),
+                      ],
+                    ),
+                    avatar: Icon(tag.icon, size: 18), // タグのアイコン
+                    selected: isSelected, // 選択状態
+                    selectedColor: tag.color.withAlpha(80), // 選択時の色
+                    onSelected: (val) {
+                      if (val) {
+                        writeProvider.selectedTags.add(tag.label); // タグを追加
+                      } else {
+                        writeProvider.selectedTags.remove(tag.label); // タグを削除
+                      }
+                      writeProvider.notify(); // 状態更新を通知
+                    },
+                  ),
+                );
+              },
             );
           },
         ),

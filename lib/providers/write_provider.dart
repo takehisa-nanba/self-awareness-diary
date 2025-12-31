@@ -1,105 +1,70 @@
 // lib/providers/write_provider.dart
 
-import 'package:flutter/material.dart'; // ChangeNotifierのために必要
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+
 import '../../domain/models/diary_record.dart';
-import 'history_provider.dart';
-import 'settings_provider.dart';
+import '../../domain/repositories/diary_repository.dart';
+import '../services/ad_service.dart';
 import '../services/environment_coordinator.dart';
 import '../services/gemini_service.dart';
-import '../../domain/repositories/diary_repository.dart';
+import 'history_provider.dart';
+import 'settings_provider.dart';
 
 /// 日記作成プロセス全体の状態を管理するプロバイダークラス。
-///
-/// ユーザーの入力データ、ステップの進行状況、環境データの取得、
-/// AIとの連携（深掘り質問生成、心の安定度分析）、および日記の保存を担当します。
 class WriteProvider with ChangeNotifier {
-  /// 現在の日記作成ステップ (0:タグ選択, 1:気分/出来事入力, 2:自己分析)。
-  int _currentStep = 0;
-  int get currentStep => _currentStep;
+  // 依存サービス
+  final EnvironmentCoordinator _environmentCoordinator;
+  final GeminiService _geminiService;
+  final DiaryRepository _diaryRepository;
+  final AdService _adService;
 
-  /// 更新対象の日記レコードのIsar ID。これがnullでない場合、更新モードと判断する。
-  /// 更新対象の日記レコードのIsar ID。これがnullでない場合、更新モードと判断する。
-  int? isarId;
-
-  // 連携するProvider
-  /// 履歴プロバイダーへの参照。日記保存後に履歴を更新するために使用。
+  // 連携プロバイダー
   HistoryProvider? _historyProvider;
-
-  /// 設定プロバイダーへの参照。サブスクリプションティアの確認などに使用。
   SettingsProvider? _settingsProvider;
 
-  /// 環境データ（位置情報、天気）を調整するためのコーディネーターサービス。
-  final EnvironmentCoordinator _environmentCoordinator;
-
-  /// Gemini AIサービス。深掘り質問の生成や心の安定度分析に使用。
-  final GeminiService _geminiService;
-
-  /// 日記レコードを保存するためのリポジトリ。
-  final DiaryRepository _diaryRepository;
-
-  // 入力データ
-  /// ユーザーが選択した気分のスコア。
-  int moodScore = 5;
-
-  /// ユーザーが選択した気分タグのリスト。
-  List<String> selectedTags = [];
-
-  /// ユーザーが入力した出来事のテキスト。
-  String eventText = "";
-
-  /// ユーザーが入力した自己分析のテキスト。
-  String selfAnalysisText = "";
-
-  /// AIによって生成された深掘り質問。
-  String reflectionQuestion = "";
-
-  // 位置・天気データ
-  /// 一時的に格納される現在の場所情報。
-  String? tempLocation;
-
-  /// 一時的に格納される現在の天気情報。
-  String? tempWeather;
-
-  /// 一時的に格納される現在の緯度。
-  double? tempLat;
-
-  /// 一時的に格納される現在の経度。
-  double? tempLng;
-
-  /// AIが深掘り質問を生成中かどうかを示すフラグ。
+  // 状態フラグ
+  int _currentStep = 0;
+  int get currentStep => _currentStep;
+  int? isarId;
+  bool isHistoricalFlow = false; // 過去の記録/編集フローかどうかのフラグ
   bool isGenerating = false;
-
-  /// 日記を保存中かどうかを示すフラグ。
   bool isSaving = false;
 
-  /// [WriteProvider] のコンストラクタ。
-  ///
-  /// 依存する環境コーディネーター、Geminiサービス、日記リポジトリを受け取ります。
+  // 入力データ
+  int moodScore = 5;
+  List<String> selectedTags = [];
+  String eventText = "";
+  String selfAnalysisText = "";
+  String reflectionQuestion = "";
+
+  // 環境データ
+  String? tempLocation;
+  String? tempWeather;
+  double? tempLat;
+  double? tempLng;
+  DateTime? _historicalDate; // 過去記録時の日付
+
   WriteProvider(
     this._environmentCoordinator,
     this._geminiService,
     this._diaryRepository,
+    this._adService,
   );
 
-  /// 連携する他のプロバイダー ([HistoryProvider], [SettingsProvider]) を登録します。
-  ///
-  /// 主に [MultiProvider] の `builder` 関数から呼び出されます。
   void updateProviders(HistoryProvider history, SettingsProvider settings) {
     _historyProvider = history;
     _settingsProvider = settings;
     notifyListeners();
   }
 
-  /// 既存の日記レコードを編集するために、プロバイダーの状態を初期化します。
-  ///
-  /// [record] 編集対象の [DiaryRecord] オブジェクト。
-  /// 既存の日記レコードを編集するために、プロバイダーの状態を初期化します。
-  ///
-  /// [record] 編集対象の [DiaryRecord] オブジェクト。
   void initForEdit(DiaryRecord record) {
-    _currentStep = 2; // 自己分析ステップから開始
-    isarId = record.isarId; // 編集対象レコードのIsar IDを保持
+    _reset();
+    isHistoricalFlow = true; // 編集も過去のフローと見なす
+    _currentStep = 2;
+    isarId = record.isarId;
     moodScore = record.moodScore;
     selectedTags = List.from(record.moodTags);
     eventText = record.eventText;
@@ -108,25 +73,36 @@ class WriteProvider with ChangeNotifier {
     tempWeather = record.weather;
     tempLat = record.latitude;
     tempLng = record.longitude;
-    reflectionQuestion = ""; // 編集時はAI質問をクリア
+    _historicalDate = record.recordDate;
+    reflectionQuestion = "";
     notifyListeners();
   }
 
-  /// 環境コーディネーターを通じて、最新の位置情報と天気データを取得します。
-  ///
-  /// データ取得中はローディング表示を行い、完了後にUIを更新します。
-  Future<void> fetchEnvironmentData() async {
-    // UIに「取得中」と表示するのは、まだデータが何もない初回のみ
+  void initForHistorical(
+    DateTime date,
+    String location,
+    double lat,
+    double lon,
+  ) {
+    _reset();
+    isHistoricalFlow = true;
+    _historicalDate = date;
+    tempLocation = location;
+    tempLat = lat;
+    tempLng = lon;
+
+    // 広告表示後に過去の天気を取得
+    _fetchHistoricalWeather(date, lat, lon);
+    notifyListeners();
+  }
+
+  Future<void> fetchCurrentEnvironmentData() async {
     if (tempLocation == null) {
       tempLocation = "位置情報取得中...";
       notifyListeners();
     }
-
-    // Coordinatorに問い合わせる。キャッシュ管理はCoordinatorの責任。
     try {
       final data = await _environmentCoordinator.fetchFullData();
-
-      // 取得したデータでUIを更新
       tempLocation = data.location;
       tempWeather = data.weather;
       tempLat = data.latitude;
@@ -139,7 +115,40 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
-  /// 日記作成の次のステップへ進みます。
+  void _fetchHistoricalWeather(DateTime date, double lat, double lon) {
+    tempWeather = "気象情報取得中...";
+    notifyListeners();
+
+    // 無料ユーザーの場合、インタースティシャル広告を表示
+    if (_settingsProvider?.currentTier == SubscriptionTier.free) {
+      _adService.showInterstitialAd(() async {
+        try {
+          final weather = await _environmentCoordinator.getHistoricalWeather(
+            lat,
+            lon,
+            date,
+          );
+          tempWeather = weather;
+        } catch (e) {
+          tempWeather = "取得失敗";
+        } finally {
+          notifyListeners();
+        }
+      });
+    } else {
+      // 有料ユーザーは広告なし
+      _environmentCoordinator
+          .getHistoricalWeather(lat, lon, date)
+          .then((weather) {
+            tempWeather = weather;
+          })
+          .catchError((_) {
+            tempWeather = "取得失敗";
+          })
+          .whenComplete(notifyListeners);
+    }
+  }
+
   void nextStep() {
     if (_currentStep < 2) {
       _currentStep++;
@@ -147,7 +156,6 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
-  /// 日記作成の前のステップへ戻ります。
   void previousStep() {
     if (_currentStep > 0) {
       _currentStep--;
@@ -155,22 +163,28 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
-  /// Gemini AIを使用して、ユーザーの出来事とタグに基づいた深掘り質問を生成します。
-  ///
-  /// 生成中は `isGenerating` フラグを `true` に設定し、UIにローディング状態を通知します。
   Future<void> prepareReflection() async {
     if (eventText.isEmpty) return;
 
+    // 無料ユーザーはリワード広告を見てから実行
+    if (_settingsProvider?.currentTier == SubscriptionTier.free) {
+      _adService.showRewardedAd(_generateReflectionQuestion);
+    } else {
+      await _generateReflectionQuestion();
+    }
+  }
+
+  /// AIによる深掘り質問を生成するプライベートメソッド。
+  Future<void> _generateReflectionQuestion() async {
     isGenerating = true;
     notifyListeners();
-
     try {
       reflectionQuestion = await _geminiService.generateReflectionQuestion(
         eventText: eventText,
         tags: selectedTags.join(', '),
       );
     } catch (e) {
-      reflectionQuestion = "その出来事は、あなたにとってどんな意味がありましたか？"; // エラー時のフォールバック
+      reflectionQuestion = "その出来事は、あなたにとってどんな意味がありましたか？";
       debugPrint("Gemini Error: $e");
     } finally {
       isGenerating = false;
@@ -178,108 +192,87 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
-  /// 入力されたデータと取得した環境データ、AI分析結果を統合して、
-  /// 日記レコードを保存または更新します。
-  ///
-  /// `isarId` がnullでない場合は更新、nullの場合は新規保存を行います。
+  /// AI安定度分析を実行し、結果を返すプライベートメソッド。
+  Future<Map<String, dynamic>?> _performAiAnalysis() async {
+    try {
+      final analysis = await _geminiService.analyzeStability(selfAnalysisText);
+      return {'score': analysis['score'], 'reason': analysis['reason']};
+    } catch (e) {
+      debugPrint("AI Analysis Error: $e");
+      return null;
+    }
+  }
+
   Future<void> save() async {
     isSaving = true;
     notifyListeners();
 
     try {
-      int? aiScore;
-      String? aiReason;
+      Map<String, dynamic>? analysisResult;
 
-      // Tier 2ユーザーで、かつ自己分析が5文字以上の場合のみAI分析を実行
-      if (_settingsProvider?.currentTier == SubscriptionTier.tier2 &&
-          selfAnalysisText.length >= 5) {
-        try {
-          final analysis = await _geminiService.analyzeStability(
-            selfAnalysisText,
-          );
-          aiScore = analysis['score'];
-          aiReason = analysis['reason'];
-        } catch (e) {
-          debugPrint("AI Analysis Error: $e");
-        }
+      // 無料ユーザーで分析テキストがある場合、リワード広告で分析
+      if (_settingsProvider?.currentTier == SubscriptionTier.free &&
+          selfAnalysisText.isNotEmpty) {
+        Completer<void> adCompleter = Completer();
+        _adService.showRewardedAd(() async {
+          analysisResult = await _performAiAnalysis();
+          adCompleter.complete();
+        });
+        await adCompleter.future; // 広告と分析の完了を待つ
+      }
+      // Tier2ユーザーは直接分析
+      else if (_settingsProvider?.currentTier == SubscriptionTier.tier2 &&
+          selfAnalysisText.isNotEmpty) {
+        analysisResult = await _performAiAnalysis();
       }
 
-      DiaryRecord record;
-      if (isarId != null) {
-        // 更新モードの場合: 既存のレコードをデータベースから取得し、変更されたフィールドを更新する
-        final existingRecord = await _diaryRepository.getRecordByIsarId(
-          isarId!,
-        );
-        if (existingRecord != null) {
-          // 既存レコードのIDと記録日時を維持しつつ、編集された内容で新しいDiaryRecordオブジェクトを作成
-          record = DiaryRecord(
-            isarId: isarId,
-            recordId: existingRecord.recordId, // 既存のrecordIdを維持
-            recordDate: existingRecord.recordDate, // 記録日時は更新しない
-            moodTags: List.from(selectedTags),
-            moodScore: moodScore,
-            eventText: eventText,
-            selfAnalysis: selfAnalysisText,
-            aiStabilityScore: aiScore,
-            aiAnalysisReason: aiReason,
-            location: tempLocation,
-            weather: tempWeather,
-            latitude: tempLat,
-            longitude: tempLng,
-          );
-        } else {
-          // IDがあるのにレコードが見つからない場合は例外をスロー
-          throw Exception("Record with isarId $isarId not found for update.");
-        }
-      } else {
-        // 新規作成モードの場合: 新しいレコードとしてDiaryRecordオブジェクトを作成
-        record = DiaryRecord(
-          recordId: const Uuid().v4(), // 一意なUUIDを生成
-          recordDate: DateTime.now(), // 現在の日時を記録日時とする
-          moodTags: List.from(selectedTags),
-          moodScore: moodScore,
-          eventText: eventText,
-          selfAnalysis: selfAnalysisText,
-          aiStabilityScore: aiScore,
-          aiAnalysisReason: aiReason,
-          location: tempLocation,
-          weather: tempWeather,
-          latitude: tempLat,
-          longitude: tempLng,
-        );
-      }
-
-      // DiaryRepositoryを介してレコードを保存または更新
-      await _diaryRepository.saveRecord(record);
-      debugPrint(
-        "日記${isarId == null ? '保存' : '更新'}完了: ${record.recordId}", // ログ出力
+      final record = DiaryRecord(
+        isarId: isarId,
+        recordId: isarId != null
+            ? (await _diaryRepository.getRecordByIsarId(isarId!))!.recordId
+            : const Uuid().v4(),
+        recordDate: isHistoricalFlow ? _historicalDate! : DateTime.now(),
+        moodTags: List.from(selectedTags),
+        moodScore: moodScore,
+        eventText: eventText,
+        selfAnalysis: selfAnalysisText,
+        aiStabilityScore: analysisResult?['score'],
+        aiAnalysisReason: analysisResult?['reason'],
+        location: tempLocation,
+        weather: tempWeather,
+        latitude: tempLat,
+        longitude: tempLng,
       );
 
-      // 履歴画面をリフレッシュ
-      _historyProvider?.refreshHistory();
+      await _diaryRepository.saveRecord(record);
+      debugPrint("日記${isarId == null ? '保存' : '更新'}完了: ${record.recordId}");
 
-      _reset(); // フォームの状態をリセット
+      _historyProvider?.refreshHistory();
+      _reset();
     } finally {
       isSaving = false;
       notifyListeners();
     }
   }
 
-  /// 日記作成フォームのすべての入力状態を初期値にリセットします。
-  /// 日記作成フォームのすべての入力状態を初期値にリセットします。
   void _reset() {
     _currentStep = 0;
-    isarId = null; // 更新IDをクリア
+    isarId = null;
+    isHistoricalFlow = false; // フラグをリセット
     moodScore = 5;
     selectedTags = [];
     eventText = "";
     selfAnalysisText = "";
     reflectionQuestion = "";
+    tempLocation = null;
+    tempWeather = null;
+    tempLat = null;
+    tempLng = null;
+    _historicalDate = null;
     notifyListeners();
     debugPrint("WriteProvider：入力内容はリセットされました。");
   }
 
-  /// リスナーに状態の変更を通知します。
   void notify() {
     notifyListeners();
   }

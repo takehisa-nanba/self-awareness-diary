@@ -52,14 +52,19 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       debugPrint("【生体反応検知】アプリが再開されました。環境データを更新します。");
       // 最新の場所と天気を取得し直す
-      context.read<WriteProvider>().fetchEnvironmentData();
+      context.read<WriteProvider>().fetchCurrentEnvironmentData();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppStateProvider>();
+    final writeState = context.watch<WriteProvider>(); // WriteProviderを監視
     final currentTab = appState.currentTab;
+
+    // WriteScreenのStep3（清書画面）かどうかを判定
+    final bool isSanctuary =
+        currentTab == AppTab.write && writeState.currentStep == 2;
 
     return PopScope(
       canPop: _canPop,
@@ -109,6 +114,7 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: AppShell(
           title: _getTitle(currentTab),
+          isSanctuary: isSanctuary, // isSanctuaryフラグをAppShellに渡す
           child: _getScreen(currentTab),
         ),
 

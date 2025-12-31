@@ -16,6 +16,11 @@ class ExtendedFabNavigator extends StatelessWidget {
   /// [context] ビルドコンテキスト。
   /// [tab] 遷移先のタブ ([AppTab] 列挙型)。
   void _changeTab(BuildContext context, AppTab tab) {
+    // もし現在の画面が詳細画面など、前の画面に戻れる状態であれば、まずそれを閉じる
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+    // その後、目的のタブに切り替える
     context.read<AppStateProvider>().setTab(tab);
   }
 
