@@ -27,7 +27,10 @@ import 'package:self_awareness_diary/providers/analysis_provider.dart';
 import 'package:self_awareness_diary/ui/screens/brand_splash_screen.dart';
 import 'package:self_awareness_diary/services/developer_service.dart';
 import 'package:self_awareness_diary/providers/diagnosis_provider.dart';
+import 'package:self_awareness_diary/services/cosmic_interpretation_service.dart'; // Import CosmicInterpretationService
 
+late GeminiService geminiService;
+late CosmicInterpretationService cosmicInterpretationService;
 void main() async {
   // アプリケーションレベルのエラーを捕捉
   FlutterError.onError = (details) {
@@ -73,6 +76,9 @@ void main() async {
   locationService = LocationService(mapsKey);
   weatherService = WeatherService(weatherKey);
   geminiService = GeminiService(geminiKey);
+  cosmicInterpretationService = CosmicInterpretationService(
+    isarService,
+  ); // Instantiate CosmicInterpretationService
 
   // サービスをまとめるコーディネーター
   environmentCoordinator = EnvironmentCoordinator(
@@ -90,6 +96,9 @@ void main() async {
             create: (_) => IsarDiaryRepository(isarService),
           ),
           Provider<GeminiService>(create: (_) => geminiService),
+          Provider<CosmicInterpretationService>(
+            create: (_) => cosmicInterpretationService,
+          ),
           // Provider層
           ChangeNotifierProvider(create: (_) => AppStateProvider()),
           ChangeNotifierProvider(

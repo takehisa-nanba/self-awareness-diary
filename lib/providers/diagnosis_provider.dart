@@ -8,13 +8,73 @@ import 'package:self_awareness_diary/services/isar_service.dart'; // 本物のIs
 class DiagnosisProvider with ChangeNotifier {
   // 性格診断のための質問（例：構造）
   // 実際のアプリでは、これらはより詳細になり、設定から読み込まれる可能性があります
-  final List<String> _questions = List.generate(
-    53,
-    (index) => '質問 ${index + 1}: 次の記述にどの程度同意しますか？',
-  );
+  final List<Map<String, String>> _questions = [
+    // CP (Critical Parent - 批判的親) - 11 questions
+    {'question': '他人の間違いがとても気になる方だ。', 'egoState': 'CP'},
+    {'question': '規律やルールは守るべきだと思う。', 'egoState': 'CP'},
+    {'question': '人に厳しく接することがよくある。', 'egoState': 'CP'},
+    {'question': '物事を完璧にこなしたいと常に思う。', 'egoState': 'CP'},
+    {'question': '自分の意見をはっきりと言う方だ。', 'egoState': 'CP'},
+    {'question': '努力や忍耐は成功に不可欠だと思う。', 'egoState': 'CP'},
+    {'question': '無責任な行動は許せない。', 'egoState': 'CP'},
+    {'question': '人を指導することに抵抗がない。', 'egoState': 'CP'},
+    {'question': 'やるべきことは最後までやり遂げる。', 'egoState': 'CP'},
+    {'question': '自分の考えが正しいと信じている。', 'egoState': 'CP'},
+    {'question': '時間には正確でありたい。', 'egoState': 'CP'},
+
+    // NP (Nurturing Parent - 養育的親) - 11 questions
+    {'question': '人の気持ちを察することが得意だ。', 'egoState': 'NP'},
+    {'question': '困っている人を見ると助けたくなる。', 'egoState': 'NP'},
+    {'question': '人を励まし、元気づけることが多い。', 'egoState': 'NP'},
+    {'question': '優しい言葉をかけるように心がけている。', 'egoState': 'NP'},
+    {'question': '相手の意見を尊重するようにしている。', 'egoState': 'NP'},
+    {'question': '人の面倒を見るのが好きだ。', 'egoState': 'NP'},
+    {'question': '誰かのために尽くすことに喜びを感じる。', 'egoState': 'NP'},
+    {'question': '人を許すことは大切だと思う。', 'egoState': 'NP'},
+    {'question': '人のはなしをじっくり聞くことができる。', 'egoState': 'NP'},
+    {'question': '争いごとは避けたい方だ。', 'egoState': 'NP'},
+    {'question': '周囲の雰囲気を和ませる役割をすることが多い。', 'egoState': 'NP'},
+
+    // A (Adult - 大人の自分) - 11 questions
+    {'question': '物事を論理的に考えることが好きだ。', 'egoState': 'A'},
+    {'question': '感情に流されず、冷静に判断できる。', 'egoState': 'A'},
+    {'question': '事実に基づいて行動する方だ。', 'egoState': 'A'},
+    {'question': '計画を立ててから行動に移す。', 'egoState': 'A'},
+    {'question': '問題解決のために情報を集める。', 'egoState': 'A'},
+    {'question': '状況を客観的に分析できる。', 'egoState': 'A'},
+    {'question': '効率を重視して物事を進める。', 'egoState': 'A'},
+    {'question': '損得を考えて行動することがよくある。', 'egoState': 'A'},
+    {'question': '自分の意見を根拠に基づいて説明できる。', 'egoState': 'A'},
+    {'question': '現実的な解決策を導き出すのが得意だ。', 'egoState': 'A'},
+    {'question': '感情的な議論は苦手だ。', 'egoState': 'A'},
+
+    // FC (Free Child - 自由な子ども) - 10 questions
+    {'question': '自分の感情を素直に表現する方だ。', 'egoState': 'FC'},
+    {'question': '楽しいことにはすぐに飛びつく。', 'egoState': 'FC'},
+    {'question': '好奇心旺盛で、新しいことに挑戦するのが好きだ。', 'egoState': 'FC'},
+    {'question': '面白いと思ったらすぐに行動する。', 'egoState': 'FC'},
+    {'question': '遊びや趣味に夢中になることが多い。', 'egoState': 'FC'},
+    {'question': '枠にとらわれず自由に発想する。', 'egoState': 'FC'},
+    {'question': '自分の感情に正直に行動する。', 'egoState': 'FC'},
+    {'question': '気分転換が上手だ。', 'egoState': 'FC'},
+    {'question': '退屈なことは苦手だ。', 'egoState': 'FC'},
+    {'question': 'ユーモアのセンスがあると言われる。', 'egoState': 'FC'},
+
+    // AC (Adapted Child - 順応した子ども) - 10 questions
+    {'question': '人の期待に応えようと努力する。', 'egoState': 'AC'},
+    {'question': '周囲の意見に合わせて自分の行動を変えることがある。', 'egoState': 'AC'},
+    {'question': '人に嫌われることを恐れる。', 'egoState': 'AC'},
+    {'question': '自分の気持ちを抑えることがある。', 'egoState': 'AC'},
+    {'question': '人の顔色をうかがう方だ。', 'egoState': 'AC'},
+    {'question': '場の空気を読むことが得意だ。', 'egoState': 'AC'},
+    {'question': '決断を人に委ねることがよくある。', 'egoState': 'AC'},
+    {'question': '人の頼みを断るのが苦手だ。', 'egoState': 'AC'},
+    {'question': '他人に合わせて行動することが多い。', 'egoState': 'AC'},
+    {'question': '批判されると落ち込みやすい。', 'egoState': 'AC'},
+  ];
 
   // 質問リストのゲッター
-  List<String> get questions => _questions;
+  List<Map<String, String>> get questions => _questions;
 
   // 質問に対するユーザーの回答
   final List<int> _answers = []; // 回答はスケール（例：1〜5）であると仮定
@@ -49,14 +109,14 @@ class DiagnosisProvider with ChangeNotifier {
       _answers.add(answer); // 回答リストに追加
       // 全ての回答が収集されたら、回答を処理する
       if (_answers.length == _questions.length) {
-        _processAnswers();
+        processAnswers();
       }
       notifyListeners(); // 回答リストの変更をUIに通知
     }
   }
 
   /// 収集された回答を処理し、スコアを計算する
-  Future<void> _processAnswers() async {
+  Future<void> processAnswers() async {
     // 実際のスコア計算ロジックのためのプレースホルダー
     // これには、回答をエゴグラムスコア（CP, NP, A, FC, AC）にマッピングすることが含まれる
     // デモンストレーションのために、ダミースコアを作成する
@@ -100,18 +160,33 @@ class DiagnosisProvider with ChangeNotifier {
   /// [type] 計算するエゴグラムのタイプ（'CP', 'NP', 'A', 'FC', 'AC'）。
   /// 戻り値：計算されたスコア（0〜99の範囲）。
   int _calculateEgoGramScore(List<int> answers, String type) {
-    // 例：事前に定義された質問タイプに基づいて回答を合計する
-    // 実際のアプリでは、このロジックは複雑で、53の質問のマッピングに基づくだろう
-    int score = 0;
+    Map<String, int> rawScores = {'CP': 0, 'NP': 0, 'A': 0, 'FC': 0, 'AC': 0};
+
+    // Define maximum possible scores for each ego state
+    // CP, NP, A have 11 questions, FC, AC have 10 questions
+    Map<String, double> maxScores = {
+      'CP': 11.0,
+      'NP': 11.0,
+      'A': 11.0,
+      'FC': 10.0,
+      'AC': 10.0,
+    };
+
     for (int i = 0; i < answers.length; i++) {
-      // ダミーロジック：質問インデックスとタイプに基づいてスコアを割り当てる
-      if ((i % 5) == 0 && type == 'CP') score += answers[i];
-      if ((i % 5) == 1 && type == 'NP') score += answers[i];
-      if ((i % 5) == 2 && type == 'A') score += answers[i];
-      if ((i % 5) == 3 && type == 'FC') score += answers[i];
-      if ((i % 5) == 4 && type == 'AC') score += answers[i];
+      if (i < _questions.length) {
+        String egoState = _questions[i]['egoState']!;
+        rawScores[egoState] = (rawScores[egoState] ?? 0) + answers[i];
+      }
     }
-    return score % 100; // デモンストレーションのために0〜99のスコアを返す
+
+    double rawScoreForType = rawScores[type]?.toDouble() ?? 0.0;
+    double maxScoreForType = maxScores[type] ?? 1.0; // Avoid division by zero
+
+    // Normalize to 100 points
+    int normalizedScore = ((rawScoreForType / maxScoreForType) * 100).round();
+
+    // Ensure score is within 0-100 range
+    return normalizedScore.clamp(0, 100);
   }
 
   /// グリットレベル計算のためのプレースホルダー関数。

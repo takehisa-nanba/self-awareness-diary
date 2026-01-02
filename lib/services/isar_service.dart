@@ -125,6 +125,29 @@ class IsarService {
         .findAll();
   }
 
+  /// 指定された期間の日記レコードを取得します。
+  ///
+  /// [startDate] 取得期間の開始日時 (含む)。
+  /// [endDate] 取得期間の終了日時 (含む)。
+  Future<List<DiaryRecord>> getDiaryRecordsForDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    // To include endDate, we add one day and then use lessThan
+    final adjustedEndDate = endDate.add(const Duration(days: 1));
+
+    return await isar
+        .collection<DiaryRecord>()
+        .filter()
+        .recordDateGreaterThan(
+          startDate.subtract(const Duration(microseconds: 1)),
+        ) // to make it >= start date
+        .and()
+        .recordDateLessThan(adjustedEndDate) // less than the day after endDate
+        .sortByRecordDateDesc()
+        .findAll();
+  }
+
   /// 場所設定をデータベースに保存または更新します。
   ///
   /// [setting] 保存または更新する [LocationSetting] オブジェクト。

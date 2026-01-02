@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
-import 'root_screen.dart';
+import 'diagnosis_screen.dart';
+import '../widgets/universe_background.dart'; // Import UniverseBackground
 
 /// アプリの顔：日記の「扉」を表現する画面
 class BrandSplashScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class BrandSplashScreen extends StatefulWidget {
 }
 
 class _BrandSplashScreenState extends State<BrandSplashScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // --- 管理用のスイッチ ---
   bool _isNavigating = false; // 画面遷移中に何度もタップされるのを防ぐ
   bool _canTap = false; // 全ての文章を読み終わるまで、扉を開けさせない「鍵」
@@ -24,6 +25,10 @@ class _BrandSplashScreenState extends State<BrandSplashScreen>
   late AnimationController _animationController;
   late Animation<double> _rotationAnimation; // 【表紙全体】を動かすための角度（0.0〜1.6）
   late Animation<double> _paperRotationAnimation; // 【中の紙】を動かすための角度（少し遅れて動く）
+
+  // Warp effect animations
+  late AnimationController _warpAnimationController;
+  late Animation<double> _warpAnimation;
 
   @override
   void initState() {
@@ -51,11 +56,24 @@ class _BrandSplashScreenState extends State<BrandSplashScreen>
         curve: const Interval(0.03, 1.0, curve: Curves.easeInOutQuart),
       ),
     );
+
+    // ワープアニメーションの初期化
+    _warpAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200), // 1.2秒
+    );
+    _warpAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _warpAnimationController,
+        curve: Curves.easeInExpo, // 直線的な加速
+      ),
+    );
   }
 
   @override
   void dispose() {
     _animationController.dispose(); // 使い終わったメモリを掃除
+    _warpAnimationController.dispose(); // ワープアニメーションコントローラーを破棄
     super.dispose();
   }
 
@@ -69,6 +87,9 @@ class _BrandSplashScreenState extends State<BrandSplashScreen>
     if (_isNavigating || !mounted || !_canTap) return;
     _isNavigating = true;
 
+    // ワープアニメーションを開始し、完了後に画面遷移
+    _warpAnimationController.forward(); // ワープアニメーション開始
+
     _animationController.forward().then((_) {
       if (!mounted) return;
       context.read<SettingsProvider>().completeFirstLaunch(); // チュートリアル終了を保存
@@ -77,7 +98,7 @@ class _BrandSplashScreenState extends State<BrandSplashScreen>
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
-              const RootScreen(),
+              const DiagnosisScreen(), // Navigate to DiagnosisScreen
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -89,93 +110,110 @@ class _BrandSplashScreenState extends State<BrandSplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    const paperColor = Color(0xFF5FFF5F); // 紙の緑
-    const coverColor = Color(0xFF98FB98); // 表紙のミントグリーン
+    // Current theme for text and other UI elements
+    final currentTheme = Theme.of(context);
+
+    final coverColor =
+        currentTheme.colorScheme.surfaceContainerHighest; // Deep purple
+    final paperColor = currentTheme.colorScheme.surfaceContainer; // Deep blue
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: GestureDetector(
-        onTap: _navigateToNext,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                // --- 【レイヤー0：最背面の影】 ---
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(
-                            (120 * (1 - (_rotationAnimation.value / 1.6)))
-                                .round(),
-                          ),
-                          blurRadius: 30,
+      extendBodyBehindAppBar: true, // Make body content extend behind app bar
+      body: Stack(
+        children: [
+          // 0. UniverseBackground at the very back
+          AnimatedBuilder(
+            animation: _warpAnimation,
+            builder: (context, child) {
+              return UniverseBackground(warpFactor: _warpAnimation.value);
+            },
+          ),
+
+          // Layered content on top of UniverseBackground
+          GestureDetector(
+            onTap: _navigateToNext,
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // --- 【レイヤー0：最背面の影】 ---
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(
+                                (120 * (1 - (_rotationAnimation.value / 1.6)))
+                                    .round(),
+                              ),
+                              blurRadius: 30,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
 
-                // --- 【レイヤー1：紙（奥行き）】 ---
-                // 表紙よりわずかに遅れて動くことで、本の中身があることを表現
-                Transform(
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.0005)
-                    ..rotateY(_paperRotationAnimation.value),
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    width: double.infinity,
-                    height: double.infinity,
-                    color: paperColor.withAlpha(150),
-                  ),
-                ),
-
-                // --- 【レイヤー2,3,4：表紙グループ（一体化）】 ---
-                // 武尚さんの「背景・装飾・文字はセットで動く」というこだわりを、一つのTransformで実現。
-                Transform(
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.0005)
-                    ..rotateY(_rotationAnimation.value),
-                  alignment: Alignment.centerLeft,
-                  child: Stack(
-                    children: [
-                      // レイヤー2：表紙の背景色
-                      Container(
+                    // --- 【レイヤー1：紙（奥行き）】 ---
+                    // 表紙よりわずかに遅れて動くことで、本の中身があることを表現
+                    Transform(
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.0005)
+                        ..rotateY(_paperRotationAnimation.value),
+                      alignment: Alignment.centerLeft,
+                      child: Container(
                         width: double.infinity,
                         height: double.infinity,
-                        color: coverColor,
+                        color: paperColor, // Use theme color
                       ),
+                    ),
 
-                      // レイヤー3：装飾フレーム
-                      Positioned.fill(
-                        child: SvgPicture.asset(
-                          'assets/images/diary_frame.svg',
-                          fit: BoxFit.fill,
-                        ),
+                    // --- 【レイヤー2,3,4：表紙グループ（一体化）】 ---
+                    // 武尚さんの「背景・装飾・文字はセットで動く」というこだわりを、一つのTransformで実現。
+                    Transform(
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.0005)
+                        ..rotateY(_rotationAnimation.value),
+                      alignment: Alignment.centerLeft,
+                      child: Stack(
+                        children: [
+                          // レイヤー2：表紙の背景色
+                          Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            color: coverColor, // Use theme color
+                          ),
+
+                          // レイヤー3：装飾フレーム
+                          Positioned.fill(
+                            child: SvgPicture.asset(
+                              'assets/images/diary_frame.svg',
+                              fit: BoxFit.fill,
+                            ),
+                          ),
+
+                          // レイヤー4：Min(e)Diary 文字演出
+                          _CoverContent(onFinished: _onTextAnimationComplete),
+
+                          // 武尚さん指定の位置：下から 250 の位置に点滅文字
+                          if (_canTap)
+                            const Positioned(
+                              bottom: 250,
+                              left: 0,
+                              right: 0,
+                              child: _TapGuidance(),
+                            ),
+                        ],
                       ),
-
-                      // レイヤー4：Min(e)Diary 文字演出
-                      _CoverContent(onFinished: _onTextAnimationComplete),
-
-                      // 武尚さん指定の位置：下から 250 の位置に点滅文字
-                      if (_canTap)
-                        const Positioned(
-                          bottom: 250,
-                          left: 0,
-                          right: 0,
-                          child: _TapGuidance(),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -344,14 +382,11 @@ class _CoverContentState extends State<_CoverContent>
                   Future.delayed(const Duration(milliseconds: 600), () {
                     _eFadeController.forward().then((_) {
                       // 完成の余韻として 1.2秒待ってから、次の説明文へ
-                      Future.delayed(
-                        const Duration(milliseconds: 1200),
-                        () {
-                          if (mounted) {
-                            setState(() => _showLastPrompt = true);
-                          }
-                        },
-                      );
+                      Future.delayed(const Duration(milliseconds: 1200), () {
+                        if (mounted) {
+                          setState(() => _showLastPrompt = true);
+                        }
+                      });
                     });
                   });
                 },
@@ -360,9 +395,7 @@ class _CoverContentState extends State<_CoverContent>
               // Diaryが出るまでの間、場所が崩れないように透明なDを置いておく
               Text(
                 'D',
-                style: normalDiaryStyle.copyWith(
-                  color: Colors.transparent,
-                ),
+                style: normalDiaryStyle.copyWith(color: Colors.transparent),
               ),
           ],
         ),
@@ -410,9 +443,7 @@ class _CoverContentState extends State<_CoverContent>
           animatedTexts: [
             TypewriterAnimatedText(
               '準備はよろしいですか？',
-              textStyle: finalTextStyle.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              textStyle: finalTextStyle.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
               speed: const Duration(milliseconds: 100),
             ),
