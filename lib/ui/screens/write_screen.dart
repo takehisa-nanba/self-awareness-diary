@@ -159,7 +159,16 @@ class _WriteScreenNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final writeProvider = context.watch<WriteProvider>();
+    // SettingsProvider にアクセスし、現在のサブスクリプションティアを取得
     final settingsProvider = context.read<SettingsProvider>();
+
+    // AI分析中かどうかを判定する条件を定義
+    // AIによる質問生成中（isGenerating）の場合、または
+    // Tier 2ユーザーで保存中（isSaving）でありAI分析が実行される場合のみローディング表示
+    final bool isAiAnalysisInProgress =
+        writeProvider.isGenerating ||
+        (writeProvider.isSaving &&
+            settingsProvider.currentTier == SubscriptionTier.tier2);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -192,10 +201,10 @@ class _WriteScreenNavigation extends StatelessWidget {
                   : () => _onNextPressed(
                       context,
                       writeProvider,
-                      settingsProvider,
+                      settingsProvider, // _onNextPressed に settingsProvider を渡す
                     ), // ボタン押下時の処理
-              // 保存中またはAI生成中はインジケータを表示、それ以外は「保存」または「次へ」を表示
-              child: (writeProvider.isSaving || writeProvider.isGenerating)
+              // AI分析中または保存中の場合はローディングインジケータを表示
+              child: isAiAnalysisInProgress
                   ? const SizedBox(
                       width: 24,
                       height: 24,
@@ -221,7 +230,7 @@ class _WriteScreenNavigation extends StatelessWidget {
   void _onNextPressed(
     BuildContext context,
     WriteProvider writeProvider,
-    SettingsProvider settingsProvider,
+    SettingsProvider settingsProvider, // settingsProvider を引数で受け取る
   ) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 

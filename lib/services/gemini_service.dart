@@ -3,6 +3,7 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'dart:convert'; // JSONエンコード・デコードのため
 import 'package:flutter/foundation.dart'; // debugPrintのため
+import 'package:self_awareness_diary/domain/models/user_profile.dart'; // UserProfileをインポート
 
 /// グローバルにアクセス可能な [GeminiService] のインスタンス。
 /// アプリケーションの初期化時に設定されることを想定しています。
@@ -51,34 +52,70 @@ class GeminiService {
     }
   }
 
-  /// 指定された日記の内容を分析し、感情の安定度を数値（0-100%）と理由として返します。
+  /// 指定された日記の内容とユーザーの性格特性を分析し、感情の安定度を数値（0-100%）と
+  /// 自己評価と実際の感情のギャップを埋めるためのアドバイスとして返します。
   ///
-  /// AIからの応答は必ずJSON形式で、`score` と `reason` を含みます。
+  /// AIからの応答は必ずJSON形式で、`score` (感情の安定度) と `reason` (アドバイス) を含みます。
   /// [text] 分析する日記のテキスト。
-  Future<Map<String, dynamic>> analyzeStability(String text) async {
+  /// [userProfile] ユーザーの性格特性データ。分析のコンテキストとして使用されます。
+  Future<Map<String, dynamic>> analyzeStability(
+    String text,
+    UserProfile? userProfile,
+  ) async {
+    // ユーザーの性格特性データを整形してプロンプトに含める
+    String userProfileDetails = "性格特性（自己認識の粒度情報）:\n";
+    if (userProfile != null) {
+      userProfileDetails += "- CP（批判的な親）: ${userProfile.cp ?? 'N/A'}\n";
+      userProfileDetails += "- NP（養育的な親）: ${userProfile.np ?? 'N/A'}\n";
+      userProfileDetails += "- A（大人）: ${userProfile.a ?? 'N/A'}\n";
+      userProfileDetails += "- FC（自由な子供）: ${userProfile.fc ?? 'N/A'}\n";
+      userProfileDetails += "- AC（適応した子供）: ${userProfile.ac ?? 'N/A'}\n";
+      // 現在の研磨度（Grit Level）を小数点以下2桁で表示、無効なら'N/A'
+      userProfileDetails +=
+          "- 現在の研磨度（Grit Level）: ${userProfile.currentGritLevel?.toStringAsFixed(2) ?? 'N/A'}";
+    } else {
+      userProfileDetails += "- 性格特性データが利用できません。"; // データがない場合のメッセージ
+    }
+
+    // AIへのプロンプトを構築
     final prompt =
         '''
-    以下の日記を分析し、感情の安定度を0-100%で数値化してください。
-    また、その理由を30文字以内で一言添えてください。
-    必ず以下のJSON形式で回答してください：
-    {"score": 数値, "reason": "理由"}
+    あなたは、ユーザーの自己認識の「粒度」（研磨度）を測定し、向上させるAIアシスタントです。
+    ユーザーの日記の内容と、提供された性格特性（砥石の粒度情報）を考慮して、日記に表れている「自己評価」と「実際の感情」との間の「ギャップ」を特定してください。
+    そして、そのギャップを埋めるための、具体的で実行可能なアドバイスを30文字以内の簡潔な理由として提供してください。
 
-    内容：$text
+    # 分析対象
+    日記内容：
+    '''
+        '$text\n\n' // 分析対象の日記テキストを挿入
+        '$userProfileDetails\n\n' // ユーザーの性格特性データを挿入
+        '''
+    # 指示
+    1.  上記の日記内容を分析し、ユーザーの「感情の安定度」を0-100%で数値化してください。
+    2.  「自己評価」と「実際の感情」との間の「ギャップ」を特定し、それを埋めるための「アドバイス」を30文字以内の簡潔な理由として提示してください。
+    3.  **必ず**以下のJSON形式で回答してください：
+        {"score": 数値, "reason": "アドバイス"}
+        （例: `{"score": 85, "reason": "日記と日記の感情の乖離を意識しましょう"}`）
     ''';
 
     try {
-      debugPrint('AI分析プロンプト: $prompt');
+      debugPrint('AI分析プロンプト: $prompt'); // デバッグ用にプロンプトを出力
+      // Gemini APIにプロンプトを送信し、コンテンツを生成
       final response = await _model.generateContent([Content.text(prompt)]);
+      // レスポンステキストからJSON部分を抽出・整形
       final jsonStr = response.text
-          ?.replaceAll('```json', '')
-          .replaceAll('```', '')
-          .trim();
+          ?.replaceAll('```json', '') // JSONコードブロックの開始マーカーを除去
+          .replaceAll('```', '') // JSONコードブロックの終了マーカーを除去
+          .trim(); // 前後の空白を除去
+
+      // JSON文字列をデコードしてMap<String, dynamic>として返す
       return jsonDecode(
-        jsonStr ?? '{"score": 50, "reason": "分析失敗"}',
-      ); // JSON解析失敗時のフォールバック
+        jsonStr ?? '{"score": 50, "reason": "分析失敗"}', // JSONデコード失敗時はデフォルト値を返す
+      );
     } catch (e) {
-      debugPrint('AI分析エラー: $e');
-      return {"score": 50, "reason": "AI通信エラー"}; // AI通信エラー時のフォールバック
+      debugPrint('AI分析エラー: $e'); // エラー発生時にログを出力
+      // AI通信エラー時はエラー用のデフォルト値を返す
+      return {"score": 50, "reason": "AI通信エラー"};
     }
   }
 
@@ -90,6 +127,7 @@ class GeminiService {
     required String eventText,
     required String tags,
   }) async {
+    // 内省を深めるための質問を生成するプロンプト
     final prompt = '出来事「$eventText」と、感情「$tags」を踏まえ、内省を深掘りする質問を1つ作成してください。';
 
     try {

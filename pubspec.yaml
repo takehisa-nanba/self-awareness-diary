@@ -1,4 +1,4 @@
-name: myapp
+name: self_awareness_diary
 description: "新しいFlutterプロジェクト"
 
 # 次の行は、パッケージが誤って `flutter pub publish` で pub.dev（公共の場所）に

@@ -7,10 +7,11 @@ import 'package:flutter/foundation.dart';
 import '../../domain/models/diary_record.dart';
 import '../../domain/models/location_setting.dart';
 import '../../domain/models/app_settings.dart';
+import '../../domain/models/user_profile.dart'; // UserProfileをインポート
 
 /// Isar データベースの初期化、およびデータ永続化層へのアクセスを提供するサービス。
 ///
-/// 日記レコード、場所設定、アプリケーション設定のCRUD操作を管理します。
+/// 日記レコード、場所設定、アプリケーション設定、ユーザープロファイルのCRUD操作を管理します。
 class IsarService {
   Isar? _isar;
 
@@ -38,6 +39,7 @@ class IsarService {
       DiaryRecordSchema,
       LocationSettingSchema,
       AppSettingsSchema,
+      UserProfileSchema, // UserProfileスキーマを追加
     ], directory: dir.path);
     debugPrint("IsarService: 初期化に成功しました。");
   }
@@ -200,6 +202,29 @@ class IsarService {
         .addressEqualTo(locationLabelOrAddress)
         .count();
     return count > 0;
+  }
+
+  /// ユーザープロファイルをIsarから取得します。
+  ///
+  /// 通常、ユーザープロファイルは一つのみ存在することを想定しています。
+  Future<UserProfile?> getUserProfile() async {
+    return await isar.userProfiles.where().findFirst();
+  }
+
+  /// ユーザープロファイルをIsarに保存または更新します。
+  ///
+  /// [profile] 保存または更新するUserProfileオブジェクト。
+  Future<void> saveUserProfile(UserProfile profile) async {
+    await isar.writeTxn(() async {
+      await isar.userProfiles.put(profile);
+    });
+  }
+
+  /// Isarからすべてのユーザープロファイルレコードをクリアします。
+  Future<void> clearUserProfile() async {
+    await isar.writeTxn(() async {
+      await isar.userProfiles.clear();
+    });
   }
 }
 

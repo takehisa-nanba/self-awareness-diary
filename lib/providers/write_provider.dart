@@ -12,6 +12,7 @@ import '../services/environment_coordinator.dart';
 import '../services/gemini_service.dart';
 import 'history_provider.dart';
 import 'settings_provider.dart';
+import 'diagnosis_provider.dart'; // DiagnosisProviderをインポート
 
 /// 日記作成プロセス全体の状態を管理するプロバイダークラス。
 class WriteProvider with ChangeNotifier {
@@ -24,6 +25,7 @@ class WriteProvider with ChangeNotifier {
   // 連携プロバイダー
   HistoryProvider? _historyProvider;
   SettingsProvider? _settingsProvider;
+  DiagnosisProvider? _diagnosisProvider; // DiagnosisProviderを追加
 
   // 状態フラグ
   int _currentStep = 0;
@@ -52,11 +54,22 @@ class WriteProvider with ChangeNotifier {
     this._geminiService,
     this._diaryRepository,
     this._adService,
+    this._diagnosisProvider, // コンストラクタ引数に追加
   );
 
-  void updateProviders(HistoryProvider history, SettingsProvider settings) {
+  /// 連携する他のプロバイダーインスタンスを更新します。
+  ///
+  /// [history] HistoryProviderのインスタンス。
+  /// [settings] SettingsProviderのインスタンス。
+  /// [diagnosis] DiagnosisProviderのインスタンス。
+  void updateProviders(
+    HistoryProvider history,
+    SettingsProvider settings,
+    DiagnosisProvider diagnosis,
+  ) {
     _historyProvider = history;
     _settingsProvider = settings;
+    _diagnosisProvider = diagnosis; // diagnosisProviderも更新
     notifyListeners();
   }
 
@@ -193,9 +206,17 @@ class WriteProvider with ChangeNotifier {
   }
 
   /// AI安定度分析を実行し、結果を返すプライベートメソッド。
+  ///
+  /// UserProfileをDiagnosisProviderから取得し、GeminiService.analyzeStabilityに渡します。
   Future<Map<String, dynamic>?> _performAiAnalysis() async {
     try {
-      final analysis = await _geminiService.analyzeStability(selfAnalysisText);
+      // DiagnosisProviderからUserProfileを取得
+      final userProfile = _diagnosisProvider?.userProfile;
+
+      final analysis = await _geminiService.analyzeStability(
+        selfAnalysisText,
+        userProfile, // UserProfileを渡す
+      );
       return {'score': analysis['score'], 'reason': analysis['reason']};
     } catch (e) {
       debugPrint("AI Analysis Error: $e");
@@ -207,25 +228,47 @@ class WriteProvider with ChangeNotifier {
     isSaving = true;
     notifyListeners();
 
-    try {
-      Map<String, dynamic>? analysisResult;
+    Map<String, dynamic>? analysisResult; // Initialize to null
 
-      // 無料ユーザーで分析テキストがある場合、リワード広告で分析
-      if (_settingsProvider?.currentTier == SubscriptionTier.free &&
-          selfAnalysisText.isNotEmpty) {
-        Completer<void> adCompleter = Completer();
-        _adService.showRewardedAd(() async {
+    // Only proceed with AI analysis logic if there's self-analysis text
+    if (selfAnalysisText.isNotEmpty) {
+      // Ensure settingsProvider is initialized
+      if (_settingsProvider == null) {
+        debugPrint(
+          "SettingsProvider is not initialized. Cannot perform AI analysis.",
+        );
+      } else {
+        final currentTier = _settingsProvider!.currentTier;
+
+        // Tier 2: Automatic analysis
+        if (currentTier == SubscriptionTier.tier2) {
+          debugPrint("Tier 2: Performing automatic AI analysis.");
           analysisResult = await _performAiAnalysis();
-          adCompleter.complete();
-        });
-        await adCompleter.future; // 広告と分析の完了を待つ
+        }
+        // Free Tier: Analysis is triggered by Rewarded Ad
+        else if (currentTier == SubscriptionTier.free) {
+          debugPrint("Free Tier: Showing Rewarded Ad for AI analysis.");
+          Completer<void> adCompleter = Completer();
+          _adService.showRewardedAd(() async {
+            debugPrint("Rewarded Ad shown. Performing AI analysis.");
+            analysisResult = await _performAiAnalysis();
+            adCompleter.complete();
+          });
+          await adCompleter.future; // Wait for ad and analysis to complete
+        }
+        // Other tiers (e.g., Tier 1): No automatic analysis, as per requirement.
+        // analysisResult remains null.
+        else {
+          debugPrint(
+            "Tier ${currentTier.toString()} does not support automatic AI analysis. Analysis skipped.",
+          );
+        }
       }
-      // Tier2ユーザーは直接分析
-      else if (_settingsProvider?.currentTier == SubscriptionTier.tier2 &&
-          selfAnalysisText.isNotEmpty) {
-        analysisResult = await _performAiAnalysis();
-      }
+    } else {
+      debugPrint("No self-analysis text provided. AI analysis skipped.");
+    }
 
+    try {
       final record = DiaryRecord(
         isarId: isarId,
         recordId: isarId != null
@@ -236,8 +279,10 @@ class WriteProvider with ChangeNotifier {
         moodScore: moodScore,
         eventText: eventText,
         selfAnalysis: selfAnalysisText,
-        aiStabilityScore: analysisResult?['score'],
-        aiAnalysisReason: analysisResult?['reason'],
+        aiStabilityScore:
+            analysisResult?['score'], // Will be null if no analysis performed
+        aiAnalysisReason:
+            analysisResult?['reason'], // Will be null if no analysis performed
         location: tempLocation,
         weather: tempWeather,
         latitude: tempLat,

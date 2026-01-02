@@ -1,17 +1,18 @@
 // lib/ui/screens/record_detail_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:myapp/providers/analysis_provider.dart';
-import 'package:myapp/providers/app_state_provider.dart';
-import 'package:myapp/providers/location_provider.dart';
-import 'package:myapp/providers/write_provider.dart';
-import 'package:myapp/services/ad_service.dart';
-import 'package:myapp/ui/widgets/app_shell.dart';
+import 'package:self_awareness_diary/providers/analysis_provider.dart';
+import 'package:self_awareness_diary/providers/app_state_provider.dart';
+import 'package:self_awareness_diary/providers/location_provider.dart';
+import 'package:self_awareness_diary/providers/write_provider.dart';
+import 'package:self_awareness_diary/services/ad_service.dart';
+import 'package:self_awareness_diary/ui/widgets/app_shell.dart';
 import 'package:provider/provider.dart';
 import '../../domain/models/diary_record.dart';
 import '../../providers/detail_provider.dart';
 import '../../providers/history_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/diagnosis_provider.dart'; // DiagnosisProviderをインポート
 import '../../services/gemini_service.dart';
 import '../../services/isar_service.dart';
 
@@ -38,6 +39,8 @@ class RecordDetailScreen extends StatelessWidget {
         record,
         context.read<GeminiService>(), // 上位のProviderからGeminiServiceを読み込む
         context.read<SettingsProvider>(), // 上位のProviderからSettingsProviderを読み込む
+        context
+            .read<DiagnosisProvider>(), // 上位のProviderからDiagnosisProviderを読み込む
       ),
       // AppShellで画面全体をラップし、統一されたヘッダーとナビゲーションを提供する
       child: AppShell(
@@ -119,6 +122,47 @@ class _DetailBody extends StatelessWidget {
     );
   }
 
+  /// ユーザーのティアや状態に応じて適切な分析実行ボタンを構築する。
+  ///
+  /// [SettingsProvider] で現在のサブスクリプションティアを取得し、
+  /// [DetailProvider] で分析済みかどうかを確認します。
+  /// ボタンのテキストとアイコンは、ティアと利用状況に応じて動的に変更されます。
+  Widget _buildAnalysisButton(BuildContext context) {
+    // SettingsProvider から現在のティア情報を取得（監視対象）
+    final settings = context.watch<SettingsProvider>();
+    // DetailProvider からレコードの分析状況を取得（監視対象）
+    final detail = context.watch<DetailProvider>();
+
+    String buttonText; // ボタンに表示するテキスト
+    IconData buttonIcon; // ボタンに表示するアイコン
+
+    // 現在のサブスクリプションティアに基づいてボタンの表示内容を決定
+    switch (settings.currentTier) {
+      case SubscriptionTier.tier2: // 最上位ティア（無制限）
+        buttonText = 'AI再分析を実行'; // 再分析ボタン
+        buttonIcon = Icons.psychology_alt; // 診断的なアイコン
+        break;
+      case SubscriptionTier.tier1: // 中間ティア（回数制限あり）
+        // 分析済みかどうかでボタンテキストを変更
+        buttonText = detail.hasAnalysis ? 'AI再分析' : 'AI分析を実行';
+        buttonIcon = Icons.psychology; // 分析アイコン
+        break;
+      case SubscriptionTier.free: // 無料ティア（広告表示）
+        // 分析済みかどうかでボタンテキストを変更
+        buttonText = detail.hasAnalysis ? '広告を見て再分析' : '広告を見てAI分析';
+        buttonIcon = Icons.workspace_premium; // プレミアム（広告）アイコン
+        break;
+    }
+
+    // ElevatedButton.icon を使用して、アイコン付きのボタンを構築
+    return ElevatedButton.icon(
+      // ボタンが押されたら、手動分析実行ロジックを呼び出す
+      onPressed: () => _performManualAnalysis(context),
+      icon: Icon(buttonIcon, size: 16), // ボタンアイコン
+      label: Text(buttonText), // ボタンテキスト
+    );
+  }
+
   /// 手動でのAI分析を実行する共通ロジック。
   ///
   /// [SettingsProvider] で利用回数を確認し、実行可能であれば分析フローを開始します。
@@ -127,86 +171,66 @@ class _DetailBody extends StatelessWidget {
   /// 有料ユーザーの場合は直接分析を実行します。
   /// 分析中はローディングダイアログを表示し、完了またはエラー時にスナックバーで結果を通知します。
   void _performManualAnalysis(BuildContext context) async {
+    // SettingsProvider を読み込み、分析の実行可否やティア情報を取得
     final settingsProvider = context.read<SettingsProvider>();
+    // AnalysisProvider を読み込み、実際の分析処理を実行
     final analysisProvider = context.read<AnalysisProvider>();
+    // DetailProvider を読み込み、レコードの更新や状態取得に使用
     final detailProvider = context.read<DetailProvider>();
+    // スナックバー表示のために ScaffoldMessenger を取得
     final scaffoldMessenger = ScaffoldMessenger.of(context);
+    // ナビゲーション操作のために Navigator を取得
     final navigator = Navigator.of(context);
 
+    // 分析の実行可否をチェック（回数制限など）
     if (settingsProvider.canPerformManualAnalysis()) {
-      final adService = AdService();
-      final record = detailProvider.record;
+      final adService = AdService(); // AdService のインスタンスを作成
+      final record = detailProvider.record; // 現在のレコードを取得
 
-      // 分析を実行するコアロジック
+      // 分析を実行するコアロジック（広告表示の有無に関わらず共通）
       Future<void> runAnalysis() async {
+        // 分析中はローディングダイアログを表示
         showDialog(
           context: context,
-          barrierDismissible: false,
+          barrierDismissible: false, // ダイアログ外タップで閉じない
           builder: (BuildContext context) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(),
+            ); // ローディングスピナー
           },
         );
 
         try {
+          // AnalysisProvider を使って実際にAI分析を実行し、更新されたレコードを取得
           final updatedRecord = await analysisProvider.performManualAnalysis(
             record,
           );
-          detailProvider.updateRecord(updatedRecord);
+          detailProvider.updateRecord(updatedRecord); // UIを更新するためにレコードを更新
           navigator.pop(); // ローディングダイアログを閉じる
           scaffoldMessenger.showSnackBar(
-            const SnackBar(content: Text('AI分析が完了しました。')),
+            const SnackBar(content: Text('AI分析が完了しました。')), // 完了メッセージ
           );
         } catch (e) {
           navigator.pop(); // ローディングダイアログを閉じる
           scaffoldMessenger.showSnackBar(
-            SnackBar(content: Text('分析中にエラーが発生しました: $e')),
+            SnackBar(content: Text('分析中にエラーが発生しました: $e')), // エラーメッセージ
           );
         }
       }
 
+      // 無料ユーザーの場合、リワード広告を表示してから分析を実行
       if (settingsProvider.currentTier == SubscriptionTier.free) {
-        adService.showRewardedAd(runAnalysis);
+        adService.showRewardedAd(runAnalysis); // 広告表示後、runAnalysis をコールバックで実行
       } else {
+        // 有料ユーザー（Tier 1, Tier 2）は広告なしで直接分析を実行
         await runAnalysis();
       }
     } else {
+      // 利用上限に達している場合、スナックバーで通知
       scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('AI分析の利用上限に達しました。')),
       );
     }
-  }
-
-  /// ユーザーのティアや状態に応じて適切な分析実行ボタンを構築する。
-  ///
-  /// [SettingsProvider] と [DetailProvider] の状態を監視し、
-  /// 適切なボタンのテキスト、アイコン、アクションを決定します。
-  Widget _buildAnalysisButton(BuildContext context) {
-    final settings = context.watch<SettingsProvider>();
-    final detail = context.watch<DetailProvider>();
-
-    String buttonText;
-    IconData buttonIcon;
-
-    switch (settings.currentTier) {
-      case SubscriptionTier.tier2:
-        buttonText = 'AI再分析を実行';
-        buttonIcon = Icons.psychology_alt;
-        break;
-      case SubscriptionTier.tier1:
-        buttonText = detail.hasAnalysis ? 'AI再分析' : 'AI分析を実行';
-        buttonIcon = Icons.psychology;
-        break;
-      case SubscriptionTier.free:
-        buttonText = detail.hasAnalysis ? '広告を見て再分析' : '広告を見てAI分析';
-        buttonIcon = Icons.workspace_premium;
-        break;
-    }
-
-    return ElevatedButton.icon(
-      onPressed: () => _performManualAnalysis(context),
-      icon: Icon(buttonIcon, size: 16),
-      label: Text(buttonText),
-    );
   }
 
   /// 環境情報（場所、天気、日時）セクションを構築する。
@@ -225,8 +249,8 @@ class _DetailBody extends StatelessWidget {
               child: Text(
                 provider.environmentInfo,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
             if (snapshot.connectionState == ConnectionState.done &&
@@ -359,9 +383,7 @@ class _DetailBody extends StatelessWidget {
         elevation: 0,
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Center(
-            child: Text('「振り返り」を記入すると、AI分析が利用できます。'),
-          ),
+          child: Center(child: Text('「振り返り」を記入すると、AI分析が利用できます。')),
         ),
       );
     }
@@ -523,10 +545,7 @@ class _SectionTitle extends StatelessWidget {
 class _AIAnalysisCard extends StatelessWidget {
   final DetailProvider provider;
   final SettingsProvider settings; // SettingsProviderを追加
-  const _AIAnalysisCard({
-    required this.provider,
-    required this.settings,
-  });
+  const _AIAnalysisCard({required this.provider, required this.settings});
 
   @override
   Widget build(BuildContext context) {
