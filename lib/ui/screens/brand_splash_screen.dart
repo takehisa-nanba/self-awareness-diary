@@ -256,6 +256,173 @@ class _CoverContentState extends State<_CoverContent>
       letterSpacing: 0.0,
     );
 
+    List<Widget> innerColumnChildren = [
+      // 1. 最初のキャッチコピー
+      AnimatedTextKit(
+        animatedTexts: [
+          TypewriterAnimatedText(
+            'あなたらしさは、あなたの中に。🪨',
+            textStyle: lightTextStyle,
+            speed: const Duration(milliseconds: 90),
+          ),
+        ],
+        isRepeatingAnimation: false,
+        onFinished: () => setState(() => _line1Finished = true),
+      ),
+      const SizedBox(height: 8),
+    ];
+
+    // 2. 2番目のキャッチコピー
+    if (_line1Finished) {
+      innerColumnChildren.add(
+        AnimatedTextKit(
+          animatedTexts: [
+            TypewriterAnimatedText(
+              'じぶんを磨く、こころがわかる。💎',
+              textStyle: lightTextStyle,
+              speed: const Duration(milliseconds: 90),
+            ),
+          ],
+          isRepeatingAnimation: false,
+          onFinished: () {
+            // 全ての文章が終わって 0.6秒後にタイトル演出を起動
+            Future.delayed(const Duration(milliseconds: 600), () {
+              if (mounted) {
+                setState(() => _line2Finished = true);
+              }
+            });
+          },
+        ),
+      );
+    }
+
+    innerColumnChildren.add(const SizedBox(height: 35));
+
+    // 3. 【核心演出】Min (e) Diary
+    if (_line2Finished) {
+      innerColumnChildren.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            // --- 「Min」を一文字ずつタイプ ---
+            AnimatedTextKit(
+              animatedTexts: [
+                TypewriterAnimatedText(
+                  'Min',
+                  textStyle: mindStyle,
+                  speed: const Duration(milliseconds: 200),
+                ),
+              ],
+              isRepeatingAnimation: false,
+              onFinished: () => setState(() => _minFinished = true),
+            ),
+
+            // --- 【透明な (e)】武尚さんの閃き ---
+            FadeTransition(
+              opacity: _eOpacity,
+              child: Text('(e)', style: mindStyle),
+            ),
+
+            // --- Diaryとの間の「少しの間隔」を 12px 固定で配置 ---
+            const SizedBox(width: 12),
+
+            // --- 「Diary」を一文字ずつタイプ (Minが終わったら開始) ---
+            if (_minFinished)
+              AnimatedTextKit(
+                animatedTexts: [
+                  TypewriterAnimatedText(
+                    'Diary',
+                    textStyle: normalDiaryStyle,
+                    speed: const Duration(milliseconds: 150),
+                  ),
+                ],
+                isRepeatingAnimation: false,
+                onFinished: () {
+                  // 全ての文字が並び終わった 0.6秒後に、(e) をじわじわ宿らせる
+                  Future.delayed(const Duration(milliseconds: 600), () {
+                    _eFadeController.forward().then((_) {
+                      // 完成の余韻として 1.2秒待ってから、次の説明文へ
+                      Future.delayed(
+                        const Duration(milliseconds: 1200),
+                        () {
+                          if (mounted) {
+                            setState(() => _showLastPrompt = true);
+                          }
+                        },
+                      );
+                    });
+                  });
+                },
+              )
+            else
+              // Diaryが出るまでの間、場所が崩れないように透明なDを置いておく
+              Text(
+                'D',
+                style: normalDiaryStyle.copyWith(
+                  color: Colors.transparent,
+                ),
+              ),
+          ],
+        ),
+      );
+    } else {
+      // タイトルが出る前の高さをあらかじめ確保（ガタつき防止）
+      innerColumnChildren.add(const SizedBox(height: titleFontSize * 1.5));
+    }
+
+    innerColumnChildren.add(const SizedBox(height: 40));
+
+    // 4. 診断儀式の説明
+    if (_showLastPrompt) {
+      innerColumnChildren.add(
+        AnimatedTextKit(
+          animatedTexts: [
+            TypewriterAnimatedText(
+              '今から、あなたの砥石の粒度を測る\n53の問いを投げ掛けますので、\nじぶんと向き合う準備をしてください。',
+              textStyle: guideStyle,
+              textAlign: TextAlign.center,
+              speed: const Duration(milliseconds: 90),
+            ),
+          ],
+          isRepeatingAnimation: false,
+          onFinished: () {
+            // 覚悟を問う前の、1.2秒の「間」
+            Future.delayed(const Duration(milliseconds: 1200), () {
+              if (mounted) {
+                setState(() {
+                  _showFinalReadyPrompt = true;
+                });
+              }
+            });
+          },
+        ),
+      );
+    }
+
+    innerColumnChildren.add(const SizedBox(height: 20));
+
+    // 5. 最後の問いかけ
+    if (_showFinalReadyPrompt) {
+      innerColumnChildren.add(
+        AnimatedTextKit(
+          animatedTexts: [
+            TypewriterAnimatedText(
+              '準備はよろしいですか？',
+              textStyle: finalTextStyle.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+              speed: const Duration(milliseconds: 100),
+            ),
+          ],
+          isRepeatingAnimation: false,
+          onFinished: widget.onFinished, // 全演出終了の合図
+        ),
+      );
+    }
+
     return Column(
       children: [
         const Spacer(flex: 3), // 上部の余白
@@ -263,160 +430,7 @@ class _CoverContentState extends State<_CoverContent>
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              // 1. 最初のキャッチコピー
-              AnimatedTextKit(
-                animatedTexts: [
-                  TypewriterAnimatedText(
-                    'あなたらしさは、あなたの中に。🪨',
-                    textStyle: lightTextStyle,
-                    speed: const Duration(milliseconds: 90),
-                  ),
-                ],
-                isRepeatingAnimation: false,
-                onFinished: () => setState(() => _line1Finished = true),
-              ),
-              const SizedBox(height: 8),
-
-              // 2. 2番目のキャッチコピー
-              if (_line1Finished)
-                AnimatedTextKit(
-                  animatedTexts: [
-                    TypewriterAnimatedText(
-                      'じぶんを磨く、こころがわかる。💎',
-                      textStyle: lightTextStyle,
-                      speed: const Duration(milliseconds: 90),
-                    ),
-                  ],
-                  isRepeatingAnimation: false,
-                  onFinished: () {
-                    // 全ての文章が終わって 0.6秒後にタイトル演出を起動
-                    Future.delayed(const Duration(milliseconds: 600), () {
-                      if (mounted) setState(() => _line2Finished = true);
-                    });
-                  },
-                ),
-
-              const SizedBox(height: 35),
-
-              // 3. 【核心演出】Min (e) Diary
-              if (_line2Finished)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    // --- 「Min」を一文字ずつタイプ ---
-                    AnimatedTextKit(
-                      animatedTexts: [
-                        TypewriterAnimatedText(
-                          'Min',
-                          textStyle: mindStyle,
-                          speed: const Duration(milliseconds: 200),
-                        ),
-                      ],
-                      isRepeatingAnimation: false,
-                      onFinished: () => setState(() => _minFinished = true),
-                    ),
-
-                    // --- 【透明な (e)】武尚さんの閃き ---
-                    // 最初はオパシティ 0.0 なので見えませんが、場所だけは確保しています。
-                    // これにより、Diaryがタイピングされても文字が横にズレません。
-                    FadeTransition(
-                      opacity: _eOpacity,
-                      child: Text('(e)', style: mindStyle),
-                    ),
-
-                    // --- Diaryとの間の「少しの間隔」を 12px 固定で配置 ---
-                    const SizedBox(width: 12),
-
-                    // --- 「Diary」を一文字ずつタイプ (Minが終わったら開始) ---
-                    if (_minFinished)
-                      AnimatedTextKit(
-                        animatedTexts: [
-                          TypewriterAnimatedText(
-                            'Diary',
-                            textStyle: normalDiaryStyle,
-                            speed: const Duration(milliseconds: 150),
-                          ),
-                        ],
-                        isRepeatingAnimation: false,
-                        onFinished: () {
-
-                          // 全ての文字が並び終わった 0.6秒後に、(e) をじわじわ宿らせる
-                          Future.delayed(const Duration(milliseconds: 600), () {
-                            _eFadeController.forward().then((_) {
-                              // 完成の余韻として 1.2秒待ってから、次の説明文へ
-                              Future.delayed(
-                                const Duration(milliseconds: 1200),
-                                () {
-                                  if (mounted)
-                                    setState(() => _showLastPrompt = true);
-                                },
-                              );
-                            });
-                          });
-                        },
-                      )
-                    else
-                      // Diaryが出るまでの間、場所が崩れないように透明なDを置いておく
-                      Text(
-                        'D',
-                        style: normalDiaryStyle.copyWith(
-                          color: Colors.transparent,
-                        ),
-                      ),
-                  ],
-                )
-              else
-                // タイトルが出る前の高さをあらかじめ確保（ガタつき防止）
-                const SizedBox(height: titleFontSize * 1.5),
-
-              const SizedBox(height: 40),
-
-              // 4. 診断儀式の説明
-              if (_showLastPrompt)
-                AnimatedTextKit(
-                  animatedTexts: [
-                    TypewriterAnimatedText(
-                      '今から、あなたの砥石の粒度を測る\n53の問いを投げ掛けますので、\nじぶんと向き合う準備をしてください。',
-                      textStyle: guideStyle,
-                      textAlign: TextAlign.center,
-                      speed: const Duration(milliseconds: 90),
-                    ),
-                  ],
-                  isRepeatingAnimation: false,
-                  onFinished: () {
-                    // 覚悟を問う前の、1.2秒の「間」
-                    Future.delayed(const Duration(milliseconds: 1200), () {
-                      if (mounted) {
-                        setState(() {
-                          _showFinalReadyPrompt = true;
-                        });
-                      }
-                    });
-                  },
-                ),
-
-              const SizedBox(height: 20),
-
-              // 5. 最後の問いかけ
-              if (_showFinalReadyPrompt)
-                AnimatedTextKit(
-                  animatedTexts: [
-                    TypewriterAnimatedText(
-                      '準備はよろしいですか？',
-                      textStyle: finalTextStyle.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                      speed: const Duration(milliseconds: 100),
-                    ),
-                  ],
-                  isRepeatingAnimation: false,
-                  onFinished: widget.onFinished, // 全演出終了の合図
-                ),
-            ],
+            children: innerColumnChildren,
           ),
         ),
         const Spacer(flex: 5), // 全体を上に押し上げるための余白
