@@ -1,6 +1,10 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'dart:math';
+
 import 'diary_record.dart';
+import 'universe_coordinate.dart';
+import 'user_profile.dart';
 
 /// 日記レコードのリストを元に、様々な角度から分析した結果を保持するモデル。
 /// 計算ロジックをProviderから分離し、ここに集約する。
@@ -280,5 +284,59 @@ class AnalysisReport {
       final average = values.reduce((a, b) => a + b) / values.length;
       return MapEntry(hour, average);
     });
+  }
+}
+
+/// [AnalysisReport] の宇宙座標計算に関する拡張
+extension AnalysisReportUniverse on AnalysisReport {
+  /// ユーザープロファイルと研磨度から宇宙座標を計算します。
+  ///
+  /// [profile] ユーザーのエゴグラムスコアを含むプロファイル。
+  /// [polishingLevel] 日記の研磨度 (0-100)。
+  ///
+  /// 5つの指標（CP, NP, A, FC, AC）を円周上に配置し、スコアを重みとした
+  /// 重心計算により、現在の心の位置をX,Y座標として算出します。
+  /// Z座標は研磨度から算出され、自己分析の深さを示します。
+  UniverseCoordinate calculateUniversePosition(
+    UserProfile profile,
+    double polishingLevel,
+  ) {
+    // 角度をラジアンに変換するヘルパー
+    double degToRad(double deg) => deg * (pi / 180.0);
+
+    // 各指標のスコアと角度(ラジアン)をマップで定義
+    final Map<String, double> angles = {
+      'cp': degToRad(90), // 規律 (真上)
+      'np': degToRad(18), // 慈愛
+      'a': degToRad(306), // 論理
+      'fc': degToRad(234), // 自由
+      'ac': degToRad(162), // 順応
+    };
+
+    final Map<String, int> scores = {
+      'cp': profile.cp ?? 0,
+      'np': profile.np ?? 0,
+      'a': profile.a ?? 0,
+      'fc': profile.fc ?? 0,
+      'ac': profile.ac ?? 0,
+    };
+
+    double totalScore = scores.values.reduce((a, b) => a + b).toDouble();
+    double weightedX = 0;
+    double weightedY = 0;
+
+    scores.forEach((key, score) {
+      weightedX += score * cos(angles[key]!);
+      weightedY += score * sin(angles[key]!);
+    });
+
+    // 合計スコアが0の場合は中心 (0,0) とする
+    double finalX = totalScore == 0 ? 0 : weightedX / totalScore;
+    double finalY = totalScore == 0 ? 0 : weightedY / totalScore;
+
+    // Z座標を正規化 (0.0 - 1.0)
+    double finalZ = polishingLevel.clamp(0, 100) / 100.0;
+
+    return UniverseCoordinate(x: finalX, y: finalY, z: finalZ);
   }
 }
