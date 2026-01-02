@@ -41,7 +41,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           extendBodyBehindAppBar:
               true, // Allow background to extend behind AppBar
           appBar: AppBar(
-            title: const Text('分析レポート'), // AppBarのタイトルを追加
+            title: Text(
+              '分析レポート', // AppBarのタイトルを追加
+              style: TextStyle(color: Colors.white), // 日本語: AppBarのタイトル色を白に設定
+            ),
             backgroundColor: Colors.transparent, // AppBarも透過
             elevation: 0, // AppBarの影をなくす
           ),
@@ -219,7 +222,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             Text(
               'AIによる高度な分析',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onTertiaryContainer,
+                color: Colors.white, // 日本語: AI分析タイトルを白に設定
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -228,7 +231,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               'アップグレードすると、AIがあなたの記録を分析し、パーソナライズされた洞察を提供します。',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onTertiaryContainer,
+                color: Colors.white, // 日本語: AI分析説明文を白に設定
               ),
             ),
             const SizedBox(height: 24),
@@ -255,7 +258,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (provider.aiInsights.isEmpty) {
-      return const Center(child: Text('AIからの洞察はありません。'));
+      return const Center(
+        child: Text('AIからの洞察はありません。', style: TextStyle(color: Colors.white)),
+      ); // 日本語: 洞察なしテキストを白に設定
     }
 
     return ListView.separated(
@@ -287,7 +292,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   child: Text(
                     insight,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: Colors.white, // 日本語: 洞察テキストを白に設定
                     ),
                   ),
                 ),
@@ -301,7 +306,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   /// 各分析セクションのタイトルを表示するための再利用可能なウィジェット。
   Widget _buildSectionTitle(BuildContext context, String title) {
-    return Text(title, style: Theme.of(context).textTheme.titleLarge);
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        color: Colors.white, // 日本語: セクションタイトルを白に設定
+      ),
+    );
   }
 
   /// ユーザーが分析対象の日付範囲を選択するためのウィジェット。
@@ -345,7 +355,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             const SizedBox(width: 8),
             Text(
               '$start - $end',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.white, // 日本語: 日付範囲を白に設定
+              ),
             ),
           ],
         ),
@@ -364,6 +376,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       children: AnalysisDataType.values.map((type) {
         return FilterChip(
           label: Text(_getDataTypeLabel(type)),
+          labelStyle: TextStyle(
+            color: Colors.white, // 日本語: FilterChipのラベルを白に設定
+          ),
           selected: activeTypes.contains(type),
           onSelected: (bool selected) {
             provider.toggleDataType(type);
@@ -433,14 +448,14 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             return LineTooltipItem(
               '$title\n',
               TextStyle(
-                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                color: Colors.white, // 日本語: ツールチップのタイトル色を白に設定
                 fontWeight: FontWeight.bold,
               ),
               children: [
                 TextSpan(
                   text: 'スコア: ${spot.y.toStringAsFixed(1)}',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    color: Colors.white, // 日本語: ツールチップのスコア色を白に設定
                   ),
                 ),
               ],
@@ -653,7 +668,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                         );
                   return Text(
                     text,
-                    style: const TextStyle(fontSize: 10),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.white,
+                    ), // 日本語: X軸ラベルを白に設定
                   ); // ラベルスタイル
                 }
                 return const Text('');
@@ -668,7 +686,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 if (value.toInt() % 2 == 0) {
                   return Text(
                     value.toInt().toString(),
-                    style: const TextStyle(fontSize: 10), // ラベルスタイル
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.white,
+                    ), // 日本語: Y軸ラベルを白に設定
                   );
                 }
                 return const Text(''); // 奇数は表示しない
@@ -725,14 +746,14 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               return BarTooltipItem(
                 '${topItems[groupIndex].key}\n',
                 TextStyle(
-                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  color: Colors.white, // 日本語: 棒グラフツールチップのタイトル色を白に設定
                   fontWeight: FontWeight.bold,
                 ),
                 children: <TextSpan>[
                   TextSpan(
                     text: '${topItems[groupIndex].value} 回',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                      color: Colors.white, // 日本語: 棒グラフツールチップの数値色を白に設定
                     ),
                   ),
                 ],
@@ -750,7 +771,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 if (index < topItems.length) {
                   return Text(
                     topItems[index].key,
-                    style: const TextStyle(fontSize: 10),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.white,
+                    ), // 日本語: 棒グラフX軸ラベルを白に設定
                     overflow: TextOverflow.ellipsis,
                   );
                 }
@@ -807,7 +831,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       });
 
     if (distribution.isEmpty) {
-      return const Center(child: Text('データがありません。'));
+      return const Center(
+        child: Text('データがありません。', style: TextStyle(color: Colors.white)),
+      ); // 日本語: データなしテキストを白に設定
     }
 
     return Card(
@@ -825,7 +851,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               children: [
                 Text(icon, style: const TextStyle(fontSize: 24)),
                 const SizedBox(height: 4),
-                Text('$count 回', style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  '$count 回',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white, // 日本語: 回数テキストを白に設定
+                  ),
+                ),
               ],
             );
           }).toList(),
@@ -840,7 +871,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   ) {
     final correlation = report.weatherCorrelation;
     if (correlation.isEmpty) {
-      return const Center(child: Text('天気の記録があるデータが不足しています。'));
+      return const Center(
+        child: Text(
+          '天気の記録があるデータが不足しています。',
+          style: TextStyle(color: Colors.white),
+        ), // 日本語: データ不足テキストを白に設定
+      );
     }
 
     // スコアの差が大きい順にソート
@@ -865,7 +901,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             leading: const Icon(Icons.wb_sunny_outlined),
             title: Text(
               entry.key,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ), // 日本語: 天気タイトルを白に設定
             ),
             subtitle: Text(
               '平均より $sign${difference.toStringAsFixed(1)} ポイント',
@@ -873,7 +912,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             ),
             trailing: Text(
               '平均 ${entry.value.toStringAsFixed(1)}',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.white, // 日本語: 平均スコアを白に設定
+              ),
             ),
           ),
         );
@@ -884,7 +925,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Widget _buildEmotionalHabits(BuildContext context, AnalysisReport report) {
     final pairs = report.tagPairs;
     if (pairs.isEmpty) {
-      return const Center(child: Text('感情の組み合わせデータがありません。'));
+      return const Center(
+        child: Text(
+          '感情の組み合わせデータがありません。',
+          style: TextStyle(color: Colors.white),
+        ),
+      ); // 日本語: データなしテキストを白に設定
     }
 
     // 上位5件に絞る
@@ -899,7 +945,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             leading: const Icon(Icons.link),
             title: Text(
               pair.key,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ), // 日本語: 感情タイトルを白に設定
             ),
             trailing: Text(
               '${pair.value} 回',
