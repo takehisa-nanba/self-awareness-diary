@@ -134,7 +134,27 @@ class AnalysisProvider extends ChangeNotifier {
     );
 
     // 取得したレコードから分析レポートを生成
-    _report = AnalysisReport(records: records, dateRange: newRange);
+    // DiagnosisProviderからUserProfileを取得
+    final currentUserProfile = _diagnosisProvider?.userProfile;
+
+    if (currentUserProfile == null) {
+      // UserProfileがない場合はエラーとするか、デフォルト値で処理する
+      // TODO: UserProfileがnullの場合の適切なエラーハンドリングまたはデフォルト値設定
+      debugPrint(
+        "Warning: UserProfile is null in AnalysisProvider.changeDateRange.",
+      );
+      _report = null; // レポート生成不可
+      _isLoading = false;
+      _isAiLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    _report = AnalysisReport(
+      records: records,
+      dateRange: newRange,
+      userProfile: currentUserProfile, // UserProfileを渡す
+    );
     _isLoading = false; // データ読み込み完了
     notifyListeners(); // データ読み込み完了とレポート更新をUIに通知
 

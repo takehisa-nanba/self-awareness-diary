@@ -10,133 +10,192 @@ import '../../providers/analysis_provider.dart';
 import '../../providers/history_provider.dart'; // カレンダーイベント読み込みのため
 import '../../providers/settings_provider.dart';
 import '../widgets/custom_date_range_picker_dialog.dart'; // カスタム日付範囲ピッカー
+import '../widgets/universe_background.dart'; // Import UniverseBackground
+import '../widgets/universe_canvas.dart'; // Import UniverseCanvas
 
 /// 日記データの分析結果を表示する画面ウィジェット。
 ///
 /// ユーザーは日付範囲を選択し、その期間の気分推移グラフ、気分分布グラフ、
 /// およびAIによる洞察（Tier 2ユーザーのみ）を視覚的に確認できます。
-class AnalysisScreen extends StatelessWidget {
+class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
 
   @override
+  State<AnalysisScreen> createState() => _AnalysisScreenState();
+}
+
+enum ViewMode { chart, cosmicMap }
+
+class _AnalysisScreenState extends State<AnalysisScreen> {
+  ViewMode _viewMode = ViewMode.chart; // デフォルトはチャートビュー
+  double _timeSliderValue = 1.0; // 4次元目の時間スライダーの値
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          /// 分析対象の日付範囲を選択するセレクター。
-          _buildDateRangeSelector(context),
-          const SizedBox(height: 16),
-          _buildDataTypeSelector(context),
-          const SizedBox(height: 24),
+    return Stack(
+      // Use Stack to layer background and content
+      children: [
+        const UniverseBackground(), // Background as the first layer
+        Scaffold(
+          backgroundColor: Colors.transparent, // Make Scaffold transparent
+          extendBodyBehindAppBar:
+              true, // Allow background to extend behind AppBar
+          appBar: AppBar(
+            title: const Text('分析レポート'), // AppBarのタイトルを追加
+            backgroundColor: Colors.transparent, // AppBarも透過
+            elevation: 0, // AppBarの影をなくす
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildDateRangeSelector(context),
+                const SizedBox(height: 16),
+                _buildDataTypeSelector(context),
+                const SizedBox(height: 16),
 
-          /// [AnalysisProvider] の状態に基づいて、分析結果を表示。
-          ///
-          /// データが読み込み中の場合、データがない場合、
-          /// または分析結果がある場合にそれぞれのUIを表示します。
-          Consumer<AnalysisProvider>(
-            builder: (context, provider, child) {
-              if (provider.isLoading) {
-                return const SizedBox(
-                  height: 400,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              final report = provider.report;
-              if (report == null ||
-                  (report
-                          .isSingleDay // 単日表示の場合は時間別スコアを確認
-                      ? report.hourlyMoodScores.isEmpty
-                      : report.dailyMoodScores.isEmpty)) {
-                return const SizedBox(
-                  height: 400,
-                  child: Center(child: Text('この期間のデータはありません。')),
-                );
-              }
-
-              return Column(
-                children: [
-                  /// 「ムード推移」セクションのタイトル。
-                  _buildSectionTitle(context, 'ムード推移'),
-                  const SizedBox(height: 16),
-
-                  /// 気分推移グラフ（単日か複数日かで表示を切り替え）。
-                  SizedBox(
-                    height: 300,
-                    child: _buildLayeredMoodTrendChart(
-                      context,
-                      report,
-                      provider.activeDataTypes,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  /// 平均スコアの表示。
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      '平均スコア: ${report.averageMoodScore.toStringAsFixed(1)}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  /// 「ムードの分布」セクションのタイトル。
-                  _buildSectionTitle(context, 'ムードの分布'),
-                  const SizedBox(height: 16),
-
-                  /// 気分タグの分布を示す棒グラフ。
-                  SizedBox(
-                    height: 250,
-                    child: _buildMoodDistributionChart(context, report),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  _buildSectionTitle(context, '研磨の軌跡'),
-                  const SizedBox(height: 16),
-                  _buildPolishingTrajectory(context, report),
-
-                  const SizedBox(height: 40),
-
-                  _buildSectionTitle(context, '自分と環境'),
-                  const SizedBox(height: 16),
-                  _buildEnvironmentCorrelation(context, report),
-
-                  const SizedBox(height: 40),
-
-                  _buildSectionTitle(context, '感情の癖'),
-                  const SizedBox(height: 16),
-                  _buildEmotionalHabits(context, report),
-
-                  const SizedBox(height: 40),
-
-                  /// AIによる洞察の表示（Tier 2ユーザーのみ利用可能）。
-                  Consumer<SettingsProvider>(
-                    builder: (context, settings, child) {
-                      if (settings.currentTier != SubscriptionTier.tier2) {
-                        return _buildUpgradePlaceholder(context);
-                      }
-                      // Tier 2ユーザーのみAI洞察を表示
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildSectionTitle(context, 'AIによる洞察'),
-                          const SizedBox(height: 16),
-                          _buildAiInsights(context, provider),
-                        ],
-                      );
+                // ViewMode Toggle
+                Center(
+                  child: SegmentedButton<ViewMode>(
+                    segments: const <ButtonSegment<ViewMode>>[
+                      ButtonSegment<ViewMode>(
+                        value: ViewMode.chart,
+                        label: Text('チャート'),
+                        icon: Icon(Icons.bar_chart),
+                      ),
+                      ButtonSegment<ViewMode>(
+                        value: ViewMode.cosmicMap,
+                        label: Text('宇宙図'),
+                        icon: Icon(Icons.travel_explore),
+                      ),
+                    ],
+                    selected: <ViewMode>{_viewMode},
+                    onSelectionChanged: (Set<ViewMode> newSelection) {
+                      setState(() {
+                        _viewMode = newSelection.first;
+                      });
                     },
                   ),
-                ],
-              );
-            },
+                ),
+                const SizedBox(height: 24),
+
+                Consumer<AnalysisProvider>(
+                  builder: (context, provider, child) {
+                    if (provider.isLoading) {
+                      return const SizedBox(
+                        height: 400,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    final report = provider.report;
+                    if (report == null ||
+                        (report.isSingleDay
+                            ? report.hourlyMoodScores.isEmpty
+                            : report.dailyMoodScores.isEmpty)) {
+                      return const SizedBox(
+                        height: 400,
+                        child: Center(child: Text('この期間のデータはありません。')),
+                      );
+                    }
+
+                    // Display either Chart or Cosmic Map based on _viewMode
+                    if (_viewMode == ViewMode.cosmicMap) {
+                      return Column(
+                        children: [
+                          SizedBox(
+                            height: 500, // Adjust height as needed
+                            child: UniverseCanvas(
+                              recordCoordinates: report.recordCoordinates,
+                              userProfile: report.userProfile,
+                              timeSliderValue: _timeSliderValue,
+                            ),
+                          ),
+                          // Time Slider for Cosmic Map
+                          Slider(
+                            value: _timeSliderValue,
+                            min: 0.0,
+                            max: 1.0,
+                            divisions: 100,
+                            label: (_timeSliderValue * 100).round().toString(),
+                            onChanged: (double value) {
+                              setState(() {
+                                _timeSliderValue = value;
+                              });
+                            },
+                          ),
+                        ],
+                      );
+                    } else {
+                      // Existing Chart View
+                      return Column(
+                        children: [
+                          _buildSectionTitle(context, 'ムード推移'),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 300,
+                            child: _buildLayeredMoodTrendChart(
+                              context,
+                              report,
+                              provider.activeDataTypes,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              '平均スコア: ${report.averageMoodScore.toStringAsFixed(1)}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                          _buildSectionTitle(context, 'ムードの分布'),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 250,
+                            child: _buildMoodDistributionChart(context, report),
+                          ),
+                          const SizedBox(height: 40),
+                          _buildSectionTitle(context, '研磨の軌跡'),
+                          const SizedBox(height: 16),
+                          _buildPolishingTrajectory(context, report),
+                          const SizedBox(height: 40),
+                          _buildSectionTitle(context, '自分と環境'),
+                          const SizedBox(height: 16),
+                          _buildEnvironmentCorrelation(context, report),
+                          const SizedBox(height: 40),
+                          _buildSectionTitle(context, '感情の癖'),
+                          const SizedBox(height: 16),
+                          _buildEmotionalHabits(context, report),
+                          const SizedBox(height: 40),
+                          Consumer<SettingsProvider>(
+                            builder: (context, settings, child) {
+                              if (settings.currentTier !=
+                                  SubscriptionTier.tier2) {
+                                return _buildUpgradePlaceholder(context);
+                              }
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildSectionTitle(context, 'AIによる洞察'),
+                                  const SizedBox(height: 16),
+                                  _buildAiInsights(context, provider),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(height: 80),
+              ],
+            ),
           ),
-          const SizedBox(height: 80), // FABのための余白
-        ],
-      ),
+        ),
+      ],
     );
   }
 

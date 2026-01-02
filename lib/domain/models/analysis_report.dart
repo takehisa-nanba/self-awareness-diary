@@ -11,12 +11,33 @@ import 'user_profile.dart';
 class AnalysisReport {
   final List<DiaryRecord> _records;
   final DateTimeRange dateRange;
+  final UserProfile userProfile; // UserProfileを追加
 
   // public getterを追加
   List<DiaryRecord> get records => _records;
 
-  AnalysisReport({required List<DiaryRecord> records, required this.dateRange})
-    : _records = records;
+  AnalysisReport({
+    required List<DiaryRecord> records,
+    required this.dateRange,
+    required this.userProfile, // コンストラクタにUserProfileを追加
+  }) : _records = records;
+
+  /// 各日記レコードの宇宙座標
+  late final Map<DiaryRecord, UniverseCoordinate> recordCoordinates =
+      _calculateRecordCoordinates();
+
+  /// レコードごとの宇宙座標を計算するプライベートメソッド
+  Map<DiaryRecord, UniverseCoordinate> _calculateRecordCoordinates() {
+    final Map<DiaryRecord, UniverseCoordinate> coordinates = {};
+    for (final record in _records) {
+      coordinates[record] = AnalysisReportUniverse(this)
+          .calculateUniversePosition(
+            userProfile,
+            record.polishingLevel.toDouble(),
+          );
+    }
+    return coordinates;
+  }
 
   /// 分析対象の期間が単日かどうか
   bool get isSingleDay => dateRange.duration.inDays == 0;

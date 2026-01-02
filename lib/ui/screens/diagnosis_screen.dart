@@ -249,7 +249,6 @@ class _ConstellationProgressBar extends StatelessWidget {
   final int currentQuestionIndex;
 
   const _ConstellationProgressBar({
-    super.key,
     required this.totalQuestions,
     required this.answeredQuestions,
     required this.currentQuestionIndex,
@@ -300,7 +299,6 @@ class _DiagnosisAppBarTitle extends StatelessWidget {
   final int totalQuestions;
 
   const _DiagnosisAppBarTitle({
-    super.key,
     required this.currentPage,
     required this.totalQuestions,
   });
