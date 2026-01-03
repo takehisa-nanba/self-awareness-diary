@@ -179,7 +179,7 @@ class _HorizontalMoodSelectorState extends State<HorizontalMoodSelector> {
                             ) // 選択項目は背景色を薄く
                           : Colors.transparent,
                       border: Border.all(
-                        color: scoreBaseColor.withAlpha(128),
+                        color: scoreBaseColor.withAlpha((255 * 0.5).round()),
                         width: 2,
                       ),
                       // 選択項目はシャドウで強調

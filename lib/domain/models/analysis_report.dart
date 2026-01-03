@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:vector_math/vector_math.dart';
 
 import 'diary_record.dart';
 import 'universe_coordinate.dart';
@@ -11,33 +12,54 @@ import 'user_profile.dart';
 class AnalysisReport {
   final List<DiaryRecord> _records;
   final DateTimeRange dateRange;
-  final UserProfile userProfile; // UserProfileを追加
+  final UserProfile userProfile;
 
-  // public getterを追加
   List<DiaryRecord> get records => _records;
 
+  // --- 宇宙図関連の定義 ---
+
+  /// UIと計算ロジックで共有する、指標と角度（度数）のマッピング
+  static const Map<String, double> egoStateAnglesDeg = {
+    'CP': 270, // 規律 (真上)
+    'NP': 198, // 慈愛 (18 + 180 = 198)
+    'A': 126,  // 論理 (306 + 180 = 486 => 126)
+    'FC': 54,  // 自由 (234 + 180 = 414 => 54)
+    'AC': 342, // 順応 (162 + 180 = 342)
+  };
+
+  /// 指標と角度（ラジアン）のマッピング (getter)
+  Map<String, double> get indicatorAnglesRad {
+    return egoStateAnglesDeg.map(
+      (key, value) => MapEntry(key, radians(value)),
+    );
+  }
+
+  /// ムードタグと、それが引き寄せられる指標のマッピング
+  static const Map<String, String> tagToIndicatorMap = {
+    // CP (Critical Parent)
+    'やるべき': 'CP', '集中': 'CP', '反省': 'CP', '責任感': 'CP',
+    // NP (Nurturing Parent)
+    'ほっとする': 'NP', '安心した': 'NP', '満たされる': 'NP', '感謝': 'NP', '穏やか': 'NP',
+    // A (Adult)
+    'いつも通り': 'A', 'すっきり': 'A', '発見': 'A', '学び': 'A', '冷静': 'A',
+    // FC (Free Child)
+    'わくわく': 'FC', 'うれしい': 'FC', '楽しい': 'FC', '趣味': 'FC', '自由': 'FC', '幸せ': 'FC',
+    // AC (Adapted Child)
+    'つかれた': 'AC', 'もやもや': 'AC', '不安': 'AC', '我慢': 'AC', '悲しい': 'AC', '違和感': 'AC',
+  };
+
+  // --- コンストラクタ ---
   AnalysisReport({
     required List<DiaryRecord> records,
     required this.dateRange,
-    required this.userProfile, // コンストラクタにUserProfileを追加
+    required this.userProfile,
   }) : _records = records;
+
+  // --- publicな分析結果 (late final) ---
 
   /// 各日記レコードの宇宙座標
   late final Map<DiaryRecord, UniverseCoordinate> recordCoordinates =
       _calculateRecordCoordinates();
-
-  /// レコードごとの宇宙座標を計算するプライベートメソッド
-  Map<DiaryRecord, UniverseCoordinate> _calculateRecordCoordinates() {
-    final Map<DiaryRecord, UniverseCoordinate> coordinates = {};
-    for (final record in _records) {
-      coordinates[record] = AnalysisReportUniverse(this)
-          .calculateUniversePosition(
-            userProfile,
-            record.polishingLevel.toDouble(),
-          );
-    }
-    return coordinates;
-  }
 
   /// 分析対象の期間が単日かどうか
   bool get isSingleDay => dateRange.duration.inDays == 0;
@@ -67,7 +89,6 @@ class AnalysisReport {
   /// タグのペア(`Set<String>`) -> 出現回数(int)
   late final Map<String, int> tagPairs = _calculateTagPairs();
 
-  // --- 新しい分析データのgetter ---
   /// 期間中の最高スコアのレコード
   late final DiaryRecord? highestScoreRecord = _records.isEmpty
       ? null
@@ -89,26 +110,82 @@ class AnalysisReport {
   );
 
   /// 研磨度の時系列データ
-
   late final Map<DateTime, int> polishingLevelData =
       _calculatePolishingLevelData();
 
   /// 時間ごとの気圧データ
-
   late final Map<int, double> hourlyPressureScores =
       _calculateHourlyPressureScores();
 
   /// 時間ごとの気温データ
-
   late final Map<int, double> hourlyTemperatureScores =
       _calculateHourlyTemperatureScores();
 
   /// 時間ごとの研磨度データ
-
   late final Map<int, double> hourlyPolishingLevelData =
       _calculateHourlyPolishingLevelData();
 
-  // --- privateな計算メソッド ---
+
+  // --- privateな計算メソッド群 ---
+
+  /// レコードごとの宇宙座標を計算する
+  Map<DiaryRecord, UniverseCoordinate> _calculateRecordCoordinates() {
+    final Map<DiaryRecord, UniverseCoordinate> coordinates = {};
+
+    // ユーザープロファイルのスコアから基本的な重心を計算
+    final Map<String, int> scores = {
+      'CP': userProfile.cp ?? 0,
+      'NP': userProfile.np ?? 0,
+      'A': userProfile.a ?? 0,
+      'FC': userProfile.fc ?? 0,
+      'AC': userProfile.ac ?? 0,
+    };
+    final double totalScore = scores.values.fold(0, (a, b) => a + b).toDouble();
+    Vector2 basePosition = Vector2.zero();
+
+    if (totalScore > 0) {
+      scores.forEach((key, score) {
+        final angle = indicatorAnglesRad[key]!;
+        basePosition += Vector2(cos(angle), sin(angle)) * score.toDouble();
+      });
+      basePosition /= totalScore;
+    }
+
+    // 各レコードについて、タグに基づいて座標を調整
+    for (final record in _records) {
+      Vector2 finalPosition = Vector2.copy(basePosition);
+      int attractionCount = 0;
+
+      for (final tag in record.moodTags) {
+        final indicator = tagToIndicatorMap[tag];
+        if (indicator != null) {
+          final angle = indicatorAnglesRad[indicator]!;
+          final attractionVector = Vector2(cos(angle), sin(angle));
+          // 重心から指標へのベクトルを算出し、その方向に座標を寄せる
+          final vectorToIndicator = attractionVector - basePosition;
+          finalPosition += vectorToIndicator * 0.1; // 引き寄せの強さ (0.1 = 10%)
+          attractionCount++;
+        }
+      }
+
+      // 複数のタグがある場合、平均化を防ぐために少し補正
+      if (attractionCount > 1) {
+        finalPosition /= (1 + (attractionCount - 1) * 0.05);
+      }
+
+      // Z座標は研磨度から算出
+      final double finalZ = record.polishingLevel.clamp(0, 100) / 100.0;
+
+      // 最終的な座標を-1.0から1.0の範囲にクランプ
+      coordinates[record] = UniverseCoordinate(
+        x: finalPosition.x.clamp(-1.0, 1.0),
+        y: finalPosition.y.clamp(-1.0, 1.0),
+        z: finalZ,
+      );
+    }
+
+    return coordinates;
+  }
 
   Map<DateTime, double> _calculateDailyMoodScores() {
     final groupedByDay = groupBy(
@@ -139,7 +216,6 @@ class AnalysisReport {
   }
 
   Map<String, int> _calculateMoodTagDistribution() {
-    debugPrint('[AnalysisReport] ${_records.length} 件のレコードからムードの分布を計算します。');
     final Map<String, int> distribution = {};
     for (final record in _records) {
       for (final tag in record.moodTags) {
@@ -150,7 +226,6 @@ class AnalysisReport {
       ..sort((a, b) => b.value.compareTo(a.value));
 
     final finalDistribution = Map.fromEntries(sortedEntries);
-    debugPrint('[AnalysisReport] 計算結果: $finalDistribution');
     return finalDistribution;
   }
 
@@ -162,7 +237,6 @@ class AnalysisReport {
     return total / _records.length;
   }
 
-  /// 期間内の日記の研磨度アイコンごとの出現回数を計算します。
   Map<String, int> _calculatePolishingDistribution() {
     final Map<String, int> distribution = {};
     for (final record in _records) {
@@ -172,12 +246,10 @@ class AnalysisReport {
     return distribution;
   }
 
-  /// 天気ごとの平均ムードスコアを計算します。
   Map<String, double> _calculateWeatherCorrelation() {
     final Map<String, List<int>> scoresByWeather = {};
     for (final record in _records) {
       if (record.weather != null) {
-        // 天気情報から温度と気圧の部分を除外
         final weatherCondition = record.weather!.split('(').first.trim();
         if (scoresByWeather.containsKey(weatherCondition)) {
           scoresByWeather[weatherCondition]!.add(record.moodScore);
@@ -193,7 +265,6 @@ class AnalysisReport {
     });
   }
 
-  /// 同時に記録された気分タグのペアの出現頻度を計算し、ランキング形式で返します。
   Map<String, int> _calculateTagPairs() {
     final Map<String, int> pairCounts = {};
     for (final record in _records) {
@@ -207,23 +278,19 @@ class AnalysisReport {
         }
       }
     }
-    // 出現回数でソート
     final sortedEntries = pairCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     return Map.fromEntries(sortedEntries);
   }
 
-  /// 気圧または気温の時系列データを抽出します。
   Map<DateTime, double> _extractWeatherData(String type) {
     final Map<DateTime, double> data = {};
     for (final record in _records) {
       if (record.weather != null) {
         RegExp regExp;
         if (type == 'pressure') {
-          // 例: "曇り (15.5°C / 1012hPa)" -> 1012
           regExp = RegExp(r'(\d+)hPa');
         } else {
-          // 例: "曇り (15.5°C / 1012hPa)" -> 15.5
           regExp = RegExp(r'(-?\d+\.\d+)°C');
         }
         final match = regExp.firstMatch(record.weather!);
@@ -235,7 +302,6 @@ class AnalysisReport {
     return data;
   }
 
-  /// 研磨度の時系列データを計算します。
   Map<DateTime, int> _calculatePolishingLevelData() {
     final Map<DateTime, int> data = {};
     for (final record in _records) {
@@ -305,59 +371,5 @@ class AnalysisReport {
       final average = values.reduce((a, b) => a + b) / values.length;
       return MapEntry(hour, average);
     });
-  }
-}
-
-/// [AnalysisReport] の宇宙座標計算に関する拡張
-extension AnalysisReportUniverse on AnalysisReport {
-  /// ユーザープロファイルと研磨度から宇宙座標を計算します。
-  ///
-  /// [profile] ユーザーのエゴグラムスコアを含むプロファイル。
-  /// [polishingLevel] 日記の研磨度 (0-100)。
-  ///
-  /// 5つの指標（CP, NP, A, FC, AC）を円周上に配置し、スコアを重みとした
-  /// 重心計算により、現在の心の位置をX,Y座標として算出します。
-  /// Z座標は研磨度から算出され、自己分析の深さを示します。
-  UniverseCoordinate calculateUniversePosition(
-    UserProfile profile,
-    double polishingLevel,
-  ) {
-    // 角度をラジアンに変換するヘルパー
-    double degToRad(double deg) => deg * (pi / 180.0);
-
-    // 各指標のスコアと角度(ラジアン)をマップで定義
-    final Map<String, double> angles = {
-      'cp': degToRad(90), // 規律 (真上)
-      'np': degToRad(18), // 慈愛
-      'a': degToRad(306), // 論理
-      'fc': degToRad(234), // 自由
-      'ac': degToRad(162), // 順応
-    };
-
-    final Map<String, int> scores = {
-      'cp': profile.cp ?? 0,
-      'np': profile.np ?? 0,
-      'a': profile.a ?? 0,
-      'fc': profile.fc ?? 0,
-      'ac': profile.ac ?? 0,
-    };
-
-    double totalScore = scores.values.reduce((a, b) => a + b).toDouble();
-    double weightedX = 0;
-    double weightedY = 0;
-
-    scores.forEach((key, score) {
-      weightedX += score * cos(angles[key]!);
-      weightedY += score * sin(angles[key]!);
-    });
-
-    // 合計スコアが0の場合は中心 (0,0) とする
-    double finalX = totalScore == 0 ? 0 : weightedX / totalScore;
-    double finalY = totalScore == 0 ? 0 : weightedY / totalScore;
-
-    // Z座標を正規化 (0.0 - 1.0)
-    double finalZ = polishingLevel.clamp(0, 100) / 100.0;
-
-    return UniverseCoordinate(x: finalX, y: finalY, z: finalZ);
   }
 }

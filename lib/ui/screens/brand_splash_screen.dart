@@ -288,7 +288,7 @@ class _CoverContentState extends State<_CoverContent>
 
     // 【Diary】用スタイル：文字を少し細く、色も少し薄くしてバランスを取る。
     final normalDiaryStyle = TextStyle(
-      color: textGreen.withAlpha(200),
+      color: textGreen.withAlpha((255*0.8).round()),
       fontSize: 28.0,
       fontWeight: FontWeight.normal,
       letterSpacing: 0.0,
@@ -482,7 +482,7 @@ class _TapGuidance extends StatelessWidget {
           FadeAnimatedText(
             'TAP TO START',
             textStyle: TextStyle(
-              color: const Color(0xFF2E7D32).withAlpha(150),
+              color: const Color(0xFF2E7D32).withAlpha((255 * 0.6).round()),
               letterSpacing: 4,
               fontWeight: FontWeight.bold,
             ),

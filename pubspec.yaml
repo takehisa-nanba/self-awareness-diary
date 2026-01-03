@@ -49,6 +49,7 @@ dependencies:
   flutter_svg: ^2.2.3
   animated_text_kit: ^4.3.0
   google_mobile_ads: ^7.0.0
+  vector_math: ^2.2.0
 
 dev_dependencies:
   flutter_test:

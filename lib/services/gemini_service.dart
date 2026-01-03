@@ -3,6 +3,8 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'dart:convert'; // JSONエンコード・デコードのため
 import 'package:flutter/foundation.dart'; // debugPrintのため
+import 'package:self_awareness_diary/domain/models/diary_record.dart';
+import 'package:self_awareness_diary/domain/models/universe_coordinate.dart';
 import 'package:self_awareness_diary/domain/models/user_profile.dart'; // UserProfileをインポート
 
 /// グローバルにアクセス可能な [GeminiService] のインスタンス。
@@ -222,6 +224,93 @@ class GeminiService {
     } catch (e) {
       debugPrint('AI宇宙図洞察生成エラー: $e');
       return ['AIとの通信中にエラーが発生しました。']; // エラー時のフォールバック
+    }
+  }
+
+  Future<String> interpretCosmicMap(String cosmicMapSummary) async {
+    final prompt =
+        '''
+    あなたは私の最高の相棒であり、教師です。
+    以下の私の心の宇宙図（Cosmic Map）のデータを見て、現在の星々の配置が何を意味しているのか、その景色から読み解けることを一つ、簡潔に教えてください。
+
+    # あなたの役割
+    - 私の心の状態を、宇宙の星々に例えて詩的に表現します。
+    - 星々の座標の偏り、密集、孤立などのパターンから、私の心理的な傾向やエネルギーの状態を読み解きます。
+    - CP（批判的な親）は北、NP（養育的な親）は北東、A（大人）は南東、FC（自由な子供）は南西、AC（適応した子供）は北西のエリアに対応します。
+    - 優しい言葉で、私に気づきを与え、励ますような解説をしてください。
+
+    # 宇宙図データ
+    $cosmicMapSummary
+
+    # 回答の形式
+    - 結論を最初に述べ、その後に簡単な解説を続ける、1〜3文程度の短い文章で回答してください。
+
+    # 回答例
+    心のエネルギーが「自由（FC）」の領域に強く引かれているようですね。最近、何か新しい挑戦を始めたり、創造的な活動に没頭したりする機会がありましたか？
+    ''';
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text ?? '星々の声に、今は静かに耳を澄ませている時間のようです。';
+    } catch (e) {
+      debugPrint('AI宇宙図解説生成エラー: $e');
+      return '申し訳ありません。宇宙との交信に失敗しました。';
+    }
+  }
+
+  /// 特定の日記レコードが、なぜその宇宙座標に位置するのかを解説します。
+  ///
+  /// [record] 対象の日記レコード。
+  /// [userProfile] ユーザーのプロファイル。
+  /// [coordinate] 対象レコードの宇宙座標。
+  Future<String> explainRecordPosition({
+    required DiaryRecord record,
+    required UserProfile userProfile,
+    required UniverseCoordinate coordinate,
+  }) async {
+    // ユーザープロファイルをテキスト化
+    String userProfileDetails = "私の基本特性（エゴグラム）:\n"
+      "CP(父性): ${userProfile.cp}, NP(母性): ${userProfile.np}, "
+      "A(理性): ${userProfile.a}, FC(自由): ${userProfile.fc}, AC(協調): ${userProfile.ac}";
+
+    // 日記レコードをテキスト化
+    String recordDetails = "この日の日記:\n"
+      "日付: ${record.recordDate.toLocal()}\n"
+      "気分タグ: ${record.moodTags.join(', ')}\n"
+      "出来事: ${record.eventText}";
+
+    // 座標をテキスト化
+    String coordinateDetails = "この日記の宇宙座標: (x: ${coordinate.x.toStringAsFixed(2)}, y: ${coordinate.y.toStringAsFixed(2)}, z: ${coordinate.z.toStringAsFixed(2)})";
+
+    final prompt = '''
+    あなたは私の心の動きを読み解く、賢者のような存在です。
+    以下の私の基本特性と、特定の日記、そしてそれが宇宙図の中で示す座標の情報が与えられます。
+
+    # あなたへの指示
+    これらの情報を統合し、この日記が「なぜ」この座標に位置しているのか、その理由を教えてください。
+    私の基本特性と、その日の出来事や感情が、どのように作用してこの星の位置になったのかを、物語を語るように、詩的かつ分かりやすく解説してください。
+    CP（批判的な親）は北、NP（養育的な親）は北東、A（大人）は南東、FC（自由な子供）は南西、AC（適応した子供）は北西のエリアに対応します。
+
+    # 私の情報
+    $userProfileDetails
+
+    # 分析対象の星（日記）
+    $recordDetails
+    $coordinateDetails
+
+    # 回答の形式
+    - 2〜3文程度の、心に響く短いメッセージで回答してください。
+    - 私を励まし、新たな気づきを与えてくれるような、ポジティブな視点を大切にしてください。
+
+    # 回答例
+    あなたの心は普段、理性の星（A）の近くで静かに輝いていることが多いようですね。しかしこの日は、自由な子供（FC）のエネルギーに強く引かれ、遠くまで旅をしました。新しい趣味が、あなたの心を解き放つ鍵となったのかもしれません。
+    ''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text ?? '星のささやきを読み解いています...。';
+    } catch (e) {
+      debugPrint('AI個別解説生成エラー: $e');
+      return '申し訳ありません。星との交信に、少し時間がかかっているようです。';
     }
   }
 }

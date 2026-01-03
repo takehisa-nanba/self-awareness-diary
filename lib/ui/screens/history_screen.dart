@@ -237,7 +237,7 @@ class HistoryScreen extends StatelessWidget {
             daysOfWeekHeight: 30.0,
             calendarStyle: CalendarStyle(
               todayDecoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withAlpha(128),
+                color: Theme.of(context).colorScheme.primary.withAlpha((255 * 0.5).round()),
                 shape: BoxShape.circle,
               ),
               selectedDecoration: BoxDecoration(

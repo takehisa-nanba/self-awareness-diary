@@ -85,7 +85,7 @@ class DeveloperModeScreen extends StatelessWidget {
             /// 生成完了後に履歴をリフレッシュし、特定の日にジャンプします。
             Card(
               elevation: 0,
-              color: Theme.of(context).colorScheme.errorContainer.withAlpha(80),
+              color: Theme.of(context).colorScheme.errorContainer.withAlpha((255 * 0.3).round()),
               child: ListTile(
                 leading: const Icon(Icons.bug_report_outlined),
                 title: const Text('テストデータを生成'),
@@ -146,7 +146,7 @@ class DeveloperModeScreen extends StatelessWidget {
               elevation: 0,
               color: Theme.of(
                 context,
-              ).colorScheme.secondaryContainer.withAlpha(80),
+              ).colorScheme.secondaryContainer.withAlpha((255 * 0.3).round()),
               child: ListTile(
                 leading: const Icon(Icons.replay),
                 title: const Text('初回起動フラグをリセット'),
@@ -166,7 +166,7 @@ class DeveloperModeScreen extends StatelessWidget {
               elevation: 0,
               color: Theme.of(
                 context,
-              ).colorScheme.secondaryContainer.withAlpha(80),
+              ).colorScheme.secondaryContainer.withAlpha((255 * 0.3).round()),
               child: ListTile(
                 leading: const Icon(Icons.preview_outlined),
                 title: const Text('スプラッシュ画面をプレビュー'),

@@ -342,7 +342,7 @@ class _DetailBody extends StatelessWidget {
               color: isEmpty
                   ? Theme.of(
                       context,
-                    ).colorScheme.surfaceContainerLowest.withAlpha(150)
+                    ).colorScheme.surfaceContainerLowest.withAlpha((255 * 0.6).round())
                   : Theme.of(context).colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -559,7 +559,7 @@ class _AIAnalysisCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      color: scoreColor.withAlpha(20),
+      color: scoreColor.withAlpha((255 * 0.1).round()),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: scoreColor.withAlpha(77)),

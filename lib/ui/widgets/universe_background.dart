@@ -11,64 +11,18 @@ class UniverseBackground extends StatefulWidget {
   State<UniverseBackground> createState() => _UniverseBackgroundState();
 }
 
-class _UniverseBackgroundState extends State<UniverseBackground>
-    with TickerProviderStateMixin {
-  // アニメーションコントローラー
-  late AnimationController _nebulaController;
-  late Animation<Offset> _nebulaAnimation;
-
-  late List<AnimationController> _starTwinkleControllers;
-  late List<double> _starOpacities; // Opacity values directly
-
+class _UniverseBackgroundState extends State<UniverseBackground> {
   late List<Offset> _starPositions;
   late List<double> _starSizes;
+  late List<double> _starOpacities;
 
-  // 星の数
   static const int _numberOfStars = 200;
 
   @override
   void initState() {
     super.initState();
 
-    // 星間ガス (Nebula) のアニメーション設定
-    _nebulaController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 30), // 30秒かけてゆっくり移動
-    )..repeat(reverse: true); // 逆方向に繰り返すことで無限に移動する錯覚を作る
-
-    _nebulaAnimation = Tween<Offset>(
-      begin: const Offset(-0.5, 0.0), // 左外から
-      end: const Offset(0.5, 0.0), // 右外へ
-    ).animate(CurvedAnimation(parent: _nebulaController, curve: Curves.linear));
-
-    // 星の瞬き (Stars Twinkle) のアニメーション設定
-    _starTwinkleControllers = List.generate(
-      _numberOfStars,
-      (index) => AnimationController(
-        vsync: this,
-        duration: Duration(
-          milliseconds: Random().nextInt(1000) + 500,
-        ), // 0.5秒〜1.5秒で瞬き
-      )..repeat(reverse: true),
-    );
-
-    _starOpacities = List.generate(
-      _numberOfStars,
-      (index) => _starTwinkleControllers[index].value,
-    );
-
-    for (int i = 0; i < _numberOfStars; i++) {
-      final int index = i;
-      _starTwinkleControllers[index].addListener(() {
-        if (mounted) {
-          setState(() {
-            _starOpacities[index] = _starTwinkleControllers[index].value;
-          });
-        }
-      });
-    }
-
-    // 星の位置とサイズをランダムに初期化
+    // 星の位置、サイズ、透明度をランダムに初期化
     _starPositions = List.generate(
       _numberOfStars,
       (index) => Offset(
@@ -80,15 +34,11 @@ class _UniverseBackgroundState extends State<UniverseBackground>
       _numberOfStars,
       (index) => Random().nextDouble() * 2 + 1, // 1px-3pxのサイズ
     );
-  }
-
-  @override
-  void dispose() {
-    _nebulaController.dispose();
-    for (var controller in _starTwinkleControllers) {
-      controller.dispose();
-    }
-    super.dispose();
+    // 透明度をランダムな固定値に設定（アニメーションなし）
+    _starOpacities = List.generate(
+      _numberOfStars,
+      (index) => Random().nextDouble() * 0.5 + 0.2, // 0.2から0.7の間のランダムな透明度
+    );
   }
 
   @override
@@ -110,25 +60,17 @@ class _UniverseBackgroundState extends State<UniverseBackground>
           ),
         ),
 
-        // 中層: ゆっくり動く星間ガス (Nebula)
-        SlideTransition(
-          position: _nebulaAnimation,
-          child: RepaintBoundary(
-            child: CustomPaint(size: Size.infinite, painter: _NebulaPainter()),
-          ),
-        ),
+        // 中層: 静的な星間ガス (Nebula)
+        CustomPaint(size: Size.infinite, painter: _NebulaPainter()),
 
-        // 最前面: 瞬く星々 (Stars)
-        // RepaintBoundary を適用してパフォーマンスを確保
-        RepaintBoundary(
-          child: CustomPaint(
-            size: Size.infinite,
-            painter: _StarsPainter(
-              starPositions: _starPositions,
-              starSizes: _starSizes,
-              starOpacities: _starOpacities,
-              warpFactor: widget.warpFactor,
-            ),
+        // 最前面: 瞬かない星々 (Stars)
+        CustomPaint(
+          size: Size.infinite,
+          painter: _StarsPainter(
+            starPositions: _starPositions,
+            starSizes: _starSizes,
+            starOpacities: _starOpacities,
+            warpFactor: widget.warpFactor,
           ),
         ),
       ],
@@ -228,9 +170,10 @@ class _StarsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _StarsPainter oldDelegate) {
-    // Only repaint if opacities or positions/sizes change
+    // Only repaint if opacities or positions/sizes/warpFactor change
     return oldDelegate.starOpacities != starOpacities ||
         oldDelegate.starPositions != starPositions ||
-        oldDelegate.starSizes != starSizes;
+        oldDelegate.starSizes != starSizes ||
+        oldDelegate.warpFactor != warpFactor;
   }
 }

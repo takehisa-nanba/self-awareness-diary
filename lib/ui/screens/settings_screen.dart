@@ -37,6 +37,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // --- デバッグ用プラン設定セクション ---
+          const Text(
+            'デバッグ設定',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          _buildSubscriptionTierSelector(context, settingsProvider),
+          const SizedBox(height: 32),
+
           // --- 一般設定セクション ---
           const Text(
             '一般設定',
@@ -92,7 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       elevation: 0,
       color: Theme.of(
         context,
-      ).colorScheme.surfaceContainerHighest.withAlpha(80),
+      ).colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
       child: SwitchListTile(
         title: const Text('「出来事」から書き始める'), // 設定項目タイトル
         subtitle: const Text('オンにすると、日記を書き始める画面が「出来事の入力」からになります。'), // 設定項目の説明
@@ -111,7 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       elevation: 0,
       color: Theme.of(
         context,
-      ).colorScheme.surfaceContainerHighest.withAlpha(80),
+      ).colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -322,5 +331,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     _labelController.clear(); // 入力フィールドをクリア
     _addressController.clear();
+  }
+
+  /// デバッグ用にサブスクリプションティアを切り替えるウィジェット。
+  Widget _buildSubscriptionTierSelector(
+    BuildContext context,
+    SettingsProvider provider,
+  ) {
+    return Card(
+      elevation: 0,
+      color: Colors.orange.withAlpha((255 * 0.3).round()),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('現在のプラン: ${provider.currentTier.name}', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            SegmentedButton<SubscriptionTier>(
+              segments: const <ButtonSegment<SubscriptionTier>>[
+                ButtonSegment(value: SubscriptionTier.free, label: Text('Free')),
+                ButtonSegment(value: SubscriptionTier.tier1, label: Text('Tier1')),
+                ButtonSegment(value: SubscriptionTier.tier2, label: Text('Tier2')),
+              ],
+              selected: {provider.currentTier},
+              onSelectionChanged: (Set<SubscriptionTier> newSelection) {
+                provider.setSubscriptionTier(newSelection.first);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
