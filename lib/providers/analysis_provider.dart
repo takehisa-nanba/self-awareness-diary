@@ -1,6 +1,7 @@
 // lib/providers/analysis_provider.dart
 
 import 'package:flutter/material.dart';
+import 'package:self_awareness_diary/domain/mappers/cosmic_map_to_prompt_mapper.dart';
 import 'package:self_awareness_diary/domain/models/diary_record.dart';
 import 'package:self_awareness_diary/providers/settings_provider.dart';
 import '../domain/models/analysis_report.dart';
@@ -64,6 +65,9 @@ class AnalysisProvider extends ChangeNotifier {
   // AI洞察用の状態
   bool _isAiLoading = false;
   List<String> _aiInsights = [];
+  // 宇宙図用のAI洞察の状態を追加
+  bool _isCosmicMapAiLoading = false;
+  List<String> _cosmicMapInsights = [];
 
   /// 現在選択されている分析対象の日付範囲。
   DateTimeRange get dateRange => _dateRange;
@@ -74,11 +78,17 @@ class AnalysisProvider extends ChangeNotifier {
   /// 日記データの読み込み中かどうかを示すフラグ。
   bool get isLoading => _isLoading;
 
-  /// AIが洞察を生成中かどうかを示すフラグ。
+  /// チャート用AIが洞察を生成中かどうかを示すフラグ。
   bool get isAiLoading => _isAiLoading;
 
-  /// AIによって生成された洞察のリスト。
+  /// AIによって生成されたチャート用の洞察のリスト。
   List<String> get aiInsights => _aiInsights;
+
+  /// 宇宙図用AIが洞察を生成中かどうかを示すフラグ。
+  bool get isCosmicMapAiLoading => _isCosmicMapAiLoading;
+
+  /// AIによって生成された宇宙図用の洞察のリスト。
+  List<String> get cosmicMapInsights => _cosmicMapInsights;
 
   /// 手動で特定の記録のAI安定度分析を実行します。
   ///
@@ -122,30 +132,28 @@ class AnalysisProvider extends ChangeNotifier {
   /// [newRange] 新しい日付範囲。
   Future<void> changeDateRange(DateTimeRange newRange) async {
     _dateRange = newRange;
-    _isLoading = true; // データ読み込み開始
-    _isAiLoading = true; // AIの読み込みも開始
-    _aiInsights = []; // 古い洞察をクリア
-    notifyListeners(); // ローディング状態をUIに通知
+    _isLoading = true;
+    _isAiLoading = true;
+    _isCosmicMapAiLoading = true; // ローディング開始
+    _aiInsights = [];
+    _cosmicMapInsights = []; // クリア
+    notifyListeners();
 
-    // 指定された日付範囲内の日記レコードを取得
     final records = await _diaryRepository.getRecordsInDateRange(
       newRange.start,
       newRange.end,
     );
 
-    // 取得したレコードから分析レポートを生成
-    // DiagnosisProviderからUserProfileを取得
     final currentUserProfile = _diagnosisProvider?.userProfile;
 
     if (currentUserProfile == null) {
-      // UserProfileがない場合はエラーとするか、デフォルト値で処理する
-      // TODO: UserProfileがnullの場合の適切なエラーハンドリングまたはデフォルト値設定
       debugPrint(
         "Warning: UserProfile is null in AnalysisProvider.changeDateRange.",
       );
-      _report = null; // レポート生成不可
+      _report = null;
       _isLoading = false;
       _isAiLoading = false;
+      _isCosmicMapAiLoading = false; // ローディング終了
       notifyListeners();
       return;
     }
@@ -153,31 +161,56 @@ class AnalysisProvider extends ChangeNotifier {
     _report = AnalysisReport(
       records: records,
       dateRange: newRange,
-      userProfile: currentUserProfile, // UserProfileを渡す
+      userProfile: currentUserProfile,
     );
-    _isLoading = false; // データ読み込み完了
-    notifyListeners(); // データ読み込み完了とレポート更新をUIに通知
+    _isLoading = false;
+    notifyListeners();
 
-    // データ分析後にAIの洞察を取得
-    await fetchAiInsights();
+    // 両方のAI洞察を並行して取得
+    await Future.wait([fetchAiInsights(), fetchCosmicMapInsights()]);
   }
 
-  /// 現在の分析レポートを基に、AIによる洞察を非同期で取得します。
+  /// 現在の分析レポートを基に、チャート用のAIによる洞察を非同期で取得します。
   Future<void> fetchAiInsights() async {
-    // レポートがまだ生成されていない場合は何もしない
     if (_report == null) {
       _isAiLoading = false;
       notifyListeners();
       return;
     }
 
-    // レポートサマリーをAIプロンプト形式にマッピング
-    final summary = AiReportToPromptMapper.toPrompt(_report!); // 新しいマッパーを使用
-    // GeminiServiceを使用してAI洞察を生成
-    final insights = await _geminiService.generateAnalysisInsights(summary);
-    _aiInsights = insights; // 生成された洞察を保存
-    _isAiLoading = false; // AI読み込み完了
-    notifyListeners(); // AI洞察の更新をUIに通知
+    final summary = AiReportToPromptMapper.toPrompt(_report!);
+    // エラーハンドリングをtry-catchで行う
+    try {
+      final insights = await _geminiService.generateAnalysisInsights(summary);
+      _aiInsights = insights;
+    } catch (e) {
+      _aiInsights = ['チャートの分析中にエラーが発生しました。'];
+    } finally {
+      _isAiLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// 現在の分析レポートを基に、宇宙図用のAIによる洞察を非同期で取得します。
+  Future<void> fetchCosmicMapInsights() async {
+    if (_report == null) {
+      _isCosmicMapAiLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    // CosmicMap用のプロンプトを生成
+    final summary = CosmicMapToPromptMapper.toPrompt(_report!);
+    // エラーハンドリングをtry-catchで行う
+    try {
+      final insights = await _geminiService.generateCosmicMapInsights(summary);
+      _cosmicMapInsights = insights;
+    } catch (e) {
+      _cosmicMapInsights = ['宇宙図の解説生成中にエラーが発生しました。'];
+    } finally {
+      _isCosmicMapAiLoading = false;
+      notifyListeners();
+    }
   }
 
   /// グラフに表示するデータタイプを切り替えます。

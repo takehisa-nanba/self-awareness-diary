@@ -265,171 +265,173 @@ class HistoryScreen extends StatelessWidget {
           const Divider(),
 
           /// 選択された日の日記記録をリスト表示。
-          Expanded(
-            child: provider.selectedDayRecords.isEmpty
-                ? const Center(child: Text('この日の記録はありません。'))
-                : ListView.builder(
-                    padding: const EdgeInsets.all(8.0),
-                    itemCount: provider.selectedDayRecords.length,
-                    itemBuilder: (context, index) {
-                      final record = provider.selectedDayRecords[index];
-                      final bool isSelfAnalysisEmpty =
-                          record.selfAnalysis?.isEmpty ?? true;
+          provider.selectedDayRecords.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(child: Text('この日の記録はありません。')),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(8.0),
+                  itemCount: provider.selectedDayRecords.length,
+                  itemBuilder: (context, index) {
+                    final record = provider.selectedDayRecords[index];
+                    final bool isSelfAnalysisEmpty =
+                        record.selfAnalysis?.isEmpty ?? true;
 
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                          vertical: 6.0,
-                          horizontal: 8.0,
-                        ),
-                        elevation: isSelfAnalysisEmpty ? 1 : 2,
-                        color: isSelfAnalysisEmpty
-                            ? Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest
-                            : null,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: isSelfAnalysisEmpty
-                              ? BorderSide(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.outlineVariant,
-                                  width: 1,
-                                )
-                              : BorderSide.none,
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () {
-                            Navigator.push(
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        vertical: 6.0,
+                        horizontal: 8.0,
+                      ),
+                      elevation: isSelfAnalysisEmpty ? 1 : 2,
+                      color: isSelfAnalysisEmpty
+                          ? Theme.of(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    RecordDetailScreen(record: record),
-                              ),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor: getMoodColor(
-                                        record.moodScore,
+                            ).colorScheme.surfaceContainerHighest
+                          : null,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: isSelfAnalysisEmpty
+                            ? BorderSide(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.outlineVariant,
+                                width: 1,
+                              )
+                            : BorderSide.none,
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  RecordDetailScreen(record: record),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 24,
+                                    backgroundColor: getMoodColor(
+                                      record.moodScore,
+                                    ),
+                                    child: Text(
+                                      '${record.moodScore}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
                                       ),
-                                      child: Text(
-                                        '${record.moodScore}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          record.eventText,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "${record.timeString} / ${record.weather ?? '天気情報なし'}",
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 12),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 4.0,
+                                  top: 4.0,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      record.polishingIcon,
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                    const SizedBox(width: 8),
                                     Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            record.eventText,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            "${record.timeString} / ${record.weather ?? '天気情報なし'}",
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.bodySmall,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.chevron_right,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
+                                      child: isSelfAnalysisEmpty
+                                          ? Text(
+                                              record.polishingMessage,
+                                              style: TextStyle(
+                                                fontStyle: FontStyle.italic,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
+                                            )
+                                          : Text(
+                                              '研磨度: ${record.polishingLevel}%',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 4.0,
-                                    top: 4.0,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        record.polishingIcon,
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: isSelfAnalysisEmpty
-                                            ? Text(
-                                                record.polishingMessage,
-                                                style: TextStyle(
-                                                  fontStyle: FontStyle.italic,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurfaceVariant,
-                                                ),
-                                              )
-                                            : Text(
-                                                '研磨度: ${record.polishingLevel}%',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (record.moodTags.isNotEmpty) ...[
-                                  const SizedBox(height: 10),
-                                  Wrap(
-                                    spacing: 6.0,
-                                    runSpacing: 4.0,
-                                    children: record.moodTags
-                                        .map(
-                                          (tag) => Chip(
-                                            label: Text(tag),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 4.0,
-                                            ),
-                                            materialTapTargetSize:
-                                                MaterialTapTargetSize
-                                                    .shrinkWrap,
-                                            labelStyle: const TextStyle(
-                                              fontSize: 12,
-                                            ),
+                              ),
+                              if (record.moodTags.isNotEmpty) ...[
+                                const SizedBox(height: 10),
+                                Wrap(
+                                  spacing: 6.0,
+                                  runSpacing: 4.0,
+                                  children: record.moodTags
+                                      .map(
+                                        (tag) => Chip(
+                                          label: Text(tag),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4.0,
                                           ),
-                                        )
-                                        .toList(),
-                                  ),
-                                ],
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          labelStyle: const TextStyle(
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
                               ],
-                            ),
+                            ],
                           ),
                         ),
-                      );
-                    },
-                  ),
-          ),
+                      ),
+                    );
+                  },
+                ),
         ],
       ),
     );

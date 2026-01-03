@@ -115,13 +115,18 @@ void main() async {
             create: (context) =>
                 DiagnosisProvider(isarService), // IsarServiceを渡す
           ),
-          ChangeNotifierProxyProvider<SettingsProvider, AnalysisProvider>(
+          ChangeNotifierProxyProvider2<
+            SettingsProvider,
+            DiagnosisProvider,
+            AnalysisProvider
+          >(
             create: (context) => AnalysisProvider(
               context.read<DiaryRepository>(),
               geminiService,
             ),
-            update: (_, settings, analysis) =>
-                analysis!..updateSettings(settings),
+            update: (_, settings, diagnosis, analysis) => analysis!
+              ..updateSettings(settings)
+              ..updateDiagnosisProvider(diagnosis),
           ),
           // LocationProviderを追加。HistoryProviderに依存するためChangeNotifierProxyProviderを使用。
           ChangeNotifierProxyProvider<HistoryProvider, LocationProvider>(

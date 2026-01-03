@@ -177,7 +177,7 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
       case AppTab.history:
         return const HistoryScreen();
       case AppTab.analysis:
-        return const AnalysisScreen();
+        return const AnalysisScreenWrapper();
       case AppTab.settings:
         return const SettingsScreen();
     }
