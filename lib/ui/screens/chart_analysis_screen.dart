@@ -9,6 +9,7 @@ import 'dart:math';
 import '../../domain/models/analysis_report.dart';
 import '../../providers/analysis_provider.dart';
 import '../../providers/history_provider.dart';
+import '../widgets/period_selector_widget.dart';
 import '../widgets/custom_date_range_picker_dialog.dart';
 
 /// 分析チャート専用の画面ウィジェット。
@@ -33,7 +34,9 @@ class ChartAnalysisScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDateRangeSelector(context),
+            const PeriodSelectorWidget(), // ★クイック選択タブを追加
+            const SizedBox(height: 8),
+            _buildDateRangeSelector(context), // カスタム期間選択
             const SizedBox(height: 16),
             _buildDataTypeSelector(context),
             const SizedBox(height: 24),

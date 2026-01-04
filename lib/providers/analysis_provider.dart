@@ -81,10 +81,6 @@ class AnalysisProvider extends ChangeNotifier {
 
   /// コンストラクタは空にする
   AnalysisProvider() {
-    final now = DateTime.now();
-    final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
-    final startOfPeriod = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
-    _dateRange = DateTimeRange(start: startOfPeriod, end: endOfToday);
     // 初期データのロードはupdateProviders後に行う
   }
 
@@ -106,7 +102,8 @@ class AnalysisProvider extends ChangeNotifier {
     _subscriptionProvider = subscription;
 
     if (needsInitialization) {
-      changeDateRange(_dateRange);
+      // The initial changeDateRange is now called from AnalysisScreen's initState
+      // to ensure the UI's default selection is respected.
     }
   }
 
