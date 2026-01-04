@@ -16,25 +16,19 @@ class PeriodSelectorWidget extends StatelessWidget {
     final analysisProvider = context.watch<AnalysisProvider>();
     final currentRange = analysisProvider.dateRange;
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final oneWeekAgo = now.subtract(const Duration(days: 6));
-    final oneMonthAgo = DateTime(now.year, now.month - 1, now.day);
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999); // 今日の終わり
+    final oneWeekAgoStart = now.subtract(const Duration(days: 6));
+    final oneMonthAgoStart = DateTime(now.year, now.month - 1, now.day);
     final allTimeStart = DateTime(2000, 1, 1);
 
     const periodOptions = ['全期間', '1か月', '1週間', '当日'];
     
-    bool isSameDay(DateTime? a, DateTime? b) {
-      if (a == null || b == null) {
-        return false;
-      }
-      return a.year == b.year && a.month == b.month && a.day == b.day;
-    }
-
     final List<bool> isSelected = [
-      isSameDay(currentRange.start, allTimeStart),
-      isSameDay(currentRange.start, oneMonthAgo),
-      isSameDay(currentRange.start, oneWeekAgo),
-      isSameDay(currentRange.start, today),
+      _isSameRange(currentRange, allTimeStart, todayEnd), // 全期間
+      _isSameRange(currentRange, oneMonthAgoStart, todayEnd), // 1か月
+      _isSameRange(currentRange, oneWeekAgoStart, todayEnd), // 1週間
+      _isSameRange(currentRange, todayStart, todayEnd), // 当日
     ];
 
     return Padding(
@@ -84,5 +78,11 @@ class PeriodSelectorWidget extends StatelessWidget {
         return;
     }
     provider.changeDateRange(DateTimeRange(start: startDate, end: endDate));
+  }
+  
+  /// 2つのDateTimeRangeが（日付レベルで）同じかどうかを判定します。
+  bool _isSameRange(DateTimeRange range1, DateTime compareStart, DateTime compareEnd) {
+    return DateUtils.isSameDay(range1.start, compareStart) &&
+           DateUtils.isSameDay(range1.end, compareEnd);
   }
 }
