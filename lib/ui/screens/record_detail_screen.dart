@@ -340,9 +340,8 @@ class _DetailBody extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: isEmpty
-                  ? Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerLowest.withAlpha((255 * 0.6).round())
+                  ? Theme.of(context).colorScheme.surfaceContainerLowest
+                        .withAlpha((255 * 0.6).round())
                   : Theme.of(context).colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(

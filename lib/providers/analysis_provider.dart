@@ -24,7 +24,10 @@ class AnalysisProvider extends ChangeNotifier {
 
   // --- 状態 ---
   final Set<AnalysisDataType> activeDataTypes = {AnalysisDataType.mood};
-  DateTimeRange _dateRange = DateTimeRange(start: DateTime.now(), end: DateTime.now());
+  DateTimeRange _dateRange = DateTimeRange(
+    start: DateTime.now(),
+    end: DateTime.now(),
+  );
   AnalysisReport? _report;
   bool _isLoading = false;
 
@@ -60,8 +63,10 @@ class AnalysisProvider extends ChangeNotifier {
   bool get isCloudy => _isCloudy;
   bool get isInterpreting => _isInterpreting;
   String? get universeInterpretation => _universeInterpretation;
-  Map<DiaryRecord, UniverseCoordinate> get visibleRecordCoordinates => _visibleRecordCoordinates;
-  Map<String, double> get indicatorAnglesRad => _report?.indicatorAnglesRad ?? {};
+  Map<DiaryRecord, UniverseCoordinate> get visibleRecordCoordinates =>
+      _visibleRecordCoordinates;
+  Map<String, double> get indicatorAnglesRad =>
+      _report?.indicatorAnglesRad ?? {};
   bool get isInterpretationVisible => _isInterpretationVisible; // ★追加
   DiaryRecord? get selectedRecord => _selectedRecord;
   String? get selectedRecordExplanation => _selectedRecordExplanation;
@@ -70,7 +75,11 @@ class AnalysisProvider extends ChangeNotifier {
   AnalysisProvider(this._diaryRepository, this._geminiService) {
     final now = DateTime.now();
     final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
-    final startOfPeriod = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+    final startOfPeriod = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 6));
     final initialRange = DateTimeRange(start: startOfPeriod, end: endOfToday);
     changeDateRange(initialRange);
   }
@@ -150,10 +159,10 @@ class AnalysisProvider extends ChangeNotifier {
     _universeInterpretation = null;
     hideInterpretation(); // ★追加
     selectRecord(null); // スライダー操作時は選択を解除
-    
+
     // スライダー操作中は表示する星をリアルタイムで更新
     _updateVisibleCoordinates();
-    
+
     _debounce?.cancel();
     _debounce = Timer(const Duration(seconds: 2), () {
       _triggerInterpretation();
@@ -171,10 +180,10 @@ class AnalysisProvider extends ChangeNotifier {
       _visibleRecordCoordinates = _report!.recordCoordinates;
     } else {
       final windowSize = 7;
-      final startIndex =
-          (_timeSliderValue * (totalDays - windowSize)).floor();
-      final startDate =
-          _report!.dateRange.start.add(Duration(days: startIndex));
+      final startIndex = (_timeSliderValue * (totalDays - windowSize)).floor();
+      final startDate = _report!.dateRange.start.add(
+        Duration(days: startIndex),
+      );
       final endDate = startDate.add(Duration(days: windowSize));
 
       final visibleEntries = allCoordinates.where((entry) {
@@ -184,7 +193,8 @@ class AnalysisProvider extends ChangeNotifier {
       _visibleRecordCoordinates = Map.fromEntries(visibleEntries);
     }
     debugPrint(
-        '[AnalysisProvider] _updateVisibleCoordinates: Tier: ${_settingsProvider?.currentTier}, Visible records: ${_visibleRecordCoordinates.length}');
+      '[AnalysisProvider] _updateVisibleCoordinates: Tier: ${_settingsProvider?.currentTier}, Visible records: ${_visibleRecordCoordinates.length}',
+    );
     notifyListeners();
   }
 
@@ -193,7 +203,8 @@ class AnalysisProvider extends ChangeNotifier {
     if (_report == null) return;
 
     debugPrint(
-        '[AnalysisProvider] _triggerInterpretation START: Tier: ${_settingsProvider?.currentTier}, Visible records: ${_visibleRecordCoordinates.length}');
+      '[AnalysisProvider] _triggerInterpretation START: Tier: ${_settingsProvider?.currentTier}, Visible records: ${_visibleRecordCoordinates.length}',
+    );
 
     _isInterpreting = true;
     _isCloudy = false;
@@ -214,7 +225,7 @@ class AnalysisProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    
+
     try {
       final tempReport = AnalysisReport(
         records: _visibleRecordCoordinates.keys.toList(),
@@ -222,7 +233,9 @@ class AnalysisProvider extends ChangeNotifier {
         userProfile: _report!.userProfile,
       );
       final promptSummary = CosmicMapToPromptMapper.toPrompt(tempReport);
-      final interpretation = await _geminiService.interpretCosmicMap(promptSummary);
+      final interpretation = await _geminiService.interpretCosmicMap(
+        promptSummary,
+      );
       _universeInterpretation = interpretation;
     } catch (e) {
       _universeInterpretation = 'AIとの通信に失敗しました。';
@@ -284,9 +297,9 @@ class AnalysisProvider extends ChangeNotifier {
     );
     _visibleRecordCoordinates = _report!.recordCoordinates; // 全体を初期表示
     _isLoading = false;
-    
+
     // スライダーの初期化と最初の解説をトリガー
-    onTimeSliderChanged(1.0); 
+    onTimeSliderChanged(1.0);
 
     notifyListeners();
 

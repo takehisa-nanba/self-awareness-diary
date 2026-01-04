@@ -36,10 +36,16 @@
 - **提案**: 将来的には、アプリのルート（AppShell など）に `UniverseBackground` を配置し、画面切り替え時に背景が途切れないようにすることで、より没入感のある「旅」の体験を提供できます。
 
 ### 2. 星の瞬きの負荷
-- **現状**: 200個の星それぞれに `AnimationController` を持たせ、`setState` を呼ぶ現在の方式は、一部の端末でパフォーマンスに影響を与える可能性があります。
-- **提案**: 1つの `AnimationController` で「時間の進み」だけを管理し、`CustomPainter` 内で `sin(time + 星の個性)` のように計算して瞬かせることで、より滑らかで効率的なアニメーションを実現できます。
+- **解決済**: 1つの `AnimationController` で「時間の進み」だけを管理し、`CustomPainter` 内で `sin(time + 星の個性)` のように計算して瞬かせることで、より滑らかで効率的なアニメーションを実現しました。
 
 ## 実装計画：精密診断とティア別深化
+
+### パフォーマンス改善の実施 (完了)
+- **UniverseBackground のリファクタリング**: 200個の星の瞬きを個別の AnimationController ではなく、単一の CustomPainter 内の時間計算（sin(time + seed)) で完結するように変更しました。
+- **UniverseCanvas の最適化**:
+    - `RepaintBoundary` の導入: `UniverseCanvas` の `CustomPaint` を `RepaintBoundary` で包み、不要な再描画を抑制しました。
+    - アニメーション制御の分離: 視点回転や拡大縮小の処理において、`ValueNotifier` と `ValueListenableBuilder` を使用し、`Painter` の更新を必要最小限の範囲に限定しました。また、`context.size` への早期アクセスによるエラーを避けるため、`LayoutBuilder` を導入し、ウィジェットのサイズ情報を安全に取得するように修正しました。
+
 ### 全ティア共通：初期粒度測定
 - **初回起動時**: 53問（TEG 3準拠）の精密性格診断を実施。ユーザーの心の設計図（ベースライン）を確定させる。
 - **目的**: どのティアに移行しても、過去からの蓄積を最高の精度で分析可能にする「ユーザーへの誠実さ」の担保。

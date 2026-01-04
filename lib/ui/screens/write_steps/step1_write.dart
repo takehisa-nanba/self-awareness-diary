@@ -57,7 +57,9 @@ class Step1Write extends StatelessWidget {
                     ),
                     avatar: Icon(tag.icon, size: 18), // タグのアイコン
                     selected: isSelected, // 選択状態
-                    selectedColor: tag.color.withAlpha((255 * 0.3).round()), // 選択時の色
+                    selectedColor: tag.color.withAlpha(
+                      (255 * 0.3).round(),
+                    ), // 選択時の色
                     onSelected: (val) {
                       if (val) {
                         writeProvider.selectedTags.add(tag.label); // タグを追加

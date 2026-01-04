@@ -22,16 +22,14 @@ class AnalysisReport {
   static const Map<String, double> egoStateAnglesDeg = {
     'CP': 270, // 規律 (真上)
     'NP': 198, // 慈愛 (18 + 180 = 198)
-    'A': 126,  // 論理 (306 + 180 = 486 => 126)
-    'FC': 54,  // 自由 (234 + 180 = 414 => 54)
+    'A': 126, // 論理 (306 + 180 = 486 => 126)
+    'FC': 54, // 自由 (234 + 180 = 414 => 54)
     'AC': 342, // 順応 (162 + 180 = 342)
   };
 
   /// 指標と角度（ラジアン）のマッピング (getter)
   Map<String, double> get indicatorAnglesRad {
-    return egoStateAnglesDeg.map(
-      (key, value) => MapEntry(key, radians(value)),
-    );
+    return egoStateAnglesDeg.map((key, value) => MapEntry(key, radians(value)));
   }
 
   /// ムードタグと、それが引き寄せられる指標のマッピング
@@ -45,7 +43,12 @@ class AnalysisReport {
     // FC (Free Child)
     'わくわく': 'FC', 'うれしい': 'FC', '楽しい': 'FC', '趣味': 'FC', '自由': 'FC', '幸せ': 'FC',
     // AC (Adapted Child)
-    'つかれた': 'AC', 'もやもや': 'AC', '不安': 'AC', '我慢': 'AC', '悲しい': 'AC', '違和感': 'AC',
+    'つかれた': 'AC',
+    'もやもや': 'AC',
+    '不安': 'AC',
+    '我慢': 'AC',
+    '悲しい': 'AC',
+    '違和感': 'AC',
   };
 
   // --- コンストラクタ ---
@@ -124,7 +127,6 @@ class AnalysisReport {
   /// 時間ごとの研磨度データ
   late final Map<int, double> hourlyPolishingLevelData =
       _calculateHourlyPolishingLevelData();
-
 
   // --- privateな計算メソッド群 ---
 

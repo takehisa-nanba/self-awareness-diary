@@ -85,7 +85,9 @@ class DeveloperModeScreen extends StatelessWidget {
             /// 生成完了後に履歴をリフレッシュし、特定の日にジャンプします。
             Card(
               elevation: 0,
-              color: Theme.of(context).colorScheme.errorContainer.withAlpha((255 * 0.3).round()),
+              color: Theme.of(
+                context,
+              ).colorScheme.errorContainer.withAlpha((255 * 0.3).round()),
               child: ListTile(
                 leading: const Icon(Icons.bug_report_outlined),
                 title: const Text('テストデータを生成'),

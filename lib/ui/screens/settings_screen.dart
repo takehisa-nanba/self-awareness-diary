@@ -346,13 +346,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('現在のプラン: ${provider.currentTier.name}', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              '現在のプラン: ${provider.currentTier.name}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             SegmentedButton<SubscriptionTier>(
               segments: const <ButtonSegment<SubscriptionTier>>[
-                ButtonSegment(value: SubscriptionTier.free, label: Text('Free')),
-                ButtonSegment(value: SubscriptionTier.tier1, label: Text('Tier1')),
-                ButtonSegment(value: SubscriptionTier.tier2, label: Text('Tier2')),
+                ButtonSegment(
+                  value: SubscriptionTier.free,
+                  label: Text('Free'),
+                ),
+                ButtonSegment(
+                  value: SubscriptionTier.tier1,
+                  label: Text('Tier1'),
+                ),
+                ButtonSegment(
+                  value: SubscriptionTier.tier2,
+                  label: Text('Tier2'),
+                ),
               ],
               selected: {provider.currentTier},
               onSelectionChanged: (Set<SubscriptionTier> newSelection) {

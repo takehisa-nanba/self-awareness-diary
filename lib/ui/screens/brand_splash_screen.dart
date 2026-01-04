@@ -288,7 +288,7 @@ class _CoverContentState extends State<_CoverContent>
 
     // 【Diary】用スタイル：文字を少し細く、色も少し薄くしてバランスを取る。
     final normalDiaryStyle = TextStyle(
-      color: textGreen.withAlpha((255*0.8).round()),
+      color: textGreen.withAlpha((255 * 0.8).round()),
       fontSize: 28.0,
       fontWeight: FontWeight.normal,
       letterSpacing: 0.0,

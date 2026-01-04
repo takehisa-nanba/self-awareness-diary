@@ -4,183 +4,191 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:self_awareness_diary/domain/models/diary_record.dart';
 import 'package:self_awareness_diary/domain/models/universe_coordinate.dart';
-import 'package:self_awareness_diary/domain/models/user_profile.dart';
-import 'dart:math';
+import 'package:self_awareness_diary/domain/models/user_profile.dart'; // UserProfileをインポート
+import 'dart:math' as math; // Rename dart:math to math
+import 'package:vector_math/vector_math_64.dart'
+    as v_math; // Use vector_math_64 with a prefix
 
 import 'package:self_awareness_diary/providers/analysis_provider.dart';
 
-/// 宇宙図を描画するためのカスタムペインター。
-/// エゴグラムの各要素を「恒星」、日記の記録を「惑星」に見立てて描画します。
 class UniverseCanvas extends StatefulWidget {
   final Map<DiaryRecord, UniverseCoordinate> recordCoordinates;
-  final UserProfile userProfile;
-  final double timeSliderValue; // 4次元目の時間軸スライダーの値 (0.0 - 1.0)
-  final double warpFactor; // ワープエフェクトの強さ
-  final Map<String, double> indicatorAnglesRad; // ラジアン角のマップ
+  final UserProfile userProfile; // UserProfileを追加
+  final double timeSliderValue;
+  final double warpFactor;
+  final Map<String, double> indicatorAnglesRad;
 
   const UniverseCanvas({
     super.key,
     required this.recordCoordinates,
-    required this.userProfile,
+    required this.userProfile, // UserProfileを追加
     required this.indicatorAnglesRad,
     this.timeSliderValue = 1.0,
-    this.warpFactor = 0.0, // デフォルトは0
+    this.warpFactor = 0.0,
   });
 
   @override
   State<UniverseCanvas> createState() => _UniverseCanvasState();
 }
 
-class _UniverseCanvasState extends State<UniverseCanvas> with SingleTickerProviderStateMixin {
-  // 視点に関する状態
-  double _rotationX = 0.0;
-  double _rotationY = 0.0;
-  // 拡大縮小とパンに関する状態
-  double _scale = 1.0;
-  Offset _offset = Offset.zero;
-
-  // アニメーション用
+class _UniverseCanvasState extends State<UniverseCanvas>
+    with TickerProviderStateMixin {
+  final TransformationController _transformationController =
+      TransformationController();
   late AnimationController _animationController;
-  Animation<Offset>? _offsetAnimation;
-  Animation<double>? _scaleAnimation;
 
-  // タップ判定のためのPainterへの参照
-  late _UniversePainter _painter;
+  late ValueNotifier<double> _rotationX;
+  late ValueNotifier<double> _rotationY;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 200))
-      ..addListener(() {
-        setState(() {
-          _offset = _offsetAnimation?.value ?? _offset;
-          _scale = _scaleAnimation?.value ?? _scale;
-        });
-      });
-    _painter = _createPainter();
+    _animationController = AnimationController(vsync: this);
+    _rotationX = ValueNotifier<double>(0.0);
+    _rotationY = ValueNotifier<double>(0.0);
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
+  void _animateToIdentity() {
+    final animation =
+        Matrix4Tween(
+          begin: _transformationController.value,
+          end: v_math.Matrix4.identity(),
+        ).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
 
-  @override
-  void didUpdateWidget(covariant UniverseCanvas oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _painter = _createPainter();
-  }
-
-  _UniversePainter _createPainter() {
-    return _UniversePainter(
-      recordCoordinates: widget.recordCoordinates,
-      userProfile: widget.userProfile,
-      indicatorAnglesRad: widget.indicatorAnglesRad,
-      rotationX: _rotationX,
-      rotationY: _rotationY,
-      scale: _scale,
-      offset: _offset,
-      timeSliderValue: widget.timeSliderValue,
-      warpFactor: widget.warpFactor,
-    );
+    _animationController.duration = const Duration(milliseconds: 300);
+    animation.addListener(() {
+      _transformationController.value = animation.value;
+    });
+    _animationController.forward(from: 0.0);
   }
 
   @override
   Widget build(BuildContext context) {
-    _painter = _createPainter();
-
     return GestureDetector(
-      onScaleStart: (details) {
-        _animationController.stop();
-      },
-      onScaleUpdate: (details) {
-        if (details.pointerCount > 1) { // 2本指以上はズーム
-          setState(() {
-            // TODO: ズーム中心を考慮したオフセット計算が必要だが、一旦パンで調整可能とする
-            final newScale = _scale * details.scale;
-            _scale = max(1.0, newScale);
-          });
-        } else { // 1本指はパン or 回転
-            if (_scale > 1.01) { // わずかなスケール変動を無視
-              setState(() {
-                // 拡大中はパン
-                _offset += details.focalPointDelta;
-              });
-            } else {
-              // 拡大していない場合は視点回転
-              setState(() {
-                _rotationY += details.focalPointDelta.dx * 0.01;
-                _rotationX += details.focalPointDelta.dy * 0.01;
-                _rotationX = _rotationX.clamp(-pi / 2, pi / 2);
-              });
-            }
-        }
-      },
-      onScaleEnd: (details) {
-        // スケールが1.1未満ならアニメーションで元に戻す
-        if (_scale < 1.1) {
-          _offsetAnimation = Tween<Offset>(begin: _offset, end: Offset.zero).animate(
-            CurvedAnimation(parent: _animationController, curve: Curves.easeInOut)
-          );
-          _scaleAnimation = Tween<double>(begin: _scale, end: 1.0).animate(
-            CurvedAnimation(parent: _animationController, curve: Curves.easeInOut)
-          );
-          _animationController.forward(from: 0.0);
-        }
-      },
       onTapUp: (details) {
-        // タップ座標をPainterの座標系に変換
-        final tappedPoint = (details.localPosition - _offset) / _scale;
-        
-        final tappedRecord = _painter.hitTestRecord(tappedPoint);
+        // Get the matrix from InteractiveViewer
+        final interactiveViewMatrix = _transformationController.value;
+
+        // Create a matrix for the current rotation
+        final size = context.size!;
+        final center = Offset(size.width / 2, size.height / 2);
+        final rotationMatrix = v_math.Matrix4.identity()
+          ..translateByVector3(v_math.Vector3(center.dx, center.dy, 0))
+          ..rotateX(_rotationX.value)
+          ..rotateY(_rotationY.value)
+          ..translateByVector3(v_math.Vector3(-center.dx, -center.dy, 0));
+
+        // Combine all transformations
+        final fullTransform = interactiveViewMatrix * rotationMatrix;
+
+        final invertedFullTransform = Matrix4.inverted(fullTransform);
+        final tappedPoint = MatrixUtils.transformPoint(
+          invertedFullTransform,
+          details.localPosition,
+        );
+
+        // Create a temporary painter for hit testing
+        final tempPainter = _UniversePainter(
+          recordCoordinates: widget.recordCoordinates,
+          userProfile: widget.userProfile,
+          indicatorAnglesRad: widget.indicatorAnglesRad,
+          timeSliderValue: widget.timeSliderValue,
+          warpFactor: widget.warpFactor,
+          rotationX: _rotationX.value,
+          rotationY: _rotationY.value,
+        );
+
+        final tappedRecord = tempPainter._hitTestPainter(tappedPoint, size);
         if (tappedRecord != null) {
           context.read<AnalysisProvider>().selectRecord(tappedRecord);
         }
       },
-      child: CustomPaint(
-        painter: _painter,
-        child: Container(),
+      // 回転は1本指でのみ (InteractiveViewerがパン・ズームを処理するため、それ以外の1本指ドラッグを回転に使う)
+      onScaleUpdate: (details) {
+        if (details.pointerCount == 1 &&
+            _transformationController.value.getMaxScaleOnAxis() <= 1.05) {
+          _rotationY.value += details.focalPointDelta.dx * 0.01;
+          _rotationX.value += details.focalPointDelta.dy * 0.01;
+          _rotationX.value = _rotationX.value.clamp(-math.pi / 2, math.pi / 2);
+        }
+      },
+      child: InteractiveViewer(
+        transformationController: _transformationController,
+        minScale: 1.0,
+        maxScale: 5.0,
+        onInteractionEnd: (details) {
+          // スケールが初期値に近づいたらアニメーションで戻す
+          if (_transformationController.value.getMaxScaleOnAxis() < 1.05) {
+            _animateToIdentity();
+          }
+        },
+        child: ValueListenableBuilder<double>(
+          valueListenable: _rotationX,
+          builder: (context, rotationX, _) {
+            return ValueListenableBuilder<double>(
+              valueListenable: _rotationY,
+              builder: (context, rotationY, _) {
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final size = constraints.biggest;
+                    final center = Offset(size.width / 2, size.height / 2);
+                    final painter = _UniversePainter(
+                      recordCoordinates: widget.recordCoordinates,
+                      userProfile: widget.userProfile,
+                      indicatorAnglesRad: widget.indicatorAnglesRad,
+                      timeSliderValue: widget.timeSliderValue,
+                      warpFactor: widget.warpFactor,
+                      rotationX: rotationX,
+                      rotationY: rotationY,
+                    );
+                    return Transform(
+                      // Apply rotation to the CustomPaint child
+                      transform: v_math.Matrix4.identity()
+                        ..translateByVector3(
+                          v_math.Vector3(center.dx, center.dy, 0),
+                        )
+                        ..rotateX(rotationX)
+                        ..rotateY(rotationY)
+                        ..translateByVector3(
+                          v_math.Vector3(-center.dx, -center.dy, 0),
+                        ),
+                      alignment: FractionalOffset.center,
+                      child: RepaintBoundary(
+                        child: CustomPaint(painter: painter, size: size),
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-// タップされた星の情報を保持するクラス
-class TappableRecord {
-  final Rect area;
-  final DiaryRecord record;
-
-  TappableRecord({required this.area, required this.record});
-}
-
 class _UniversePainter extends CustomPainter {
   final Map<DiaryRecord, UniverseCoordinate> recordCoordinates;
-  final UserProfile userProfile;
+  final UserProfile userProfile; // UserProfileを追加
   final Map<String, double> indicatorAnglesRad;
   final double rotationX;
   final double rotationY;
-  final double scale;
-  final Offset offset;
   final double timeSliderValue;
   final double warpFactor;
 
-  // タップ可能な領域のリスト
-  final List<TappableRecord> tappableRecords = [];
-
   _UniversePainter({
     required this.recordCoordinates,
-    required this.userProfile,
+    required this.userProfile, // UserProfileを追加
     required this.indicatorAnglesRad,
     required this.rotationX,
     required this.rotationY,
-    required this.scale,
-    required this.offset,
     required this.timeSliderValue,
     required this.warpFactor,
   });
 
-  // エゴグラムの各要素の表示名と色
   static const Map<String, Color> egoStateColors = {
     'CP': Colors.red,
     'NP': Colors.green,
@@ -189,125 +197,107 @@ class _UniversePainter extends CustomPainter {
     'AC': Colors.orange,
   };
 
-  /// タップ位置がどの星にヒットしたかをテストする
-  DiaryRecord? hitTestRecord(Offset position) {
-    for (final tappable in tappableRecords) {
-      if (tappable.area.contains(position)) {
-        return tappable.record;
+  DiaryRecord? _hitTestPainter(Offset localPoint, Size size) {
+    double minDistance = double.infinity;
+    DiaryRecord? closestRecord;
+
+    // 恒星のヒットテスト（今回は惑星のみに絞る）
+    // indicatorAnglesRad.forEach((key, angleRad) {
+    //   final coord = UniverseCoordinate(x: cos(angleRad), y: sin(angleRad), z: 0);
+    //   final projectedPoint = coord.getProjectedOffset(size, rotationX, rotationY);
+    //   const double tapRadius = 25.0;
+    //   final distance = (localPoint - projectedPoint).distance;
+    //   if (distance < tapRadius && distance < minDistance) {
+    //     minDistance = distance;
+    //     closestRecord = ... // 恒星のタップはRecordではないので別の方法を考える
+    //   }
+    // });
+
+    // 惑星のヒットテスト
+    for (final entry in recordCoordinates.entries) {
+      final projectedPoint = entry.value.getProjectedOffset(
+        size,
+        rotationX,
+        rotationY,
+      );
+      const double tapRadius = 25.0; // タップ半径
+      final distance = (localPoint - projectedPoint).distance;
+      if (distance < tapRadius && distance < minDistance) {
+        minDistance = distance;
+        closestRecord = entry.key;
       }
     }
-    return null;
+    return closestRecord;
   }
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 毎回の描画前にクリア
-    tappableRecords.clear();
-
     final center = Offset(size.width / 2, size.height / 2);
 
-    // 実際の描画処理を行う内部関数
-    void paintUniverse(Canvas canvas, Size size) {
-      const double baseRadius = 100.0;
-      const double maxZScale = 150.0;
+    // 恒星
+    indicatorAnglesRad.forEach((key, angleRad) {
+      // UserProfileの値をUniverseCoordinateのx, y, zに適切にマッピングして使用する
+      // 今回は恒星なのでZは0。x,yは円周上の位置とする
+      final coord = UniverseCoordinate(
+        x: math.cos(angleRad) * (size.width / 4),
+        y: math.sin(angleRad) * (size.height / 4),
+        z: 0,
+      );
+      final projectedPoint = coord.getProjectedOffset(
+        size,
+        rotationX,
+        rotationY,
+      );
 
-      // 恒星（エゴグラムの5要素）を描画
-      indicatorAnglesRad.forEach((key, angleRad) {
-        final x3d = baseRadius * cos(angleRad);
-        final y3d = baseRadius * sin(angleRad);
-        const z3d = 0.0;
-        final rotatedX = x3d * cos(rotationY) - z3d * sin(rotationY);
-        final rotatedY = y3d * cos(rotationX) - (x3d * sin(rotationY) + z3d * cos(rotationY)) * sin(rotationX);
-        final rotatedZ = y3d * sin(rotationX) + (x3d * sin(rotationY) + z3d * cos(rotationY)) * cos(rotationX);
-        final perspectiveScale = 1 - (rotatedZ / maxZScale);
-        final projectedX = center.dx + rotatedX * perspectiveScale;
-        final projectedY = center.dy + rotatedY * perspectiveScale;
-        final color = egoStateColors[key] ?? Colors.white;
-        final paint = Paint()
-          ..color = color.withAlpha((255 * perspectiveScale.clamp(0.2, 1.0)).round()).withBlue(200)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, perspectiveScale * 5);
-        final starRadius = 10.0 * perspectiveScale.clamp(0.5, 1.5);
-        canvas.drawCircle(Offset(projectedX, projectedY), starRadius, paint);
+      final color = egoStateColors[key] ?? Colors.white;
+      final paint = Paint()
+        ..color = color.withAlpha(200)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8);
+      canvas.drawCircle(projectedPoint, 12.0, paint);
 
-        final textPainter = TextPainter(
-          text: TextSpan(
-            text: key,
-            style: TextStyle(
-              color: Colors.white.withAlpha((255 * perspectiveScale.clamp(0.5, 1.0)).round()),
-              fontSize: 10 * perspectiveScale.clamp(0.8, 1.2),
-              fontWeight: FontWeight.bold,
-            ),
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: key,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
           ),
-          textDirection: TextDirection.ltr,
-        );
-        textPainter.layout();
-        textPainter.paint(canvas, Offset(projectedX - textPainter.width / 2, projectedY - textPainter.height / 2));
-      });
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        projectedPoint - Offset(textPainter.width / 2, textPainter.height / 2),
+      );
+    });
 
-      // 日記の星（惑星）を描画
-      final recordList = recordCoordinates.entries.toList();
-      final recordsToShowCount = (recordList.length * timeSliderValue).ceil();
+    // 惑星
+    final recordList = recordCoordinates.entries.toList();
+    final recordsToShowCount = (recordList.length * timeSliderValue).ceil();
+    for (int i = 0; i < recordsToShowCount; i++) {
+      final entry = recordList[i];
+      final projectedPoint = entry.value.getProjectedOffset(
+        size,
+        rotationX,
+        rotationY,
+      );
 
-      for (int i = 0; i < recordsToShowCount; i++) {
-        final entry = recordList[i];
-        final record = entry.key;
-        final coord = entry.value;
+      final vectorFromCenter = projectedPoint - center;
+      final warpedPosition = projectedPoint + vectorFromCenter * warpFactor;
 
-        final x3d = coord.x * (size.width / 4);
-        final y3d = coord.y * (size.height / 4);
-        final z3d = coord.z * maxZScale;
-        final rotatedX = x3d * cos(rotationY) - z3d * sin(rotationY);
-        final rotatedY = y3d * cos(rotationX) - (x3d * sin(rotationY) + z3d * cos(rotationY)) * sin(rotationX);
-        final rotatedZ = y3d * sin(rotationX) + (x3d * sin(rotationY) + z3d * cos(rotationY)) * cos(rotationX);
-        final perspectiveScale = 1 - (rotatedZ / maxZScale);
-        final projectedX = center.dx + rotatedX * perspectiveScale;
-        final projectedY = center.dy + rotatedY * perspectiveScale;
-        final vectorFromCenter = Offset(projectedX - center.dx, projectedY - center.dy);
-        final warpedPosition = Offset(
-          projectedX + vectorFromCenter.dx * warpFactor,
-          projectedY + vectorFromCenter.dy * warpFactor,
-        );
-        final paint = Paint()..color = Colors.amberAccent.withAlpha((255 * perspectiveScale.clamp(0.1, 0.8)).round());
-        final recordRadius = 2.0 * perspectiveScale.clamp(0.5, 1.5);
-
-        // タップ領域を計算してリストに追加
-        final tappableArea = Rect.fromCircle(center: warpedPosition, radius: recordRadius + 8.0); // 少し領域を広げる
-        tappableRecords.add(TappableRecord(area: tappableArea, record: record));
-
-        canvas.drawCircle(warpedPosition, recordRadius, paint);
-      }
+      final paint = Paint()..color = Colors.amberAccent.withAlpha(220);
+      canvas.drawCircle(warpedPosition, 2.5, paint);
     }
-
-    // --- 描画の実行 ---
-    // オフセットとスケールを適用したクリッピング領域を作成
-    final clipRect = Rect.fromLTWH(0, 0, size.width, size.height);
-    canvas.clipRect(clipRect);
-
-    canvas.save();
-    // キャンバス全体を変換
-    final transformCenter = Offset(size.width / 2, size.height / 2);
-    final matrix = Matrix4.identity()
-      ..translate(transformCenter.dx, transformCenter.dy)
-      ..scale(scale)
-      ..translate(-transformCenter.dx, -transformCenter.dy)
-      ..translate(offset.dx, offset.dy);
-
-    canvas.transform(matrix.storage);
-    
-    paintUniverse(canvas, size);
-
-    canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant _UniversePainter oldDelegate) {
     return oldDelegate.recordCoordinates != recordCoordinates ||
-        oldDelegate.userProfile != userProfile ||
-        oldDelegate.indicatorAnglesRad != indicatorAnglesRad ||
+        oldDelegate.userProfile != userProfile || // UserProfileの変更もトリガー
         oldDelegate.rotationX != rotationX ||
         oldDelegate.rotationY != rotationY ||
-        oldDelegate.scale != scale ||
-        oldDelegate.offset != offset ||
         oldDelegate.timeSliderValue != timeSliderValue ||
         oldDelegate.warpFactor != warpFactor;
   }

@@ -11,10 +11,12 @@ class UniverseBackground extends StatefulWidget {
   State<UniverseBackground> createState() => _UniverseBackgroundState();
 }
 
-class _UniverseBackgroundState extends State<UniverseBackground> {
+class _UniverseBackgroundState extends State<UniverseBackground>
+    with TickerProviderStateMixin {
   late List<Offset> _starPositions;
   late List<double> _starSizes;
-  late List<double> _starOpacities;
+  late AnimationController _twinkleController;
+  late Animation<double> _twinkleAnimation;
 
   static const int _numberOfStars = 200;
 
@@ -22,7 +24,19 @@ class _UniverseBackgroundState extends State<UniverseBackground> {
   void initState() {
     super.initState();
 
-    // 星の位置、サイズ、透明度をランダムに初期化
+    _twinkleController = AnimationController(
+      vsync: this,
+      duration: const Duration(
+        seconds: 10,
+      ), // Adjust duration for desired twinkle speed
+    )..repeat(reverse: true);
+
+    _twinkleAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(_twinkleController);
+
+    // 星の位置、サイズをランダムに初期化
     _starPositions = List.generate(
       _numberOfStars,
       (index) => Offset(
@@ -34,11 +48,12 @@ class _UniverseBackgroundState extends State<UniverseBackground> {
       _numberOfStars,
       (index) => Random().nextDouble() * 2 + 1, // 1px-3pxのサイズ
     );
-    // 透明度をランダムな固定値に設定（アニメーションなし）
-    _starOpacities = List.generate(
-      _numberOfStars,
-      (index) => Random().nextDouble() * 0.5 + 0.2, // 0.2から0.7の間のランダムな透明度
-    );
+  }
+
+  @override
+  void dispose() {
+    _twinkleController.dispose();
+    super.dispose();
   }
 
   @override
@@ -63,15 +78,20 @@ class _UniverseBackgroundState extends State<UniverseBackground> {
         // 中層: 静的な星間ガス (Nebula)
         CustomPaint(size: Size.infinite, painter: _NebulaPainter()),
 
-        // 最前面: 瞬かない星々 (Stars)
-        CustomPaint(
-          size: Size.infinite,
-          painter: _StarsPainter(
-            starPositions: _starPositions,
-            starSizes: _starSizes,
-            starOpacities: _starOpacities,
-            warpFactor: widget.warpFactor,
-          ),
+        // 最前面: 瞬く星々 (Stars)
+        AnimatedBuilder(
+          animation: _twinkleAnimation,
+          builder: (context, child) {
+            return CustomPaint(
+              size: Size.infinite,
+              painter: _StarsPainter(
+                starPositions: _starPositions,
+                starSizes: _starSizes,
+                twinkleValue: _twinkleAnimation.value,
+                warpFactor: widget.warpFactor,
+              ),
+            );
+          },
         ),
       ],
     );
@@ -125,15 +145,23 @@ class _NebulaPainter extends CustomPainter {
 class _StarsPainter extends CustomPainter {
   final List<Offset> starPositions;
   final List<double> starSizes;
-  final List<double> starOpacities; // Opacity values directly
+  final double twinkleValue; // 瞬きの現在の値 (0.0-1.0)
   final double warpFactor;
+
+  // 各星の瞬きを非同期にするためのシード値
+  final List<double> _twinkleSeeds;
+  static const double _twinkleFrequency = 2 * pi; // 瞬きの頻度 (sin関数の周期)
 
   _StarsPainter({
     required this.starPositions,
     required this.starSizes,
-    required this.starOpacities,
+    required this.twinkleValue,
     this.warpFactor = 0.0,
-  });
+  }) : _twinkleSeeds = List.generate(
+         starPositions.length,
+         (index) =>
+             Random(index).nextDouble() * _twinkleFrequency, // 各星に異なるシードを与える
+       );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -161,7 +189,13 @@ class _StarsPainter extends CustomPainter {
       );
 
       final starSize = starSizes[i];
-      final opacity = starOpacities[i];
+
+      // 瞬きを計算: sin関数で周期的な透明度変化を作成
+      // 0.2から0.7の範囲で透明度を変化させる
+      final double twinkle =
+          (sin(twinkleValue * _twinkleFrequency + _twinkleSeeds[i]) + 1) /
+          2; // 0.0-1.0
+      final double opacity = 0.2 + (twinkle * 0.5); // 0.2-0.7
 
       paint.color = Colors.white.withAlpha((255 * opacity).round());
       canvas.drawCircle(warpedPosition, starSize / 2, paint);
@@ -170,8 +204,8 @@ class _StarsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _StarsPainter oldDelegate) {
-    // Only repaint if opacities or positions/sizes/warpFactor change
-    return oldDelegate.starOpacities != starOpacities ||
+    // twinkleValueが変わったときにのみ再描画
+    return oldDelegate.twinkleValue != twinkleValue ||
         oldDelegate.starPositions != starPositions ||
         oldDelegate.starSizes != starSizes ||
         oldDelegate.warpFactor != warpFactor;

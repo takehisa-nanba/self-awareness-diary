@@ -268,20 +268,24 @@ class GeminiService {
     required UniverseCoordinate coordinate,
   }) async {
     // ユーザープロファイルをテキスト化
-    String userProfileDetails = "私の基本特性（エゴグラム）:\n"
-      "CP(父性): ${userProfile.cp}, NP(母性): ${userProfile.np}, "
-      "A(理性): ${userProfile.a}, FC(自由): ${userProfile.fc}, AC(協調): ${userProfile.ac}";
+    String userProfileDetails =
+        "私の基本特性（エゴグラム）:\n"
+        "CP(父性): ${userProfile.cp}, NP(母性): ${userProfile.np}, "
+        "A(理性): ${userProfile.a}, FC(自由): ${userProfile.fc}, AC(協調): ${userProfile.ac}";
 
     // 日記レコードをテキスト化
-    String recordDetails = "この日の日記:\n"
-      "日付: ${record.recordDate.toLocal()}\n"
-      "気分タグ: ${record.moodTags.join(', ')}\n"
-      "出来事: ${record.eventText}";
+    String recordDetails =
+        "この日の日記:\n"
+        "日付: ${record.recordDate.toLocal()}\n"
+        "気分タグ: ${record.moodTags.join(', ')}\n"
+        "出来事: ${record.eventText}";
 
     // 座標をテキスト化
-    String coordinateDetails = "この日記の宇宙座標: (x: ${coordinate.x.toStringAsFixed(2)}, y: ${coordinate.y.toStringAsFixed(2)}, z: ${coordinate.z.toStringAsFixed(2)})";
+    String coordinateDetails =
+        "この日記の宇宙座標: (x: ${coordinate.x.toStringAsFixed(2)}, y: ${coordinate.y.toStringAsFixed(2)}, z: ${coordinate.z.toStringAsFixed(2)})";
 
-    final prompt = '''
+    final prompt =
+        '''
     あなたは私の心の動きを読み解く、賢者のような存在です。
     以下の私の基本特性と、特定の日記、そしてそれが宇宙図の中で示す座標の情報が与えられます。
 

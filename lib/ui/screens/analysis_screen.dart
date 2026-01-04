@@ -23,8 +23,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('宇宙図分布',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          '宇宙図分布',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -36,8 +38,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           final report = provider.report;
           if (report == null || report.recordCoordinates.isEmpty) {
             return const Center(
-                child: Text('分析データがありません。',
-                    style: TextStyle(color: Colors.white70)));
+              child: Text(
+                '分析データがありません。',
+                style: TextStyle(color: Colors.white70),
+              ),
+            );
           }
 
           return Stack(
@@ -49,8 +54,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   builder: (context, settingsProvider, child) {
                     final warpFactor =
                         (settingsProvider.currentTier == SubscriptionTier.free)
-                            ? 0.0
-                            : 0.05; // 動きを認識しやすいように値を調整
+                        ? 0.0
+                        : 0.05; // 動きを認識しやすいように値を調整
                     return UniverseCanvas(
                       recordCoordinates: provider.visibleRecordCoordinates,
                       userProfile: report.userProfile,
@@ -87,7 +92,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             child: Text(
               '宇宙が曇ってしまっていて鮮明に読み取れませんでした。\nあと少し、どんな小さなことでも良いので、私に教えてくれませんか？',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withAlpha((255 * 0.8).round()), fontSize: 16),
+              style: TextStyle(
+                color: Colors.white.withAlpha((255 * 0.8).round()),
+                fontSize: 16,
+              ),
             ),
           ),
         ),
@@ -140,7 +148,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(16.0),
                             child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+                              filter: ImageFilter.blur(
+                                sigmaX: 8.0,
+                                sigmaY: 8.0,
+                              ),
                               child: Container(
                                 width: MediaQuery.of(context).size.width * 0.85,
                                 padding: const EdgeInsets.all(20.0),
@@ -156,10 +167,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          DateFormat('yyyy年M月d日 HH:mm').format(record.recordDate),
+                                          DateFormat(
+                                            'yyyy年M月d日 HH:mm',
+                                          ).format(record.recordDate),
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
@@ -167,80 +181,163 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                           ),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.close, color: Colors.white),
-                                          onPressed: () => provider.selectRecord(null),
-                                        )
+                                          icon: const Icon(
+                                            Icons.close,
+                                            color: Colors.white,
+                                          ),
+                                          onPressed: () =>
+                                              provider.selectRecord(null),
+                                        ),
                                       ],
                                     ),
-                                    const Divider(color: Colors.white54, height: 20),
+                                    const Divider(
+                                      color: Colors.white54,
+                                      height: 20,
+                                    ),
                                     if (record.moodTags.isNotEmpty) ...[
-                                      const Text('気分タグ', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                      const Text(
+                                        '気分タグ',
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                        ),
+                                      ),
                                       const SizedBox(height: 8),
                                       Wrap(
                                         spacing: 8.0,
                                         runSpacing: 4.0,
                                         children: record.moodTags
-                                            .map((tag) => Chip(
-                                                  label: Text(tag),
-                                                  backgroundColor: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                                ))
+                                            .map(
+                                              (tag) => Chip(
+                                                label: Text(tag),
+                                                backgroundColor:
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .secondaryContainer
+                                                        .withAlpha(150),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8.0,
+                                                    ),
+                                              ),
+                                            )
                                             .toList(),
                                       ),
                                       const SizedBox(height: 16),
                                     ],
-                                    const Text('出来事', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                    const Text(
+                                      '出来事',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                     const SizedBox(height: 8),
                                     Text(
                                       record.eventText,
-                                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
                                       maxLines: 5,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                    const Divider(color: Colors.white54, height: 24),
+                                    const Divider(
+                                      color: Colors.white54,
+                                      height: 24,
+                                    ),
                                     // AI解説セクション
                                     GestureDetector(
                                       onTap: () {
-                                        if (!provider.isExplanationLoading && provider.selectedRecordExplanation == null) {
+                                        if (!provider.isExplanationLoading &&
+                                            provider.selectedRecordExplanation ==
+                                                null) {
                                           provider.explainSelectedRecord();
                                         }
                                       },
                                       child: AnimatedSize(
-                                        duration: const Duration(milliseconds: 300),
+                                        duration: const Duration(
+                                          milliseconds: 300,
+                                        ),
                                         curve: Curves.easeInOut,
                                         child: provider.isExplanationLoading
-                                            ? const Center(child: Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: CircularProgressIndicator(strokeWidth: 2),
-                                              ))
-                                            : (provider.selectedRecordExplanation != null
-                                                ? Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      const Text('星の物語', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                                                      const SizedBox(height: 8),
-                                                      Text(
-                                                        provider.selectedRecordExplanation!,
-                                                        style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
+                                            ? const Center(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        strokeWidth: 2,
                                                       ),
-                                                    ],
-                                                  )
-                                                : Container(
-                                                    width: double.infinity,
-                                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                                    decoration: BoxDecoration(
-                                                      color: Theme.of(context).colorScheme.primary.withAlpha(50),
-                                                      borderRadius: BorderRadius.circular(8),
-                                                    ),
-                                                    child: const Row(
-                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                ),
+                                              )
+                                            : (provider.selectedRecordExplanation !=
+                                                      null
+                                                  ? Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
                                                       children: [
-                                                        Icon(Icons.auto_awesome, size: 16, color: Colors.white),
-                                                        SizedBox(width: 8),
-                                                        Text('AIにこの星の物語を聞く', style: TextStyle(color: Colors.white)),
+                                                        const Text(
+                                                          '星の物語',
+                                                          style: TextStyle(
+                                                            color:
+                                                                Colors.white70,
+                                                            fontSize: 12,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 8,
+                                                        ),
+                                                        Text(
+                                                          provider
+                                                              .selectedRecordExplanation!,
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 14,
+                                                                height: 1.5,
+                                                              ),
+                                                        ),
                                                       ],
-                                                    ),
-                                                  )),
+                                                    )
+                                                  : Container(
+                                                      width: double.infinity,
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            vertical: 12,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .primary
+                                                            .withAlpha(50),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                      ),
+                                                      child: const Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Icon(
+                                                            Icons.auto_awesome,
+                                                            size: 16,
+                                                            color: Colors.white,
+                                                          ),
+                                                          SizedBox(width: 8),
+                                                          Text(
+                                                            'AIにこの星の物語を聞く',
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    )),
                                       ),
                                     ),
                                   ],
@@ -258,16 +355,19 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-
   /// AIによる解説を表示するグラスモフィズム風カード
   Widget _buildInterpretationCard(
-      BuildContext context, AnalysisProvider provider) {
+    BuildContext context,
+    AnalysisProvider provider,
+  ) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 500),
       transitionBuilder: (Widget child, Animation<double> animation) {
         return FadeTransition(opacity: animation, child: child);
       },
-      child: provider.isInterpretationVisible && provider.universeInterpretation != null
+      child:
+          provider.isInterpretationVisible &&
+              provider.universeInterpretation != null
           ? ClipRRect(
               key: const ValueKey('interpretation'),
               borderRadius: BorderRadius.circular(16.0),
@@ -276,7 +376,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16.0),
                   margin: const EdgeInsets.symmetric(
-                      horizontal: 24.0, vertical: 8.0),
+                    horizontal: 24.0,
+                    vertical: 8.0,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withAlpha(50),
                     borderRadius: BorderRadius.circular(16.0),
@@ -298,8 +400,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   /// 画面下部の操作パネル
-  Widget _buildControlPanel(
-      BuildContext context, AnalysisProvider provider) {
+  Widget _buildControlPanel(BuildContext context, AnalysisProvider provider) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
       color: Colors.black.withAlpha((255 * 0.6).round()),
@@ -308,8 +409,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('時間軸 (4次元目)',
-                style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const Text(
+              '時間軸 (4次元目)',
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
             Slider(
               value: provider.timeSliderValue,
               onChanged: (value) {
@@ -318,7 +421,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             ),
             const SizedBox(height: 8),
             // 全体のAI解説表示ボタン
-            if (provider.universeInterpretation != null && !provider.isInterpretationVisible)
+            if (provider.universeInterpretation != null &&
+                !provider.isInterpretationVisible)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: OutlinedButton.icon(
@@ -344,7 +448,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const ChartAnalysisScreen()),
+                    builder: (context) => const ChartAnalysisScreen(),
+                  ),
                 );
               },
             ),
@@ -361,11 +466,6 @@ class AnalysisScreenWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Stack(
-      children: [
-        UniverseBackground(),
-        AnalysisScreen(),
-      ],
-    );
+    return const Stack(children: [UniverseBackground(), AnalysisScreen()]);
   }
 }
