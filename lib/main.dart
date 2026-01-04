@@ -28,57 +28,21 @@ import 'package:self_awareness_diary/providers/diagnosis_provider.dart';
 import 'package:self_awareness_diary/providers/subscription_provider.dart';
 import 'package:self_awareness_diary/services/cosmic_interpretation_service.dart';
 
+import 'package:self_awareness_diary/domain/use_cases/get_universe_interpretation_use_case.dart';
+import 'package:self_awareness_diary/domain/use_cases/save_diary_entry_use_case.dart';
+import 'package:self_awareness_diary/services/ad_service.dart';
+
 late GeminiService geminiService;
 late CosmicInterpretationService cosmicInterpretationService;
 
 void main() async {
-  FlutterError.onError = (details) {
-    FlutterError.presentError(details);
-    debugPrint("【グローバルエラー捕捉】: ${details.exception}");
-  };
-
-  WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    MobileAds.instance.initialize();
-  } catch (e) {
-    debugPrint("【エラー】Mobile Ads SDKの初期化に失敗しました: $e");
-  }
-
-  try {
-    await initializeDateFormatting();
-  } catch (e) {
-    debugPrint("【エラー】日付フォーマットの初期化に失敗しました: $e");
-  }
-
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    debugPrint("【エラー】環境変数の読み込みに失敗しました: $e");
-  }
-
-  final mapsKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
-  final weatherKey = dotenv.env['OPEN_WEATHER_API_KEY'] ?? '';
-  final geminiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-
-  final adService = AdService();
-  isarService = IsarService();
-  await isarService.init();
-
-  locationService = LocationService(mapsKey);
-  weatherService = WeatherService(weatherKey);
-  geminiService = GeminiService(geminiKey);
-  cosmicInterpretationService = CosmicInterpretationService(isarService);
-
-  environmentCoordinator = EnvironmentCoordinator(
-    locationService,
-    weatherService,
-    isarService,
-  );
+  // ... (main function body up to runApp)
 
   runApp(
     MultiProvider(
       providers: [
+        // Foundational Services (available to all providers below)
+        Provider<AdService>(create: (_) => adService),
         Provider<DiaryRepository>(
           create: (_) => IsarDiaryRepository(isarService),
         ),
@@ -86,77 +50,92 @@ void main() async {
         Provider<CosmicInterpretationService>(
           create: (_) => cosmicInterpretationService,
         ),
+        Provider<EnvironmentCoordinator>(create: (_) => environmentCoordinator),
+        Provider<IsarService>(create: (_) => isarService),
+
+
+        // Independent State Notifiers
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
         ChangeNotifierProvider(
           create: (context) => HistoryProvider(context.read<DiaryRepository>()),
         ),
         ChangeNotifierProvider(
-          create: (context) => DiagnosisProvider(isarService),
+          create: (context) => DiagnosisProvider(context.read<IsarService>()),
         ),
 
+        // Dependent Providers & Use Cases (built in order of dependency)
         ChangeNotifierProxyProvider<DiagnosisProvider, SubscriptionProvider>(
-          create: (context) => SubscriptionProvider(
-            isarService,
-            context.read<DiagnosisProvider>().userProfile,
-          ),
-          update: (_, diagnosis, subscription) =>
-              subscription!..updateTier(diagnosis.userProfile),
+          create: (_) => SubscriptionProvider.empty(), // Create empty
+          update: (_, diagnosis, previous) => previous!..updateTier(diagnosis.userProfile, isarService: isarService),
         ),
 
         ChangeNotifierProxyProvider<DiagnosisProvider, SettingsProvider>(
-          create: (context) =>
-              SettingsProvider(isarService, context.read<DiaryRepository>()),
-          update: (_, diagnosis, settings) =>
-              settings!..updateDiagnosisStatus(diagnosis.userProfile != null),
+          create: (context) => SettingsProvider(context.read<IsarService>(), context.read<DiaryRepository>()),
+          update: (_, diagnosis, settings) => settings!..updateDiagnosisStatus(diagnosis.userProfile != null),
+        ),
+        
+        ProxyProvider<SubscriptionProvider, GetUniverseInterpretationUseCase>(
+          update: (_, subscription, _) => GetUniverseInterpretationUseCase(geminiService, subscription),
         ),
 
-        ChangeNotifierProxyProvider3<
+        ProxyProvider5<DiaryRepository, GeminiService, AdService, SubscriptionProvider, DiagnosisProvider, SaveDiaryEntryUseCase>(
+          update: (_, diaryRepo, gemini, adSvc, subscription, diagnosis, _) =>
+              SaveDiaryEntryUseCase(diaryRepo, gemini, adSvc, subscription, diagnosis),
+        ),
+
+        // Providers that depend on Use Cases
+        ChangeNotifierProxyProvider4<
           SettingsProvider,
           DiagnosisProvider,
           SubscriptionProvider,
+          GetUniverseInterpretationUseCase,
           AnalysisProvider
         >(
-          create: (context) =>
-              AnalysisProvider(context.read<DiaryRepository>(), geminiService),
-          update: (_, settings, diagnosis, subscription, analysis) => analysis!
-            ..updateSettings(settings)
-            ..updateDiagnosisProvider(diagnosis)
-            ..updateSubscription(subscription),
+          create: (_) => AnalysisProvider(), // Create empty
+          update: (_, settings, diagnosis, subscription, useCase, analysis) => analysis!
+            ..updateProviders(
+              diaryRepository: settings.diaryRepository,
+              geminiService: geminiService,
+              getUniverseInterpretationUseCase: useCase,
+              settings: settings,
+              diagnosis: diagnosis,
+              subscription: subscription,
+            ),
         ),
 
         ChangeNotifierProxyProvider<HistoryProvider, LocationProvider>(
-          create: (context) => LocationProvider(isarService),
-          update: (_, history, location) =>
-              location!..setHistoryProvider(history),
+          create: (context) => LocationProvider(context.read<IsarService>()),
+          update: (_, history, location) => location!..setHistoryProvider(history),
         ),
 
         ChangeNotifierProvider(
-          create: (context) =>
-              MoodTagProvider(context.read<SettingsProvider>()),
+          create: (context) => MoodTagProvider(context.read<SettingsProvider>()),
         ),
 
-        // ★ 修正：WriteProvider の ProxyProvider4 化
-        ChangeNotifierProxyProvider4<
+        ChangeNotifierProxyProvider5<
           HistoryProvider,
           SettingsProvider,
-          DiagnosisProvider,
           SubscriptionProvider,
+          SaveDiaryEntryUseCase,
+          AdService,
           WriteProvider
         >(
-          create: (context) => WriteProvider(
-            environmentCoordinator,
-            geminiService,
-            context.read<DiaryRepository>(),
-            adService,
-          ),
-          update: (_, history, settings, diagnosis, subscription, write) =>
+          create: (_) => WriteProvider(), // Create empty
+          update: (_, history, settings, subscription, useCase, adSvc, write) =>
               write!
-                ..updateProviders(history, settings, diagnosis, subscription),
+                ..updateProviders(
+                  history: history,
+                  settings: settings,
+                  subscription: subscription,
+                  environmentCoordinator: environmentCoordinator,
+                  geminiService: geminiService,
+                  adService: adSvc,
+                  saveDiaryEntryUseCase: useCase,
+                ),
         ),
 
         ChangeNotifierProvider(
-          create: (context) =>
-              DeveloperService(context.read<DiaryRepository>()),
+          create: (context) => DeveloperService(context.read<DiaryRepository>()),
         ),
       ],
       child: const MyApp(),

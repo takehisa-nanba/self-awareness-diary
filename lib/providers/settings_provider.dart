@@ -10,7 +10,9 @@ import '../../domain/models/subscription_tier.dart'; // SubscriptionTierをイ�
 ///
 /// 設定値は `IsarService` を介して永続化されます。
 class SettingsProvider extends ChangeNotifier {
-  final IsarService _isarService; // 設定の永続化に使用するIsarService
+  final IsarService _isarService;
+  final DiaryRepository _diaryRepository;
+  DiaryRepository get diaryRepository => _diaryRepository;
 
   // チュートリアルの開始ステップ設定
   bool _startFromStep2 = false;
@@ -46,7 +48,7 @@ class SettingsProvider extends ChangeNotifier {
   DateTime? lastDailyAnalysis;
 
   // コンストラクタ。IsarServiceとDiaryRepository（現在は未使用）を受け取る。
-  SettingsProvider(this._isarService, DiaryRepository diaryRepository) {
+  SettingsProvider(this._isarService, this._diaryRepository) {
     _loadSettings(); // アプリ起動時に設定を読み込む
   }
 

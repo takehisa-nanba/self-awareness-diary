@@ -13,11 +13,14 @@ enum FeatureStatus {
   needsReward,
   needsRewardMonthly,
   forbidden,
+  notEnoughData,
 }
 
 class SubscriptionProvider with ChangeNotifier {
   SubscriptionTier _currentTier = SubscriptionTier.free;
-  final IsarService _isarService;
+  IsarService? _isarService;
+
+  SubscriptionProvider.empty();
 
   SubscriptionProvider(this._isarService, UserProfile? userProfile) {
     if (userProfile != null) {
@@ -28,7 +31,10 @@ class SubscriptionProvider with ChangeNotifier {
   SubscriptionTier get currentTier => _currentTier;
 
   // ティアの更新。UserProfileの変更に基づいて呼び出される
-  void updateTier(UserProfile? userProfile) {
+  void updateTier(UserProfile? userProfile, {IsarService? isarService}) {
+    if (isarService != null) {
+      _isarService = isarService;
+    }
     final newTier = userProfile?.tier ?? SubscriptionTier.free;
     if (_currentTier != newTier) {
       _currentTier = newTier;
@@ -60,7 +66,8 @@ class SubscriptionProvider with ChangeNotifier {
 
   /// 指定された期間からの機能の利用回数を取得します。
   Future<int> getUsedCount(String featureId, DateTime since) async {
-    return await _isarService.isar.usageLogs
+    if (_isarService == null) return 0;
+    return await _isarService!.isar.usageLogs
         .filter()
         .featureIdEqualTo(featureId)
         .usedAtGreaterThan(
@@ -149,11 +156,12 @@ class SubscriptionProvider with ChangeNotifier {
   ///
   /// [featureId] 利用した機能のID。
   Future<void> recordUsage(String featureId) async {
+    if (_isarService == null) return;
     final usageLog = UsageLog()
       ..featureId = featureId
       ..usedAt = DateTime.now();
-    await _isarService.isar.writeTxn(() async {
-      await _isarService.isar.usageLogs.put(usageLog);
+    await _isarService!.isar.writeTxn(() async {
+      await _isarService!.isar.usageLogs.put(usageLog);
     });
     notifyListeners();
     debugPrint('SubscriptionProvider: Usage recorded for $featureId');

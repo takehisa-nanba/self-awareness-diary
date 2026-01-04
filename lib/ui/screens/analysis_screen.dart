@@ -36,6 +36,22 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.psychology_alt, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                _isPanelOpen = true;
+              });
+              _draggableScrollableController.animateTo(
+                0.5,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+            },
+            tooltip: 'AI分析パネルを開く',
+          ),
+        ],
       ),
       body: Consumer<AnalysisProvider>(
         builder: (context, provider, child) {
