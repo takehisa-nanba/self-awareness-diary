@@ -70,13 +70,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
           return Stack(
             children: [
-              // 宇宙図キャンバス
+              // 宇宙図キャンバス (背景)
               Consumer<SettingsProvider>(
                 builder: (context, settingsProvider, child) {
                   final warpFactor =
                       (settingsProvider.currentTier == SubscriptionTier.free)
-                      ? 0.0
-                      : 0.05;
+                          ? 0.0
+                          : 0.05;
                   return UniverseCanvas(
                     recordCoordinates: provider.visibleRecordCoordinates,
                     userProfile: report.userProfile,
@@ -90,31 +90,49 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               // 霧エフェクト
               if (provider.isCloudy) _buildFogEffect(),
 
+              // コントロールバー (スライダーと詳細チャートボタン)
+              _buildControlBar(context, provider),
+
               // 選択された星の詳細カード (最前面)
               _buildSelectedRecordCard(context),
 
-              // フローティング解析パネル
+              // AI分析用のフローティングパネル
               _buildFloatingAnalysisPanel(context, provider),
             ],
           );
         },
       ),
-      floatingActionButton: _isPanelOpen
-          ? null
-          : FloatingActionButton(
-              onPressed: () {
-                setState(() {
-                  _isPanelOpen = true;
-                });
-                _draggableScrollableController.animateTo(
-                  0.5,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-              },
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: const Icon(Icons.psychology_alt),
+    );
+  }
+
+  /// 時間軸スライダーと詳細チャートボタンを持つ、常時表示のコントロールバーを構築します。
+  Widget _buildControlBar(BuildContext context, AnalysisProvider provider) {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            decoration: BoxDecoration(
+              color: Colors.black.withAlpha(100),
+              border: Border(
+                top: BorderSide(color: Colors.white.withAlpha(100)),
+              ),
             ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTimeSlider(context, provider),
+                const SizedBox(height: 8),
+                _buildDetailChartButton(context),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
