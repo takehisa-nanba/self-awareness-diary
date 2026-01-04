@@ -1,10 +1,11 @@
-// lib/ui/screens/write_screen.dart
+import 'package:flutter/material.dart'; // 必須
 
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/write_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/app_state_provider.dart';
+import '../../domain/models/subscription_tier.dart'; // SubscriptionTierをインポート
+
 import '../widgets/location_status_bar.dart';
 import 'write_steps/step1_write.dart';
 import 'write_steps/step2_write.dart';
@@ -159,69 +160,181 @@ class _WriteScreenNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final writeProvider = context.watch<WriteProvider>();
-    // SettingsProvider にアクセスし、現在のサブスクリプションティアを取得
-    final settingsProvider = context.read<SettingsProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
 
-    // AI分析中かどうかを判定する条件を定義
-    // AIによる質問生成中（isGenerating）の場合、または
-    // Tier 2ユーザーで保存中（isSaving）でありAI分析が実行される場合のみローディング表示
+    final isLastStep = writeProvider.currentStep == 2;
+    final buttonText = isLastStep ? '保存' : '次へ';
+    final currentTier = settingsProvider.currentTier;
+    final showAiOptions = settingsProvider.showAiOptionsDuringWrite;
+
+    // AI分析中かどうかを判定する条件
     final bool isAiAnalysisInProgress =
-        writeProvider.isGenerating ||
-        (writeProvider.isSaving &&
-            settingsProvider.currentTier == SubscriptionTier.tier2);
+        writeProvider.isGenerating || writeProvider.isSaving;
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // 前のステップに戻るボタン
-          if (writeProvider.currentStep > 0)
-            TextButton(
-              onPressed: writeProvider.previousStep,
-              child: const Text(
-                '戻る',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    // Freeティアの場合
+    if (currentTier == SubscriptionTier.free) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (writeProvider.currentStep > 0)
+              TextButton(
+                onPressed: writeProvider.previousStep,
+                child: const Text(
+                  '戻る',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              )
+            else
+              const SizedBox.shrink(),
+            SizedBox(
+              width: 108,
+              height: 54,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                onPressed: isAiAnalysisInProgress
+                    ? null
+                    : () => _onNextPressed(
+                        context,
+                        writeProvider,
+                        false,
+                      ), // FreeティアはAIなし
+                child: isAiAnalysisInProgress
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 3),
+                      )
+                    : Text(
+                        buttonText,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
-            )
-          else
-            const SizedBox.shrink(), // ステップ0の場合はボタンを表示しない
-          // 次のステップへ進む、または記録を保存するボタン
-          SizedBox(
-            width: 108,
-            height: 54,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Tier 1 / 2 の場合
+    if (isLastStep && showAiOptions) {
+      // 最終ステップでAIオプション表示がONの場合
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // AI解析を待って保存
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.auto_awesome),
+                label: Text('AI解析を待って$buttonText'),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                onPressed: isAiAnalysisInProgress
+                    ? null
+                    : () => _onNextPressed(context, writeProvider, true),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // AIを使わずに保存
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.skip_next),
+                label: Text('AIを使わずに$buttonText'),
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                onPressed: isAiAnalysisInProgress
+                    ? null
+                    : () => _onNextPressed(context, writeProvider, false),
+              ),
+            ),
+            if (writeProvider.currentStep > 0)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: writeProvider.previousStep,
+                  child: const Text(
+                    '戻る',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-              onPressed: writeProvider.isSaving || writeProvider.isGenerating
-                  ? null // 保存中またはAI生成中はボタンを無効化
-                  : () => _onNextPressed(
-                      context,
-                      writeProvider,
-                      settingsProvider, // _onNextPressed に settingsProvider を渡す
-                    ), // ボタン押下時の処理
-              // AI分析中または保存中の場合はローディングインジケータを表示
-              child: isAiAnalysisInProgress
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 3),
-                    )
-                  : Text(
-                      writeProvider.currentStep == 2 ? '保存' : '次へ',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+          ],
+        ),
+      );
+    } else {
+      // AIオプション表示がOFFの場合、または最終ステップでない場合（従来の挙動）
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (writeProvider.currentStep > 0)
+              TextButton(
+                onPressed: writeProvider.previousStep,
+                child: const Text(
+                  '戻る',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              )
+            else
+              const SizedBox.shrink(),
+            SizedBox(
+              width: 108,
+              height: 54,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                onPressed: isAiAnalysisInProgress
+                    ? null
+                    : () => _onNextPressed(
+                        context,
+                        writeProvider,
+                        true,
+                      ), // AI自動実行
+                child: isAiAnalysisInProgress
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 3),
+                      )
+                    : Text(
+                        buttonText,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    }
   }
 
   /// 「次へ」または「保存」ボタンが押された際の処理。
@@ -230,7 +343,7 @@ class _WriteScreenNavigation extends StatelessWidget {
   void _onNextPressed(
     BuildContext context,
     WriteProvider writeProvider,
-    SettingsProvider settingsProvider, // settingsProvider を引数で受け取る
+    bool runAi, // AIを実行するかどうかのフラグ
   ) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
@@ -254,19 +367,15 @@ class _WriteScreenNavigation extends StatelessWidget {
     // バリデーション通過後
     if (writeProvider.currentStep < 2) {
       // 会員の場合、ステップ1の後にAIによる内省質問を準備
-      if (writeProvider.currentStep == 1 &&
-          settingsProvider.currentTier != SubscriptionTier.free) {
+      if (writeProvider.currentStep == 1) {
+        // prepareReflection内でAI利用制限をチェックするため、ここでは直接呼び出す
         await writeProvider.prepareReflection();
         if (!context.mounted) return;
-      } else if (writeProvider.currentStep == 1 &&
-          settingsProvider.currentTier == SubscriptionTier.free) {
-        debugPrint("非会員のためAI質問生成をスキップします");
-        writeProvider.reflectionQuestion = "";
       }
       writeProvider.nextStep(); // 次のステップへ
     } else {
       // 最終ステップ（自己分析）なら保存処理を実行
-      await writeProvider.save();
+      await writeProvider.save(runAi: runAi); // runAiフラグを渡す
       if (!context.mounted) return;
       scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('記録を保存しました')),

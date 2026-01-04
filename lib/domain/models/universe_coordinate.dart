@@ -30,11 +30,12 @@ class UniverseCoordinate {
     final double currentZ = z * spaceScale;
 
     // Y軸（水平）回転
-    final rotatedZAfterY = currentZ * cos(rotationY) - currentX * sin(rotationY);
+    final rotatedZAfterY =
+        currentZ * cos(rotationY) - currentX * sin(rotationY);
 
     // X軸（垂直）回転
     final finalZ = rotatedZAfterY * cos(rotationX) - currentY * sin(rotationX);
-    
+
     return finalZ;
   }
 
@@ -50,10 +51,12 @@ class UniverseCoordinate {
 
     // Y軸回転
     final rotatedX = currentX * cos(rotationY) + currentZ * sin(rotationY);
-    final rotatedZAfterY = currentZ * cos(rotationY) - currentX * sin(rotationY);
+    final rotatedZAfterY =
+        currentZ * cos(rotationY) - currentX * sin(rotationY);
 
     // X軸回転
-    final rotatedY = currentY * cos(rotationX) + rotatedZAfterY * sin(rotationX);
+    final rotatedY =
+        currentY * cos(rotationX) + rotatedZAfterY * sin(rotationX);
     final finalZ = rotatedZAfterY * cos(rotationX) - currentY * sin(rotationX);
 
     // 透視投影

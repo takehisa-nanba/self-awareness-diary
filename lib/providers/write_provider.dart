@@ -10,9 +10,11 @@ import '../../domain/repositories/diary_repository.dart';
 import '../services/ad_service.dart';
 import '../services/environment_coordinator.dart';
 import '../services/gemini_service.dart';
-import 'history_provider.dart';
-import 'settings_provider.dart';
+import 'settings_provider.dart'; // SettingsProviderをインポート
+import 'history_provider.dart'; // HistoryProviderをインポート
 import 'diagnosis_provider.dart'; // DiagnosisProviderをインポート
+import 'package:self_awareness_diary/providers/subscription_provider.dart'; // SubscriptionProviderとFeatureStatusをインポート
+import 'package:self_awareness_diary/domain/models/subscription_tier.dart'; // SubscriptionTierをインポート
 
 /// 日記作成プロセス全体の状態を管理するプロバイダークラス。
 class WriteProvider with ChangeNotifier {
@@ -24,8 +26,9 @@ class WriteProvider with ChangeNotifier {
 
   // 連携プロバイダー
   HistoryProvider? _historyProvider;
-  SettingsProvider? _settingsProvider;
-  DiagnosisProvider? _diagnosisProvider; // DiagnosisProviderを追加
+  SettingsProvider? settingsProvider; // SettingsProviderを追加
+  DiagnosisProvider? _diagnosisProvider;
+  SubscriptionProvider? _subscriptionProvider; // SubscriptionProviderを追加
 
   // 状態フラグ
   int _currentStep = 0;
@@ -54,7 +57,7 @@ class WriteProvider with ChangeNotifier {
     this._geminiService,
     this._diaryRepository,
     this._adService,
-    this._diagnosisProvider, // コンストラクタ引数に追加
+    // DiagnosisProviderはupdateProvidersで渡す
   );
 
   /// 連携する他のプロバイダーインスタンスを更新します。
@@ -62,14 +65,17 @@ class WriteProvider with ChangeNotifier {
   /// [history] HistoryProviderのインスタンス。
   /// [settings] SettingsProviderのインスタンス。
   /// [diagnosis] DiagnosisProviderのインスタンス。
+  /// [subscription] SubscriptionProviderのインスタンス。
   void updateProviders(
     HistoryProvider history,
     SettingsProvider settings,
     DiagnosisProvider diagnosis,
+    SubscriptionProvider subscription, // SubscriptionProviderを追加
   ) {
     _historyProvider = history;
-    _settingsProvider = settings;
-    _diagnosisProvider = diagnosis; // diagnosisProviderも更新
+    settingsProvider = settings; // settingsProviderを更新
+    _diagnosisProvider = diagnosis;
+    _subscriptionProvider = subscription; // subscriptionProviderも更新
     notifyListeners();
   }
 
@@ -115,11 +121,21 @@ class WriteProvider with ChangeNotifier {
       notifyListeners();
     }
     try {
-      final data = await _environmentCoordinator.fetchFullData();
-      tempLocation = data.location;
-      tempWeather = data.weather;
-      tempLat = data.latitude;
-      tempLng = data.longitude;
+      final status = await _subscriptionProvider!.checkFeatureStatus(
+        'weather_current',
+      );
+      if (status == FeatureStatus.allowed) {
+        final data = await _environmentCoordinator.fetchFullData();
+        tempLocation = data.location;
+        tempWeather = data.weather;
+        tempLat = data.latitude;
+        tempLng = data.longitude;
+        _subscriptionProvider!.recordUsage('weather_current'); // 利用を記録
+      } else {
+        // 現在の天気は常にallowedのはずだが、念のため
+        tempLocation = "位置情報取得失敗";
+        tempWeather = "取得失敗";
+      }
     } catch (e) {
       debugPrint("識別依頼エラー: $e");
       tempLocation = "位置情報取得失敗";
@@ -128,12 +144,33 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
-  void _fetchHistoricalWeather(DateTime date, double lat, double lon) {
+  Future<void> _fetchHistoricalWeather(
+    DateTime date,
+    double lat,
+    double lon,
+  ) async {
     tempWeather = "気象情報取得中...";
     notifyListeners();
 
-    // 無料ユーザーの場合、インタースティシャル広告を表示
-    if (_settingsProvider?.currentTier == SubscriptionTier.free) {
+    final status = await _subscriptionProvider!.checkFeatureStatus(
+      'weather_historical',
+    );
+
+    if (status == FeatureStatus.allowed) {
+      try {
+        final weather = await _environmentCoordinator.getHistoricalWeather(
+          lat,
+          lon,
+          date,
+        );
+        tempWeather = weather;
+        _subscriptionProvider!.recordUsage('weather_historical'); // 利用を記録
+      } catch (e) {
+        tempWeather = "取得失敗";
+      } finally {
+        notifyListeners();
+      }
+    } else if (status == FeatureStatus.needsInterstitial) {
       _adService.showInterstitialAd(() async {
         try {
           final weather = await _environmentCoordinator.getHistoricalWeather(
@@ -142,6 +179,7 @@ class WriteProvider with ChangeNotifier {
             date,
           );
           tempWeather = weather;
+          _subscriptionProvider!.recordUsage('weather_historical'); // 利用を記録
         } catch (e) {
           tempWeather = "取得失敗";
         } finally {
@@ -149,16 +187,9 @@ class WriteProvider with ChangeNotifier {
         }
       });
     } else {
-      // 有料ユーザーは広告なし
-      _environmentCoordinator
-          .getHistoricalWeather(lat, lon, date)
-          .then((weather) {
-            tempWeather = weather;
-          })
-          .catchError((_) {
-            tempWeather = "取得失敗";
-          })
-          .whenComplete(notifyListeners);
+      // forbiddenの場合など
+      tempWeather = "上位プラン限定";
+      notifyListeners();
     }
   }
 
@@ -179,12 +210,31 @@ class WriteProvider with ChangeNotifier {
   Future<void> prepareReflection() async {
     if (eventText.isEmpty) return;
 
-    // 無料ユーザーはリワード広告を見てから実行
-    if (_settingsProvider?.currentTier == SubscriptionTier.free) {
-      _adService.showRewardedAd(_generateReflectionQuestion);
-    } else {
-      await _generateReflectionQuestion();
+    if (_subscriptionProvider == null) {
+      debugPrint("SubscriptionProvider is not available.");
+      // デフォルトの動作、またはエラー処理
+      reflectionQuestion = "その出来事は、あなたにとってどんな意味がありましたか？";
+      notifyListeners();
+      return;
     }
+
+    final status = await _subscriptionProvider!.checkFeatureStatus(
+      'ai_write_assist',
+    );
+
+    if (status == FeatureStatus.allowed) {
+      await _generateReflectionQuestion();
+      _subscriptionProvider!.recordUsage('ai_write_assist'); // 利用を記録
+    } else if (status == FeatureStatus.needsReward) {
+      // Freeティアはリワード広告を見てから実行
+      _adService.showRewardedAd(() async {
+        await _generateReflectionQuestion();
+        _subscriptionProvider!.recordUsage('ai_write_assist'); // 利用を記録
+      });
+    } else if (status == FeatureStatus.forbidden) {
+      reflectionQuestion = "AIによる深掘り質問は上位プラン限定です。";
+    }
+    notifyListeners();
   }
 
   /// AIによる深掘り質問を生成するプライベートメソッド。
@@ -224,48 +274,58 @@ class WriteProvider with ChangeNotifier {
     }
   }
 
-  Future<void> save() async {
+  Future<void> save({bool runAi = false}) async {
     isSaving = true;
     notifyListeners();
 
     Map<String, dynamic>? analysisResult; // Initialize to null
 
-    // Only proceed with AI analysis logic if there's self-analysis text
-    if (selfAnalysisText.isNotEmpty) {
-      // Ensure settingsProvider is initialized
-      if (_settingsProvider == null) {
-        debugPrint(
-          "SettingsProvider is not initialized. Cannot perform AI analysis.",
-        );
-      } else {
-        final currentTier = _settingsProvider!.currentTier;
+    // FreeティアではrunAi=trueでもAI分析を行わない
+    if (_subscriptionProvider?.currentTier == SubscriptionTier.free) {
+      debugPrint("FreeティアのためAI分析は実行されません。");
+      runAi = false; // runAiフラグを強制的にfalseにする
+    }
 
-        // Tier 2: Automatic analysis
-        if (currentTier == SubscriptionTier.tier2) {
-          debugPrint("Tier 2: Performing automatic AI analysis.");
+    // Only proceed with AI analysis logic if there's self-analysis text AND runAi is true
+    if (selfAnalysisText.isNotEmpty && runAi) {
+      if (_subscriptionProvider == null) {
+        debugPrint("SubscriptionProvider is not available.");
+        return;
+      }
+
+      final status = await _subscriptionProvider!.checkFeatureStatus(
+        'ai_write_eval',
+      );
+
+      if (status == FeatureStatus.allowed) {
+        debugPrint("AI Write Eval: Allowed. Performing AI analysis.");
+        analysisResult = await _performAiAnalysis();
+        _subscriptionProvider!.recordUsage('ai_write_eval'); // 利用を記録
+      } else if (status == FeatureStatus.needsReward) {
+        debugPrint(
+          "AI Write Eval: Needs Reward. Showing Rewarded Ad for AI analysis.",
+        );
+        Completer<void> adCompleter = Completer();
+        _adService.showRewardedAd(() async {
+          debugPrint("Rewarded Ad shown. Performing AI analysis.");
           analysisResult = await _performAiAnalysis();
-        }
-        // Free Tier: Analysis is triggered by Rewarded Ad
-        else if (currentTier == SubscriptionTier.free) {
-          debugPrint("Free Tier: Showing Rewarded Ad for AI analysis.");
-          Completer<void> adCompleter = Completer();
-          _adService.showRewardedAd(() async {
-            debugPrint("Rewarded Ad shown. Performing AI analysis.");
-            analysisResult = await _performAiAnalysis();
-            adCompleter.complete();
-          });
-          await adCompleter.future; // Wait for ad and analysis to complete
-        }
-        // Other tiers (e.g., Tier 1): No automatic analysis, as per requirement.
-        // analysisResult remains null.
-        else {
-          debugPrint(
-            "Tier ${currentTier.toString()} does not support automatic AI analysis. Analysis skipped.",
-          );
-        }
+          _subscriptionProvider!.recordUsage('ai_write_eval'); // 利用を記録
+          adCompleter.complete();
+        });
+        await adCompleter.future; // Wait for ad and analysis to complete
+      } else if (status == FeatureStatus.forbidden) {
+        debugPrint(
+          "AI Write Eval: Forbidden. AI analysis skipped for this tier.",
+        );
+        // UIでメッセージ表示が必要な場合は別途実装
+        analysisResult = {'score': null, 'reason': 'この機能は上位プラン限定です。'};
+      } else {
+        debugPrint("AI Write Eval: Unexpected status. AI analysis skipped.");
       }
     } else {
-      debugPrint("No self-analysis text provided. AI analysis skipped.");
+      debugPrint(
+        "No self-analysis text provided or runAi is false. AI analysis skipped.",
+      );
     }
 
     try {

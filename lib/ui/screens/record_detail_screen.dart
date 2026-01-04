@@ -13,6 +13,8 @@ import '../../providers/detail_provider.dart';
 import '../../providers/history_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/diagnosis_provider.dart'; // DiagnosisProviderをインポート
+import 'package:self_awareness_diary/domain/models/subscription_tier.dart'; // SubscriptionTierをインポート
+
 import '../../services/gemini_service.dart';
 import '../../services/isar_service.dart';
 

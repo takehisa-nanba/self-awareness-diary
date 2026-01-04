@@ -17,47 +17,27 @@ const UserProfileSchema = CollectionSchema(
   name: r'UserProfile',
   id: 4738427352541298891,
   properties: {
-    r'a': PropertySchema(
-      id: 0,
-      name: r'a',
-      type: IsarType.long,
-    ),
-    r'ac': PropertySchema(
-      id: 1,
-      name: r'ac',
-      type: IsarType.long,
-    ),
-    r'cp': PropertySchema(
-      id: 2,
-      name: r'cp',
-      type: IsarType.long,
-    ),
+    r'a': PropertySchema(id: 0, name: r'a', type: IsarType.long),
+    r'ac': PropertySchema(id: 1, name: r'ac', type: IsarType.long),
+    r'cp': PropertySchema(id: 2, name: r'cp', type: IsarType.long),
     r'currentGritLevel': PropertySchema(
       id: 3,
       name: r'currentGritLevel',
       type: IsarType.double,
     ),
-    r'fc': PropertySchema(
-      id: 4,
-      name: r'fc',
-      type: IsarType.long,
-    ),
+    r'fc': PropertySchema(id: 4, name: r'fc', type: IsarType.long),
     r'lastDiagnosisDate': PropertySchema(
       id: 5,
       name: r'lastDiagnosisDate',
       type: IsarType.dateTime,
     ),
-    r'np': PropertySchema(
-      id: 6,
-      name: r'np',
-      type: IsarType.long,
-    ),
+    r'np': PropertySchema(id: 6, name: r'np', type: IsarType.long),
     r'tier': PropertySchema(
       id: 7,
       name: r'tier',
       type: IsarType.byte,
       enumMap: _UserProfiletierEnumValueMap,
-    )
+    ),
   },
   estimateSize: _userProfileEstimateSize,
   serialize: _userProfileSerialize,
@@ -116,7 +96,7 @@ UserProfile _userProfileDeserialize(
   object.id = id;
   object.tier =
       _UserProfiletierValueEnumMap[reader.readByteOrNull(offsets[7])] ??
-          SubscriptionTier.free;
+      SubscriptionTier.free;
   return object;
 }
 
@@ -143,17 +123,14 @@ P _userProfileDeserializeProp<P>(
       return (reader.readLongOrNull(offset)) as P;
     case 7:
       return (_UserProfiletierValueEnumMap[reader.readByteOrNull(offset)] ??
-          SubscriptionTier.free) as P;
+              SubscriptionTier.free)
+          as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
 
-const _UserProfiletierEnumValueMap = {
-  'free': 0,
-  'tier1': 1,
-  'tier2': 2,
-};
+const _UserProfiletierEnumValueMap = {'free': 0, 'tier1': 1, 'tier2': 2};
 const _UserProfiletierValueEnumMap = {
   0: SubscriptionTier.free,
   1: SubscriptionTier.tier1,
@@ -169,7 +146,10 @@ List<IsarLinkBase<dynamic>> _userProfileGetLinks(UserProfile object) {
 }
 
 void _userProfileAttach(
-    IsarCollection<dynamic> col, Id id, UserProfile object) {
+  IsarCollection<dynamic> col,
+  Id id,
+  UserProfile object,
+) {
   object.id = id;
 }
 
@@ -186,15 +166,13 @@ extension UserProfileQueryWhere
     on QueryBuilder<UserProfile, UserProfile, QWhereClause> {
   QueryBuilder<UserProfile, UserProfile, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterWhereClause> idNotEqualTo(
-      Id id) {
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -216,8 +194,10 @@ extension UserProfileQueryWhere
     });
   }
 
-  QueryBuilder<UserProfile, UserProfile, QAfterWhereClause> idGreaterThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<UserProfile, UserProfile, QAfterWhereClause> idGreaterThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -225,8 +205,10 @@ extension UserProfileQueryWhere
     });
   }
 
-  QueryBuilder<UserProfile, UserProfile, QAfterWhereClause> idLessThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<UserProfile, UserProfile, QAfterWhereClause> idLessThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -241,12 +223,14 @@ extension UserProfileQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -255,27 +239,27 @@ extension UserProfileQueryFilter
     on QueryBuilder<UserProfile, UserProfile, QFilterCondition> {
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> aIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'a',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'a'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> aIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'a',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'a'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> aEqualTo(
-      int? value) {
+    int? value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'a',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'a', value: value),
+      );
     });
   }
 
@@ -284,11 +268,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'a',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'a',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -297,11 +283,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'a',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'a',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -312,39 +300,41 @@ extension UserProfileQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'a',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'a',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> acIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'ac',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'ac'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> acIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'ac',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'ac'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> acEqualTo(
-      int? value) {
+    int? value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'ac',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'ac', value: value),
+      );
     });
   }
 
@@ -353,11 +343,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'ac',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'ac',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -366,11 +358,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'ac',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'ac',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -381,39 +375,41 @@ extension UserProfileQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'ac',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'ac',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> cpIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'cp',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'cp'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> cpIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'cp',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'cp'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> cpEqualTo(
-      int? value) {
+    int? value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'cp',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'cp', value: value),
+      );
     });
   }
 
@@ -422,11 +418,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'cp',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'cp',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -435,11 +433,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'cp',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'cp',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -450,82 +450,87 @@ extension UserProfileQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'cp',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'cp',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      currentGritLevelIsNull() {
+  currentGritLevelIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'currentGritLevel',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'currentGritLevel'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      currentGritLevelIsNotNull() {
+  currentGritLevelIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'currentGritLevel',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'currentGritLevel'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      currentGritLevelEqualTo(
-    double? value, {
-    double epsilon = Query.epsilon,
-  }) {
+  currentGritLevelEqualTo(double? value, {double epsilon = Query.epsilon}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'currentGritLevel',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'currentGritLevel',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      currentGritLevelGreaterThan(
-    double? value, {
-    bool include = false,
-    double epsilon = Query.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'currentGritLevel',
-        value: value,
-        epsilon: epsilon,
-      ));
-    });
-  }
-
-  QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      currentGritLevelLessThan(
+  currentGritLevelGreaterThan(
     double? value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'currentGritLevel',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'currentGritLevel',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      currentGritLevelBetween(
+  currentGritLevelLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'currentGritLevel',
+          value: value,
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
+  currentGritLevelBetween(
     double? lower,
     double? upper, {
     bool includeLower = true,
@@ -533,40 +538,42 @@ extension UserProfileQueryFilter
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'currentGritLevel',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'currentGritLevel',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> fcIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'fc',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'fc'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> fcIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'fc',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'fc'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> fcEqualTo(
-      int? value) {
+    int? value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'fc',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'fc', value: value),
+      );
     });
   }
 
@@ -575,11 +582,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'fc',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'fc',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -588,11 +597,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'fc',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'fc',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -603,23 +614,25 @@ extension UserProfileQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'fc',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'fc',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> idEqualTo(
-      Id value) {
+    Id value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
     });
   }
 
@@ -628,11 +641,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -641,11 +656,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -656,113 +673,114 @@ extension UserProfileQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      lastDiagnosisDateIsNull() {
+  lastDiagnosisDateIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'lastDiagnosisDate',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'lastDiagnosisDate'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      lastDiagnosisDateIsNotNull() {
+  lastDiagnosisDateIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'lastDiagnosisDate',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'lastDiagnosisDate'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      lastDiagnosisDateEqualTo(DateTime? value) {
+  lastDiagnosisDateEqualTo(DateTime? value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'lastDiagnosisDate',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'lastDiagnosisDate', value: value),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      lastDiagnosisDateGreaterThan(
-    DateTime? value, {
-    bool include = false,
-  }) {
+  lastDiagnosisDateGreaterThan(DateTime? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'lastDiagnosisDate',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'lastDiagnosisDate',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      lastDiagnosisDateLessThan(
-    DateTime? value, {
-    bool include = false,
-  }) {
+  lastDiagnosisDateLessThan(DateTime? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'lastDiagnosisDate',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'lastDiagnosisDate',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
-      lastDiagnosisDateBetween(
+  lastDiagnosisDateBetween(
     DateTime? lower,
     DateTime? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'lastDiagnosisDate',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'lastDiagnosisDate',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> npIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'np',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'np'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> npIsNotNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'np',
-      ));
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'np'),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> npEqualTo(
-      int? value) {
+    int? value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'np',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'np', value: value),
+      );
     });
   }
 
@@ -771,11 +789,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'np',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'np',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -784,11 +804,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'np',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'np',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -799,23 +821,25 @@ extension UserProfileQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'np',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'np',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition> tierEqualTo(
-      SubscriptionTier value) {
+    SubscriptionTier value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'tier',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'tier', value: value),
+      );
     });
   }
 
@@ -824,11 +848,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'tier',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'tier',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -837,11 +863,13 @@ extension UserProfileQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'tier',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'tier',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -852,13 +880,15 @@ extension UserProfileQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'tier',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'tier',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -908,14 +938,14 @@ extension UserProfileQuerySortBy
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
-      sortByCurrentGritLevel() {
+  sortByCurrentGritLevel() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'currentGritLevel', Sort.asc);
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
-      sortByCurrentGritLevelDesc() {
+  sortByCurrentGritLevelDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'currentGritLevel', Sort.desc);
     });
@@ -934,14 +964,14 @@ extension UserProfileQuerySortBy
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
-      sortByLastDiagnosisDate() {
+  sortByLastDiagnosisDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastDiagnosisDate', Sort.asc);
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
-      sortByLastDiagnosisDateDesc() {
+  sortByLastDiagnosisDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastDiagnosisDate', Sort.desc);
     });
@@ -1011,14 +1041,14 @@ extension UserProfileQuerySortThenBy
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
-      thenByCurrentGritLevel() {
+  thenByCurrentGritLevel() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'currentGritLevel', Sort.asc);
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
-      thenByCurrentGritLevelDesc() {
+  thenByCurrentGritLevelDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'currentGritLevel', Sort.desc);
     });
@@ -1049,14 +1079,14 @@ extension UserProfileQuerySortThenBy
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
-      thenByLastDiagnosisDate() {
+  thenByLastDiagnosisDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastDiagnosisDate', Sort.asc);
     });
   }
 
   QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
-      thenByLastDiagnosisDateDesc() {
+  thenByLastDiagnosisDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastDiagnosisDate', Sort.desc);
     });
@@ -1108,7 +1138,7 @@ extension UserProfileQueryWhereDistinct
   }
 
   QueryBuilder<UserProfile, UserProfile, QDistinct>
-      distinctByCurrentGritLevel() {
+  distinctByCurrentGritLevel() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'currentGritLevel');
     });
@@ -1121,7 +1151,7 @@ extension UserProfileQueryWhereDistinct
   }
 
   QueryBuilder<UserProfile, UserProfile, QDistinct>
-      distinctByLastDiagnosisDate() {
+  distinctByLastDiagnosisDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'lastDiagnosisDate');
     });
@@ -1167,7 +1197,7 @@ extension UserProfileQueryProperty
   }
 
   QueryBuilder<UserProfile, double?, QQueryOperations>
-      currentGritLevelProperty() {
+  currentGritLevelProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'currentGritLevel');
     });
@@ -1180,7 +1210,7 @@ extension UserProfileQueryProperty
   }
 
   QueryBuilder<UserProfile, DateTime?, QQueryOperations>
-      lastDiagnosisDateProperty() {
+  lastDiagnosisDateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'lastDiagnosisDate');
     });

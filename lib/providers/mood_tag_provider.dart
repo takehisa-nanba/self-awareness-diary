@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart'; // ChangeNotifierのために必要
 import '../data/mood_tag_list.dart'; // allMoodTags のインポート
 import '../domain/models/mood_tag.dart';
-import 'settings_provider.dart'; // SubscriptionTier と _settingsProvider のインポート
+import 'settings_provider.dart'; // _settingsProvider のインポート
 
 /// ユーザーのサブスクリプションティアに基づいて、利用可能な気分タグを管理するプロバイダークラス。
 ///

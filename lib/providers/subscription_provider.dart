@@ -7,7 +7,13 @@ import 'package:self_awareness_diary/domain/models/usage_log.dart';
 import 'package:self_awareness_diary/services/isar_service.dart';
 import 'package:isar/isar.dart'; // Isarをインポート
 
-enum FeatureStatus { allowed, needsInterstitial, needsReward, needsRewardMonthly, forbidden }
+enum FeatureStatus {
+  allowed,
+  needsInterstitial,
+  needsReward,
+  needsRewardMonthly,
+  forbidden,
+}
 
 class SubscriptionProvider with ChangeNotifier {
   SubscriptionTier _currentTier = SubscriptionTier.free;
@@ -32,13 +38,13 @@ class SubscriptionProvider with ChangeNotifier {
   }
 
   /// 本日の00:00:00を返します。
-  DateTime get _startOfToday {
+  DateTime get startOfToday {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);
   }
 
   /// 今週の月曜日00:00:00を返します。
-  DateTime get _startOfThisWeek {
+  DateTime get startOfThisWeek {
     final now = DateTime.now();
     // Dartのweekdayは月曜=1, 日曜=7
     // 月曜日を週の始まりとするため、(now.weekday - 1) * Duration(days: 1) を引く
@@ -47,7 +53,7 @@ class SubscriptionProvider with ChangeNotifier {
   }
 
   /// 今月1日00:00:00を返します。
-  DateTime get _startOfThisMonth {
+  DateTime get startOfThisMonth {
     final now = DateTime.now();
     return DateTime(now.year, now.month, 1);
   }
@@ -57,8 +63,20 @@ class SubscriptionProvider with ChangeNotifier {
     return await _isarService.isar.usageLogs
         .filter()
         .featureIdEqualTo(featureId)
-        .usedAtGreaterThan(since.subtract(const Duration(microseconds: 1))) // sinceを含む
+        .usedAtGreaterThan(
+          since.subtract(const Duration(microseconds: 1)),
+        ) // sinceを含む
         .count();
+  }
+
+  /// AI宇宙図解説の週次利用回数を取得します（Freeティア用）。
+  Future<int> getWeeklyInterpretationCount() async {
+    return await getUsedCount('ai_interpretation', startOfThisWeek);
+  }
+
+  /// AI宇宙図解説の月次ボーナス利用回数を取得します（Freeティア用）。
+  Future<int> getMonthlyInterpretationCount() async {
+    return await getUsedCount('ai_interpretation_monthly', startOfThisMonth);
   }
 
   /// 指定された機能の利用可否ステータスを返します。
@@ -66,11 +84,14 @@ class SubscriptionProvider with ChangeNotifier {
   /// [featureId] チェックする機能のID (例: 'weather', 'ai_write_assist')
   Future<FeatureStatus> checkFeatureStatus(String featureId) async {
     switch (featureId) {
-      case 'weather':
+      case 'weather_current':
+        return FeatureStatus.allowed; // 現在の天気は常に許可
+
+      case 'weather_historical':
         if (_currentTier == SubscriptionTier.free) {
-          return FeatureStatus.needsInterstitial;
+          return FeatureStatus.needsInterstitial; // Freeティアは広告が必要
         }
-        return FeatureStatus.allowed;
+        return FeatureStatus.allowed; // それ以外は許可
 
       case 'ai_write_assist':
       case 'ai_write_eval':
@@ -81,17 +102,27 @@ class SubscriptionProvider with ChangeNotifier {
 
       case 'ai_interpretation':
         if (_currentTier == SubscriptionTier.free) {
-          final weeklyUsage = await getUsedCount(featureId, _startOfThisWeek);
-          final monthlyUsage = await getUsedCount(featureId, _startOfThisMonth);
-
+          // 週次（'ai_interpretation'）の利用をチェック
+          final weeklyUsage = await getUsedCount(
+            'ai_interpretation',
+            startOfThisWeek,
+          );
           if (weeklyUsage == 0) {
             return FeatureStatus.needsReward; // 今週利用がなければneedsReward
-          } else if (monthlyUsage < 2) { // 今週使済みだが、今月2回未満ならneedsRewardMonthly
+          }
+
+          // 週次利用済みの場合、月次ボーナス枠（'ai_interpretation_monthly'）の利用をチェック
+          final monthlyBonusUsage = await getUsedCount(
+            'ai_interpretation_monthly',
+            startOfThisMonth,
+          );
+          if (monthlyBonusUsage == 0) {
+            // 月次ボーナスが0回ならneedsRewardMonthly
             return FeatureStatus.needsRewardMonthly;
           }
-          return FeatureStatus.forbidden; // それ以外はforbidden
+          return FeatureStatus.forbidden; // いずれも使用済みならforbidden
         } else if (_currentTier == SubscriptionTier.tier1) {
-          final dailyUsage = await getUsedCount(featureId, _startOfToday);
+          final dailyUsage = await getUsedCount(featureId, startOfToday);
           if (dailyUsage == 0) {
             return FeatureStatus.allowed; // 今日利用がなければallowed
           }

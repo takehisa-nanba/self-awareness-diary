@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/isar_service.dart';
 import '../../domain/repositories/diary_repository.dart';
 import 'package:table_calendar/table_calendar.dart'; // isSameDayのため
-
-// サブスクリプションティアを定義する列挙型
-enum SubscriptionTier { free, tier1, tier2 }
+import '../../domain/models/subscription_tier.dart'; // SubscriptionTierをインポート
 
 /// アプリの設定（サブスクリプションティア、初回起動フラグ、AI利用回数など）を管理するプロバイダークラス。
 ///
@@ -30,6 +28,10 @@ class SettingsProvider extends ChangeNotifier {
   // 設定読み込み中かどうかのフラグ
   bool _isLoading = true;
   bool get isLoading => _isLoading;
+
+  // 日記作成時にAIの選択ボタンを表示するかどうか
+  bool _showAiOptionsDuringWrite = false;
+  bool get showAiOptionsDuringWrite => _showAiOptionsDuringWrite;
 
   // --- AI分析利用回数管理 ---
   // 無料ユーザー向けの週次利用回数
@@ -57,13 +59,16 @@ class SettingsProvider extends ChangeNotifier {
     final firstLaunchFlag = await _isarService.getSetting('isFirstLaunch');
     isFirstLaunch = firstLaunchFlag != 'false'; // 'false'以外はtrueとする
 
-    // isDiagnosisCompleteフラグの読み込みは外部からの更新に委ねる
-    // final diagnosisCompleteFlag = await _isarService.getSetting('isDiagnosisComplete');
-    // isDiagnosisComplete = diagnosisCompleteFlag == 'true'; // 'true'の場合のみtrueとする
-
     // 開始ステップ設定の読み込み
     final savedStepSetting = await _isarService.getSetting('startFromStep2');
     _startFromStep2 = savedStepSetting == 'true'; // 'true'の場合のみtrueとする
+
+    // showAiOptionsDuringWriteフラグの読み込み
+    final savedAiOptionsSetting = await _isarService.getSetting(
+      'showAiOptionsDuringWrite',
+    );
+    _showAiOptionsDuringWrite =
+        savedAiOptionsSetting == 'true'; // 'true'の場合のみtrueとする
 
     // サブスクリプションティアの読み込み
     final savedTier = await _isarService.getSetting('subscriptionTier');
@@ -217,6 +222,16 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setStartFromStep2(bool value) async {
     _startFromStep2 = value;
     await _isarService.saveSetting('startFromStep2', value.toString());
+    notifyListeners();
+  }
+
+  /// 日記作成時にAIの選択ボタンを表示するかどうかを設定します。
+  Future<void> setShowAiOptionsDuringWrite(bool value) async {
+    _showAiOptionsDuringWrite = value;
+    await _isarService.saveSetting(
+      'showAiOptionsDuringWrite',
+      value.toString(),
+    );
     notifyListeners();
   }
 

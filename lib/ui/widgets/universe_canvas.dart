@@ -29,8 +29,10 @@ class UniverseCanvas extends StatefulWidget {
   State<UniverseCanvas> createState() => _UniverseCanvasState();
 }
 
-class _UniverseCanvasState extends State<UniverseCanvas> with TickerProviderStateMixin {
-  final TransformationController _transformationController = TransformationController();
+class _UniverseCanvasState extends State<UniverseCanvas>
+    with TickerProviderStateMixin {
+  final TransformationController _transformationController =
+      TransformationController();
   late AnimationController _animationController;
   late ValueNotifier<double> _rotationX;
   late ValueNotifier<double> _rotationY;
@@ -66,11 +68,13 @@ class _UniverseCanvasState extends State<UniverseCanvas> with TickerProviderStat
     if (widget.recordCoordinates != oldWidget.recordCoordinates) {
       _recordEntryTimes.clear();
     }
-    
+
     final oldRecordList = oldWidget.recordCoordinates.entries.toList();
     final newRecordList = widget.recordCoordinates.entries.toList();
-    final oldRecordsToShowCount = (oldRecordList.length * oldWidget.timeSliderValue).ceil();
-    final newRecordsToShowCount = (newRecordList.length * widget.timeSliderValue).ceil();
+    final oldRecordsToShowCount =
+        (oldRecordList.length * oldWidget.timeSliderValue).ceil();
+    final newRecordsToShowCount =
+        (newRecordList.length * widget.timeSliderValue).ceil();
 
     bool newRecordAppeared = false;
     if (newRecordsToShowCount > oldRecordsToShowCount) {
@@ -90,16 +94,19 @@ class _UniverseCanvasState extends State<UniverseCanvas> with TickerProviderStat
   }
 
   void _animateToIdentity() {
-    final animation = Matrix4Tween(
-      begin: _transformationController.value,
-      end: v_math.Matrix4.identity(),
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
+    final animation =
+        Matrix4Tween(
+          begin: _transformationController.value,
+          end: v_math.Matrix4.identity(),
+        ).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
 
     _animationController.duration = const Duration(milliseconds: 400);
     animation.addListener(() {
       _transformationController.value = animation.value;
     });
-    
+
     _rotationX.value = 0.0;
     _rotationY.value = 0.0;
     _animationController.forward(from: 0.0);
@@ -126,7 +133,10 @@ class _UniverseCanvasState extends State<UniverseCanvas> with TickerProviderStat
               viewMatrix: _transformationController.value,
             );
 
-            final tappedRecord = tempPainter._hitTestPainter(details.localPosition, size);
+            final tappedRecord = tempPainter._hitTestPainter(
+              details.localPosition,
+              size,
+            );
             if (tappedRecord != null) {
               context.read<AnalysisProvider>().selectRecord(tappedRecord);
             }
@@ -135,20 +145,35 @@ class _UniverseCanvasState extends State<UniverseCanvas> with TickerProviderStat
             transformationController: _transformationController,
             minScale: 0.1,
             maxScale: 10.0,
-            panEnabled: false, 
+            panEnabled: false,
             onInteractionUpdate: (details) {
               if (details.pointerCount == 1) {
                 _rotationY.value += details.focalPointDelta.dx * 0.01;
                 _rotationX.value += details.focalPointDelta.dy * 0.01;
-                _rotationX.value = _rotationX.value.clamp(-math.pi / 2, math.pi / 2);
+                _rotationX.value = _rotationX.value.clamp(
+                  -math.pi / 2,
+                  math.pi / 2,
+                );
               } else if (details.pointerCount == 2) {
                 final newTranslation = v_math.Matrix4.identity()
-                  ..translateByVector3(v_math.Vector3(details.focalPointDelta.dx, details.focalPointDelta.dy, 0));
-                _transformationController.value = newTranslation * _transformationController.value;
+                  ..translateByVector3(
+                    v_math.Vector3(
+                      details.focalPointDelta.dx,
+                      details.focalPointDelta.dy,
+                      0,
+                    ),
+                  );
+                _transformationController.value =
+                    newTranslation * _transformationController.value;
               }
             },
             child: ListenableBuilder(
-              listenable: Listenable.merge([_rotationX, _rotationY, _flareAnimationController, _transformationController]),
+              listenable: Listenable.merge([
+                _rotationX,
+                _rotationY,
+                _flareAnimationController,
+                _transformationController,
+              ]),
               builder: (context, _) {
                 return SizedBox.expand(
                   child: RepaintBoundary(
@@ -236,9 +261,13 @@ class _UniversePainter extends CustomPainter {
 
     // 1. 恒星（エゴ指標）
     indicatorAnglesRad.forEach((key, angleRad) {
-      final coord = UniverseCoordinate(x: math.cos(angleRad), y: math.sin(angleRad), z: 0.0);
+      final coord = UniverseCoordinate(
+        x: math.cos(angleRad),
+        y: math.sin(angleRad),
+        z: 0.0,
+      );
       final double rotatedZ = coord.getRotatedZ(rotationX, rotationY);
-      
+
       // 遠近感スケール (clamp範囲を広げて奥行きを強調)
       final double perspectiveScale = (rotatedZ / 100.0 + 1.0).clamp(0.1, 2.5);
       final projectedPoint = _project(coord, size);
@@ -246,22 +275,29 @@ class _UniversePainter extends CustomPainter {
 
       // ★研磨：ぼかしを完全に廃止し、不透明度のみで遠近を表現
       final paint = Paint()
-        ..color = color.withValues(alpha: (perspectiveScale * 0.4).clamp(0.1, 0.9));
-      
+        ..color = color.withValues(
+          alpha: (perspectiveScale * 0.4).clamp(0.1, 0.9),
+        );
+
       canvas.drawCircle(projectedPoint, 15.0 * perspectiveScale, paint);
 
       final textPainter = TextPainter(
         text: TextSpan(
           text: key,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: (perspectiveScale * 0.6).clamp(0.3, 1.0)),
+            color: Colors.white.withValues(
+              alpha: (perspectiveScale * 0.6).clamp(0.3, 1.0),
+            ),
             fontSize: (14 * perspectiveScale).clamp(8.0, 30.0),
             fontWeight: FontWeight.bold,
           ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
-      textPainter.paint(canvas, projectedPoint - Offset(textPainter.width / 2, textPainter.height / 2));
+      textPainter.paint(
+        canvas,
+        projectedPoint - Offset(textPainter.width / 2, textPainter.height / 2),
+      );
     });
 
     // 2. 惑星（日記レコード）
@@ -287,10 +323,13 @@ class _UniversePainter extends CustomPainter {
       final entryTime = recordEntryTimes[record];
       if (entryTime != null) {
         final elapsed = DateTime.now().difference(entryTime);
-        final animationProgress = (elapsed.inMilliseconds / 700).clamp(0.0, 1.0);
+        final animationProgress = (elapsed.inMilliseconds / 700).clamp(
+          0.0,
+          1.0,
+        );
         if (animationProgress < 1.0) {
           final curve = Curves.easeOutBack.transform(animationProgress);
-          currentSize *= (1.0 + 2.0 * (1.0 - curve)); 
+          currentSize *= (1.0 + 2.0 * (1.0 - curve));
           currentOpacity = (0.3 + 0.7 * curve);
         } else {
           recordEntryTimes.remove(record);
@@ -300,7 +339,7 @@ class _UniversePainter extends CustomPainter {
       // ★研磨：中心の白とぼかしを排除し、ソリッドな琥珀色の星に
       final paint = Paint()
         ..color = Colors.amberAccent.withValues(alpha: currentOpacity);
-      
+
       canvas.drawCircle(warpedPosition, currentSize, paint);
     }
   }

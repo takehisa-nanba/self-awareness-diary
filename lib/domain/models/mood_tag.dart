@@ -1,7 +1,7 @@
 // lib/domain/models/mood_tag.dart
 
 import 'package:flutter/material.dart';
-import '../../providers/settings_provider.dart'; // SubscriptionTierの定義をインポート
+import 'package:self_awareness_diary/domain/models/subscription_tier.dart'; // SubscriptionTierの定義をインポート
 
 /// 気分タグの情報を定義するデータモデルクラス。
 ///

@@ -11,6 +11,8 @@ import '../domain/repositories/diary_repository.dart';
 import '../services/gemini_service.dart';
 import '../domain/mappers/ai_report_to_prompt_mapper.dart';
 import 'diagnosis_provider.dart';
+import 'package:self_awareness_diary/providers/subscription_provider.dart'; // SubscriptionProviderをインポート
+import 'package:self_awareness_diary/domain/models/subscription_tier.dart'; // SubscriptionTierをインポート
 
 /// 分析グラフに表示するデータの種類を定義する列挙型。
 enum AnalysisDataType { mood, pressure, temperature, polishing }
@@ -21,6 +23,7 @@ class AnalysisProvider extends ChangeNotifier {
   final GeminiService _geminiService;
   SettingsProvider? _settingsProvider;
   DiagnosisProvider? _diagnosisProvider;
+  SubscriptionProvider? _subscriptionProvider; // SubscriptionProviderを追加
 
   // --- 状態 ---
   final Set<AnalysisDataType> activeDataTypes = {AnalysisDataType.mood};
@@ -45,11 +48,12 @@ class AnalysisProvider extends ChangeNotifier {
   bool _isCloudy = false;
   bool _isInterpreting = false;
   String? _universeInterpretation;
-  bool _isInterpretationVisible = false; // ★追加
+  bool _isInterpretationVisible = false;
   Map<DiaryRecord, UniverseCoordinate> _visibleRecordCoordinates = {};
   DiaryRecord? _selectedRecord;
   String? _selectedRecordExplanation;
   bool _isExplanationLoading = false;
+  FeatureStatus _interpretationStatus = FeatureStatus.forbidden; // 宇宙図解説のステータス
 
   // --- ゲッター ---
   DateTimeRange get dateRange => _dateRange;
@@ -67,10 +71,11 @@ class AnalysisProvider extends ChangeNotifier {
       _visibleRecordCoordinates;
   Map<String, double> get indicatorAnglesRad =>
       _report?.indicatorAnglesRad ?? {};
-  bool get isInterpretationVisible => _isInterpretationVisible; // ★追加
+  bool get isInterpretationVisible => _isInterpretationVisible;
   DiaryRecord? get selectedRecord => _selectedRecord;
   String? get selectedRecordExplanation => _selectedRecordExplanation;
   bool get isExplanationLoading => _isExplanationLoading;
+  FeatureStatus get interpretationStatus => _interpretationStatus; // ゲッターを追加
 
   AnalysisProvider(this._diaryRepository, this._geminiService) {
     final now = DateTime.now();
@@ -98,6 +103,10 @@ class AnalysisProvider extends ChangeNotifier {
     _diagnosisProvider = diagnosis;
   }
 
+  void updateSubscription(SubscriptionProvider subscription) {
+    _subscriptionProvider = subscription;
+  }
+
   /// ユーザーがタップした星（日記レコード）を選択状態にする。
   /// [record]がnullの場合、選択を解除する。
   void selectRecord(DiaryRecord? record) {
@@ -105,31 +114,49 @@ class AnalysisProvider extends ChangeNotifier {
       _selectedRecord = record;
       _selectedRecordExplanation = null; // 選択が変更されたら解説をクリア
       _isExplanationLoading = false;
-      hideInterpretation(); // ★追加: 星選択時/選択解除時は全体の解説を隠す
+      hideInterpretation(); // 星選択時/選択解除時は全体の解説を隠す
       notifyListeners();
     }
   }
 
   /// 選択された星（日記）の位置についてAIに解説を求める。
   Future<void> explainSelectedRecord() async {
-    if (_selectedRecord == null || _report == null) return;
+    if (_selectedRecord == null ||
+        _report == null ||
+        _subscriptionProvider == null) {
+      return;
+    }
 
     _isExplanationLoading = true;
     _selectedRecordExplanation = null;
     notifyListeners();
 
-    try {
-      final coordinate = _report!.recordCoordinates[_selectedRecord!];
-      if (coordinate == null) {
-        throw Exception('Coordinate not found for the selected record.');
-      }
+    final status = await _subscriptionProvider!.checkFeatureStatus(
+      'record_insight',
+    );
 
-      final explanation = await _geminiService.explainRecordPosition(
-        record: _selectedRecord!,
-        userProfile: _report!.userProfile,
-        coordinate: coordinate,
-      );
-      _selectedRecordExplanation = explanation;
+    try {
+      if (status == FeatureStatus.allowed ||
+          status == FeatureStatus.needsReward) {
+        final coordinate = _report!.recordCoordinates[_selectedRecord!];
+        if (coordinate == null) {
+          throw Exception('Coordinate not found for the selected record.');
+        }
+
+        final explanation = await _geminiService.explainRecordPosition(
+          record: _selectedRecord!,
+          userProfile: _report!.userProfile,
+          coordinate: coordinate,
+        );
+        _selectedRecordExplanation = explanation;
+
+        // 利用を記録 (needsRewardの場合はUI側で広告表示後、再度呼び出されることを想定)
+        if (status == FeatureStatus.allowed) {
+          _subscriptionProvider!.recordUsage('record_insight');
+        }
+      } else if (status == FeatureStatus.forbidden) {
+        _selectedRecordExplanation = 'この機能は上位プランでご利用いただけます。';
+      }
     } catch (e) {
       _selectedRecordExplanation = 'AIとの通信中にエラーが発生しました。';
     } finally {
@@ -158,13 +185,12 @@ class AnalysisProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-
   /// 時間スライダーの値が変更されたときに呼び出される。
   void onTimeSliderChanged(double value) {
     _timeSliderValue = value;
     _isCloudy = false;
     _universeInterpretation = null;
-    hideInterpretation(); // ★追加
+    hideInterpretation();
     selectRecord(null); // スライダー操作時は選択を解除
 
     // スライダー操作中は表示する星をリアルタイムで更新
@@ -172,7 +198,7 @@ class AnalysisProvider extends ChangeNotifier {
 
     _debounce?.cancel();
     _debounce = Timer(const Duration(seconds: 2), () {
-      _triggerInterpretation();
+      triggerInterpretation();
     });
   }
 
@@ -206,11 +232,11 @@ class AnalysisProvider extends ChangeNotifier {
   }
 
   /// スライダー操作のデバウンス後に実行される処理。
-  Future<void> _triggerInterpretation() async {
-    if (_report == null) return;
+  Future<void> triggerInterpretation() async {
+    if (_report == null || _subscriptionProvider == null) return;
 
     debugPrint(
-      '[AnalysisProvider] _triggerInterpretation START: Tier: ${_settingsProvider?.currentTier}, Visible records: ${_visibleRecordCoordinates.length}',
+      '[AnalysisProvider] triggerInterpretation START: Tier: ${_settingsProvider?.currentTier}, Visible records: ${_visibleRecordCoordinates.length}',
     );
 
     _isInterpreting = true;
@@ -226,27 +252,73 @@ class AnalysisProvider extends ChangeNotifier {
       return;
     }
 
-    if (_settingsProvider?.currentTier == SubscriptionTier.free) {
+    _interpretationStatus = await _subscriptionProvider!.checkFeatureStatus(
+      'ai_interpretation',
+    );
+
+    if (_interpretationStatus == FeatureStatus.allowed) {
+      try {
+        final tempReport = AnalysisReport(
+          records: _visibleRecordCoordinates.keys.toList(),
+          dateRange: _report!.dateRange, // 期間は全体のまま
+          userProfile: _report!.userProfile,
+          geminiService: _geminiService,
+        );
+        final promptSummary = CosmicMapToPromptMapper.toPrompt(tempReport);
+        final interpretation = await _geminiService.interpretCosmicMap(
+          promptSummary,
+        );
+                  _universeInterpretation = interpretation;
+                  // 宇宙図解説の利用を記録（FreeティアはUI側、Tier2は不要/任意のためTier1のみここで記録）
+                  if (_subscriptionProvider!.currentTier == SubscriptionTier.tier1) {
+          _subscriptionProvider!.recordUsage(
+            'ai_interpretation',
+          ); // Tier1の利用を記録
+                  }
+      } catch (e) {
+        _universeInterpretation = 'AIとの通信に失敗しました。';
+      } finally {
+        _isInterpreting = false;
+        notifyListeners();
+      }
+    } else if (_interpretationStatus == FeatureStatus.needsReward) {
+      _universeInterpretation = 'この機能は広告を視聴すると今週1回ご利用いただけます。';
+      _isInterpreting = false;
+      notifyListeners();
+    } else if (_interpretationStatus == FeatureStatus.needsRewardMonthly) {
+      _universeInterpretation = 'この機能は広告を視聴すると今月1回ご利用いただけます。';
+      _isInterpreting = false;
+      notifyListeners();
+    } else if (_interpretationStatus == FeatureStatus.forbidden) {
       _universeInterpretation = 'この機能は上位プランでご利用いただけます。';
       _isInterpreting = false;
       notifyListeners();
-      return;
     }
+  }
+
+  // --- 既存のコードの下あたりに追加 ---
+
+  /// Freeティアユーザー向けの解析実行（広告視聴後に呼ばれる）
+  /// [isMonthly] が true の場合は月次ボーナス枠を使用する
+  Future<void> runFreeInterpretation(bool isMonthly) async {
+    // このメソッドはUI側 (analysis_screen) から広告視聴後に直接呼び出される
+    if (_subscriptionProvider == null) return;
+
+    _isInterpreting = true;
+    notifyListeners();
 
     try {
-      final tempReport = AnalysisReport(
-        records: _visibleRecordCoordinates.keys.toList(),
-        dateRange: _report!.dateRange, // 期間は全体のまま
-        userProfile: _report!.userProfile,
-        geminiService: _geminiService,
-      );
-      final promptSummary = CosmicMapToPromptMapper.toPrompt(tempReport);
-      final interpretation = await _geminiService.interpretCosmicMap(
-        promptSummary,
-      );
-      _universeInterpretation = interpretation;
+      // 1. サブスクリプションプロバイダーに使用実績を記録させる
+      final featureKey = isMonthly
+          ? 'ai_interpretation_monthly'
+          : 'ai_interpretation';
+      await _subscriptionProvider!.recordUsage(featureKey);
+
+      // 2. 実際のAI解析処理を呼び出す
+      await triggerInterpretation();
     } catch (e) {
-      _universeInterpretation = 'AIとの通信に失敗しました。';
+      debugPrint('【エラー】無料枠での解析実行に失敗しました: $e');
+      rethrow;
     } finally {
       _isInterpreting = false;
       notifyListeners();
@@ -364,3 +436,4 @@ class AnalysisProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+

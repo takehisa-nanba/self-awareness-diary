@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../domain/models/mood_tag.dart';
-import '../providers/settings_provider.dart'; // SubscriptionTier の定義のため
+import '../domain/models/subscription_tier.dart'; // SubscriptionTier の定義のため
 
 /// アプリケーションで利用可能なすべての気分タグの定義済みリスト。
 ///

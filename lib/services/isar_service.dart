@@ -8,6 +8,7 @@ import '../../domain/models/diary_record.dart';
 import '../../domain/models/location_setting.dart';
 import '../../domain/models/app_settings.dart';
 import '../../domain/models/user_profile.dart'; // UserProfileをインポート
+import '../../domain/models/usage_log.dart'; // UsageLogをインポート
 
 /// Isar データベースの初期化、およびデータ永続化層へのアクセスを提供するサービス。
 ///

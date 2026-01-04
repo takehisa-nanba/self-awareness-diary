@@ -5,7 +5,8 @@ import '../../domain/models/diary_record.dart';
 import '../../services/isar_service.dart'; // isarService にアクセスするため
 import '../../core/utils/color_helpers.dart'; // getAiScoreColor 関数を使用
 import '../../services/gemini_service.dart';
-import 'settings_provider.dart';
+import 'settings_provider.dart'; // SettingsProviderをインポートし続ける
+import '../../domain/models/subscription_tier.dart'; // SubscriptionTierをインポート
 import 'diagnosis_provider.dart'; // DiagnosisProvider をインポート
 
 /// 日記レコードの詳細画面のデータと状態を管理するプロバイダークラス。

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/settings_provider.dart';
 import '../../services/ad_service.dart';
+import 'package:self_awareness_diary/domain/models/subscription_tier.dart'; // SubscriptionTierをインポート
 
 /// バナー広告を表示するためのラッパーウィジェット。
 ///

@@ -59,7 +59,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
       body: Stack(
         children: [
           const UniverseBackground(),
-          
+
           // 進捗バー
           Positioned(
             top: 0,
@@ -126,7 +126,8 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
                       final scaffoldMessenger = ScaffoldMessenger.of(context);
 
                       if (!diagnosisProvider.isAllAnswered) {
-                        final targetIndex = diagnosisProvider.firstUnansweredIndex;
+                        final targetIndex =
+                            diagnosisProvider.firstUnansweredIndex;
                         await _pageController.animateToPage(
                           targetIndex,
                           duration: const Duration(milliseconds: 300),
@@ -146,8 +147,16 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
                             title: const Text('お疲れ様でした。'),
                             content: const Text('すべての設問を確定します。\nよろしいですか？'),
                             actions: [
-                              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('キャンセル')),
-                              TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('はい（確定）')),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(dialogContext, false),
+                                child: const Text('キャンセル'),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(dialogContext, true),
+                                child: const Text('はい（確定）'),
+                              ),
                             ],
                           ),
                         );
@@ -157,7 +166,9 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
                           // 4. 遷移の前にも必ずチェック
                           if (!context.mounted) return;
                           navigator.pushReplacement(
-                            MaterialPageRoute(builder: (_) => const RootScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const RootScreen(),
+                            ),
                           );
                         }
                       }
@@ -212,8 +223,8 @@ class _QuestionCardState extends State<_QuestionCard> {
     final isSelected = _localSelected == value;
     return ElevatedButton.styleFrom(
       foregroundColor: isSelected ? theme.colorScheme.onPrimary : Colors.white,
-      backgroundColor: isSelected 
-          ? theme.colorScheme.primary 
+      backgroundColor: isSelected
+          ? theme.colorScheme.primary
           : Colors.white.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -243,7 +254,9 @@ class _QuestionCardState extends State<_QuestionCard> {
                 children: [
                   Text(
                     widget.question,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleLarge?.copyWith(color: Colors.white),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
@@ -300,7 +313,9 @@ class _ConstellationProgressBar extends StatelessWidget {
             if (index < answeredQuestions) {
               dotColor = Theme.of(context).colorScheme.primary;
             } else if (index == currentQuestionIndex) {
-              dotColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.5);
+              dotColor = Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.5);
             } else {
               dotColor = Colors.white24;
             }
@@ -310,7 +325,10 @@ class _ConstellationProgressBar extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 1.0),
                 width: 4,
                 height: 4,
-                decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
               ),
             );
           }),
@@ -343,7 +361,9 @@ class _DiagnosisAppBarTitle extends StatelessWidget {
         ),
         Text(
           '${currentPage + 1}/$totalQuestions',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.white70),
         ),
       ],
     );

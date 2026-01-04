@@ -6,6 +6,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/developer_service.dart';
 import '../../providers/history_provider.dart';
 import 'brand_splash_screen.dart'; // スプラッシュ画面をプレビューするため
+import 'package:self_awareness_diary/domain/models/subscription_tier.dart'; // SubscriptionTierをインポート
 
 /// アプリケーションの開発者向け機能を提供する画面ウィジェット。
 ///

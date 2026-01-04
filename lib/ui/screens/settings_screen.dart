@@ -8,6 +8,7 @@ import '../../providers/diagnosis_provider.dart'; // DiagnosisProviderをイン�
 import '../../services/isar_service.dart'; // IsarServiceをインポート (findNearbyRecordsのため)
 import 'developer_mode_screen.dart';
 import 'location_edit_screen.dart';
+import 'package:self_awareness_diary/domain/models/subscription_tier.dart'; // SubscriptionTierをインポート
 
 /// アプリケーション全体の設定を管理する画面ウィジェット。
 ///
@@ -32,7 +33,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>(); // 一般設定プロバイダー
     final locationProvider = context.watch<LocationProvider>(); // 場所設定プロバイダー
-    final diagnosisProvider = context.watch<DiagnosisProvider>(); // DiagnosisProviderを追加
+    final diagnosisProvider = context
+        .watch<DiagnosisProvider>(); // DiagnosisProviderを追加
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -54,7 +56,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          _buildGeneralSettings(context, settingsProvider, diagnosisProvider), // diagnosisProviderを渡す
+          _buildGeneralSettings(
+            context,
+            settingsProvider,
+            diagnosisProvider,
+          ), // diagnosisProviderを渡す
 
           const SizedBox(height: 32),
 
@@ -120,6 +126,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         const SizedBox(height: 16),
+        if (provider.currentTier != SubscriptionTier.free) // Freeティアではない場合のみ表示
+          Card(
+            elevation: 0,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest
+                .withAlpha((255 * 0.3).round()),
+            child: SwitchListTile(
+              title: const Text('日記作成時にAIの選択ボタンを表示する'), // 設定項目タイトル
+              subtitle: const Text(
+                'オンにすると、AIによる分析・質問の実行有無を選択できるようになります。',
+              ), // 設定項目の説明
+              value: provider.showAiOptionsDuringWrite, // 現在の設定値
+              onChanged: (value) {
+                provider.setShowAiOptionsDuringWrite(value);
+              }, // 設定変更時の処理
+              secondary: const Icon(Icons.auto_awesome), // 設定項目アイコン
+            ),
+          ),
+        const SizedBox(height: 16),
         Card(
           elevation: 0,
           color: Theme.of(
@@ -150,7 +174,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        await diagnosisProvider.resetUserProfile(); // DiagnosisProviderのresetUserProfileを呼び出す
+                        await diagnosisProvider
+                            .resetUserProfile(); // DiagnosisProviderのresetUserProfileを呼び出す
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -159,7 +184,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         }
                       },
-
                       icon: const Icon(Icons.refresh),
                       label: const Text('性格診断をやり直す'),
                     ),
