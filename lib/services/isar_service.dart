@@ -40,6 +40,7 @@ class IsarService {
       LocationSettingSchema,
       AppSettingsSchema,
       UserProfileSchema, // UserProfileスキーマを追加
+      UsageLogSchema, // UsageLogスキーマを追加
     ], directory: dir.path);
     debugPrint("IsarService: 初期化に成功しました。");
   }

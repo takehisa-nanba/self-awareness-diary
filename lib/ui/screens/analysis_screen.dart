@@ -233,14 +233,18 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-                                    Text(
-                                      record.eventText,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
+                                    SizedBox(
+                                      height: 80, // スクロールエリアの高さ
+                                      child: SingleChildScrollView(
+                                        child: Text(
+                                          record.eventText,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            height: 1.5,
+                                          ),
+                                        ),
                                       ),
-                                      maxLines: 5,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     const Divider(
                                       color: Colors.white54,
@@ -360,16 +364,43 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     BuildContext context,
     AnalysisProvider provider,
   ) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 500),
-      transitionBuilder: (Widget child, Animation<double> animation) {
-        return FadeTransition(opacity: animation, child: child);
-      },
-      child:
-          provider.isInterpretationVisible &&
-              provider.universeInterpretation != null
-          ? ClipRRect(
-              key: const ValueKey('interpretation'),
+    return Consumer<SettingsProvider>( // SettingsProviderも購読
+      builder: (context, settingsProvider, child) {
+        // Tier2ユーザーでない場合は表示しない
+        if (settingsProvider.currentTier != SubscriptionTier.tier2) {
+          return provider.universeInterpretation != null
+              ? Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(50),
+                    borderRadius: BorderRadius.circular(16.0),
+                    border: Border.all(
+                      color: Colors.white.withAlpha(100),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Text(
+                    'AIによる宇宙図の解説はTier2プランでご利用いただけます。',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withAlpha(200),
+                      fontSize: 14,
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink();
+        }
+
+        return AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: GestureDetector(
+            onTap: () {
+              provider.toggleInterpretationVisibility();
+            },
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(16.0),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
@@ -387,15 +418,60 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                       width: 1.0,
                     ),
                   ),
-                  child: Text(
-                    provider.universeInterpretation!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'AIによる宇宙図の解説',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Icon(
+                            provider.isInterpretationVisible
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, animation) {
+                          return FadeTransition(opacity: animation, child: child);
+                        },
+                        child: provider.isInterpretationVisible
+                            ? Column(
+                                key: const ValueKey('interpretation_content'),
+                                children: [
+                                  const Divider(color: Colors.white54, height: 20),
+                                  SingleChildScrollView(
+                                    // スクロール可能なテキストエリア
+                                    child: Text(
+                                      provider.universeInterpretation!,
+                                      textAlign: TextAlign.start,
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 14),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const SizedBox.shrink(key: ValueKey('empty_content')),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            )
-          : const SizedBox.shrink(key: ValueKey('empty')),
+            ),
+          ),
+        );
+      },
     );
   }
 

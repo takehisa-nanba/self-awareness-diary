@@ -152,6 +152,13 @@ class AnalysisProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 全体のAI解説の表示/非表示を切り替える。
+  void toggleInterpretationVisibility() {
+    _isInterpretationVisible = !_isInterpretationVisible;
+    notifyListeners();
+  }
+
+
   /// 時間スライダーの値が変更されたときに呼び出される。
   void onTimeSliderChanged(double value) {
     _timeSliderValue = value;

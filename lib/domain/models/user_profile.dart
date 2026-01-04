@@ -1,12 +1,16 @@
 // lib/domain/models/user_profile.dart
 
 import 'package:isar/isar.dart';
+import 'package:self_awareness_diary/domain/models/subscription_tier.dart';
 
 part 'user_profile.g.dart';
 
 @collection
 class UserProfile {
   Id id = Isar.autoIncrement; // Auto-incrementing primary key
+
+  @enumerated
+  SubscriptionTier tier = SubscriptionTier.free;
 
   // Ego gram scores (e.g., from a 53-question personality test)
   int? cp; // Critical Parent

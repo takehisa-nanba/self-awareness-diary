@@ -20,30 +20,49 @@ class UniverseCoordinate {
     return 'UniverseCoordinate(x: $x, y: $y, z: $z)';
   }
 
+  /// 指定された回転角度に基づいて3D座標を回転させ、回転後のZ座標を計算します。
+  /// このメソッドは、遠近感の計算に使用されます。
+  double getRotatedZ(double rotationX, double rotationY) {
+    // 宇宙空間のスケールを合わせる
+    const double spaceScale = 150.0;
+    final double currentX = x * spaceScale;
+    final double currentY = y * spaceScale;
+    final double currentZ = z * spaceScale;
+
+    // Y軸（水平）回転
+    final rotatedZAfterY = currentZ * cos(rotationY) - currentX * sin(rotationY);
+
+    // X軸（垂直）回転
+    final finalZ = rotatedZAfterY * cos(rotationX) - currentY * sin(rotationX);
+    
+    return finalZ;
+  }
+
   /// 3D座標を回転させ、2Dスクリーンに投影したOffsetを計算します。
   Offset getProjectedOffset(Size size, double rotationX, double rotationY) {
-    const double maxZScale = 150.0;
-    final center = Offset(size.width / 2, size.height / 2);
+    final double centerX = size.width / 2;
+    final double centerY = size.height / 2;
 
-    // painterの計算と合わせる
-    final x3d = x * (size.width / 4);
-    final y3d = y * (size.height / 4);
-    final z3d = z * maxZScale;
+    const double spaceScale = 150.0;
+    final double currentX = x * spaceScale;
+    final double currentY = y * spaceScale;
+    final double currentZ = z * spaceScale;
 
-    // 3D回転
-    final rotatedX = x3d * cos(rotationY) - z3d * sin(rotationY);
-    final rotatedY =
-        y3d * cos(rotationX) -
-        (x3d * sin(rotationY) + z3d * cos(rotationY)) * sin(rotationX);
-    final rotatedZ =
-        y3d * sin(rotationX) +
-        (x3d * sin(rotationY) + z3d * cos(rotationY)) * cos(rotationX);
+    // Y軸回転
+    final rotatedX = currentX * cos(rotationY) + currentZ * sin(rotationY);
+    final rotatedZAfterY = currentZ * cos(rotationY) - currentX * sin(rotationY);
+
+    // X軸回転
+    final rotatedY = currentY * cos(rotationX) + rotatedZAfterY * sin(rotationX);
+    final finalZ = rotatedZAfterY * cos(rotationX) - currentY * sin(rotationX);
 
     // 透視投影
-    final perspectiveScale = 1 - (rotatedZ / maxZScale);
-    return Offset(
-      center.dx + rotatedX * perspectiveScale,
-      center.dy + rotatedY * perspectiveScale,
-    );
+    const double focalLength = 200.0;
+    final double perspectiveFactor = focalLength / (focalLength + finalZ);
+
+    final double projectedX = rotatedX * perspectiveFactor;
+    final double projectedY = rotatedY * perspectiveFactor;
+
+    return Offset(centerX + projectedX, centerY + projectedY);
   }
 }
