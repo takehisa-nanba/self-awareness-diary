@@ -6,6 +6,7 @@ import 'package:vector_math/vector_math.dart';
 import 'diary_record.dart';
 import 'universe_coordinate.dart';
 import 'user_profile.dart';
+import 'package:self_awareness_diary/services/gemini_service.dart'; // GeminiServiceをインポート
 
 /// 日記レコードのリストを元に、様々な角度から分析した結果を保持するモデル。
 /// 計算ロジックをProviderから分離し、ここに集約する。
@@ -13,6 +14,7 @@ class AnalysisReport {
   final List<DiaryRecord> _records;
   final DateTimeRange dateRange;
   final UserProfile userProfile;
+  final GeminiService geminiService; // GeminiServiceを追加
 
   List<DiaryRecord> get records => _records;
 
@@ -56,6 +58,7 @@ class AnalysisReport {
     required List<DiaryRecord> records,
     required this.dateRange,
     required this.userProfile,
+    required this.geminiService, // GeminiServiceを必須にする
   }) : _records = records;
 
   // --- publicな分析結果 (late final) ---
@@ -154,6 +157,7 @@ class AnalysisReport {
     }
 
     // 各レコードについて、タグに基づいて座標を調整
+    final Random random = Random(); // ランダムノイズ生成用
     for (final record in _records) {
       Vector2 finalPosition = Vector2.copy(basePosition);
       int attractionCount = 0;
@@ -165,8 +169,19 @@ class AnalysisReport {
           final attractionVector = Vector2(cos(angle), sin(angle));
           // 重心から指標へのベクトルを算出し、その方向に座標を寄せる
           final vectorToIndicator = attractionVector - basePosition;
-          finalPosition += vectorToIndicator * 0.1; // 引き寄せの強さ (0.1 = 10%)
+          // 研磨度に応じて引き寄せの強さを調整 (0.1から0.3まで変化)
+          final double attractionCoefficient =
+              0.1 + (record.polishingLevel.clamp(0, 100) / 100.0) * 0.2;
+          finalPosition += vectorToIndicator * attractionCoefficient;
           attractionCount++;
+        } else {
+          // タグがtagToIndicatorMapにない場合、AIに分類を問い合わせる
+          // classifyNewTagは非同期なので、ここでは直接呼び出せない
+          // そのため、ここでは微小なランダムノイズを適用する
+          finalPosition += Vector2(
+            random.nextDouble() * 0.05 - 0.025, // -0.025から0.025のランダムなXノイズ
+            random.nextDouble() * 0.05 - 0.025, // -0.025から0.025のランダムなYノイズ
+          );
         }
       }
 

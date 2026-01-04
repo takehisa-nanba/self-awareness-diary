@@ -105,15 +105,20 @@ void main() async {
             create: (context) =>
                 HistoryProvider(context.read<DiaryRepository>()),
           ),
-          // SettingsProviderを先に定義
-          ChangeNotifierProvider(
-            create: (context) =>
-                SettingsProvider(isarService, context.read<DiaryRepository>()),
-          ),
           // DiagnosisProviderを定義（UserProfileを管理するため）
           ChangeNotifierProvider(
             create: (context) =>
                 DiagnosisProvider(isarService), // IsarServiceを渡す
+          ),
+          // SettingsProviderをDiagnosisProviderの後に定義
+          ChangeNotifierProxyProvider<
+            DiagnosisProvider,
+            SettingsProvider
+          >(
+            create: (context) =>
+                SettingsProvider(isarService, context.read<DiaryRepository>()),
+            update: (_, diagnosis, settings) =>
+                settings!..updateDiagnosisStatus(diagnosis.userProfile != null),
           ),
           ChangeNotifierProxyProvider2<
             SettingsProvider,
@@ -211,18 +216,19 @@ class InitialScreenWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settings, child) {
-        // _loadSettingsが完了するのを待つ
-        if (settings.isLoading) {
+    return Consumer<DiagnosisProvider>(
+      builder: (context, diagnosis, child) {
+        // userProfileの読み込みが完了するのを待つ
+        if (diagnosis.isLoading) {
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(),
-            ), // 設定読み込み中はローディングを表示
+            ), // プロファイル読み込み中はローディングを表示
           );
         }
-        // 初回起動かどうかで表示画面を切り替え
-        return settings.isFirstLaunch
+        // UserProfileが存在しない場合（未診断）はBrandSplashScreen -> DiagnosisScreen
+        // UserProfileが存在する場合（診断済み）はRootScreenを直接表示
+        return diagnosis.userProfile == null
             ? const BrandSplashScreen()
             : const RootScreen();
       },

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/location_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/diagnosis_provider.dart'; // DiagnosisProviderをインポート
 import '../../services/isar_service.dart'; // IsarServiceをインポート (findNearbyRecordsのため)
 import 'developer_mode_screen.dart';
 import 'location_edit_screen.dart';
@@ -31,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>(); // 一般設定プロバイダー
     final locationProvider = context.watch<LocationProvider>(); // 場所設定プロバイダー
+    final diagnosisProvider = context.watch<DiagnosisProvider>(); // DiagnosisProviderを追加
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -52,7 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          _buildGeneralSettings(context, settingsProvider), // 一般設定UIの構築
+          _buildGeneralSettings(context, settingsProvider, diagnosisProvider), // diagnosisProviderを渡す
 
           const SizedBox(height: 32),
 
@@ -96,21 +98,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildGeneralSettings(
     BuildContext context,
     SettingsProvider provider,
+    DiagnosisProvider diagnosisProvider, // DiagnosisProviderを追加
   ) {
-    return Card(
-      elevation: 0,
-      color: Theme.of(
-        context,
-      ).colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
-      child: SwitchListTile(
-        title: const Text('「出来事」から書き始める'), // 設定項目タイトル
-        subtitle: const Text('オンにすると、日記を書き始める画面が「出来事の入力」からになります。'), // 設定項目の説明
-        value: provider.startFromStep2, // 現在の設定値
-        onChanged: (value) {
-          provider.setStartFromStep2(value);
-        }, // 設定変更時の処理
-        secondary: const Icon(Icons.edit_note), // 設定項目アイコン
-      ),
+    return Column(
+      children: [
+        Card(
+          elevation: 0,
+          color: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
+          child: SwitchListTile(
+            title: const Text('「出来事」から書き始める'), // 設定項目タイトル
+            subtitle: const Text(
+              'オンにすると、日記を書き始める画面が「出来事の入力」からになります。',
+            ), // 設定項目の説明
+            value: provider.startFromStep2, // 現在の設定値
+            onChanged: (value) {
+              provider.setStartFromStep2(value);
+            }, // 設定変更時の処理
+            secondary: const Icon(Icons.edit_note), // 設定項目アイコン
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 0,
+          color: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '性格診断ステータス:',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  provider.isDiagnosisComplete ? '完了済み' : '未完了',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: provider.isDiagnosisComplete
+                        ? Colors.green
+                        : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (provider.isDiagnosisComplete) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        await diagnosisProvider.resetUserProfile(); // DiagnosisProviderのresetUserProfileを呼び出す
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('性格診断ステータスをリセットしました。'),
+                            ),
+                          );
+                        }
+                      },
+
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('性格診断をやり直す'),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

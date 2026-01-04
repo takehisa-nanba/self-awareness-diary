@@ -231,6 +231,7 @@ class AnalysisProvider extends ChangeNotifier {
         records: _visibleRecordCoordinates.keys.toList(),
         dateRange: _report!.dateRange, // 期間は全体のまま
         userProfile: _report!.userProfile,
+        geminiService: _geminiService,
       );
       final promptSummary = CosmicMapToPromptMapper.toPrompt(tempReport);
       final interpretation = await _geminiService.interpretCosmicMap(
@@ -294,6 +295,7 @@ class AnalysisProvider extends ChangeNotifier {
       records: records,
       dateRange: newRange,
       userProfile: currentUserProfile,
+      geminiService: _geminiService,
     );
     _visibleRecordCoordinates = _report!.recordCoordinates; // 全体を初期表示
     _isLoading = false;

@@ -7,6 +7,19 @@ import '../../providers/settings_provider.dart';
 import 'diagnosis_screen.dart';
 import '../widgets/universe_background.dart'; // Import UniverseBackground
 
+// 仮のホーム画面 (必要に応じて適切なウィジェットに置き換える)
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Home')),
+      body: const Center(child: Text('Main Application Home Screen')),
+    );
+  }
+}
+
 /// アプリの顔：日記の「扉」を表現する画面
 class BrandSplashScreen extends StatefulWidget {
   const BrandSplashScreen({super.key});
@@ -92,13 +105,20 @@ class _BrandSplashScreenState extends State<BrandSplashScreen>
 
     _animationController.forward().then((_) {
       if (!mounted) return;
-      context.read<SettingsProvider>().completeFirstLaunch(); // チュートリアル終了を保存
+      final settingsProvider = context.read<SettingsProvider>();
+
+      // ナビゲーション先のウィジェットを決定
+      Widget nextScreen;
+      if (!settingsProvider.isDiagnosisComplete) {
+        nextScreen = const DiagnosisScreen();
+      } else {
+        nextScreen = const HomePage(); // 仮のホーム画面 (必要に応じて適切なウィジェットに置き換える)
+      }
 
       // ふわっと次の画面へ切り替え
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const DiagnosisScreen(), // Navigate to DiagnosisScreen
+          pageBuilder: (context, animation, secondaryAnimation) => nextScreen,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -231,18 +251,23 @@ class _CoverContent extends StatefulWidget {
 }
 
 class _CoverContentState extends State<_CoverContent>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // 文字がどこまで表示されたかを管理するスイッチ
   bool _line1Finished = false;
   bool _line2Finished = false; // タイトル開始の合図
-  bool _minFinished = false; // "Min"完了
+  bool _diaryFinished = false; // Diaryのタイピング完了フラグ
 
   bool _showLastPrompt = false;
   bool _showFinalReadyPrompt = false;
 
-  // "(e)" の透明度をじわじわ変えるためのコントローラー
-  late AnimationController _eFadeController;
-  late Animation<double> _eOpacity;
+  // "(e)" の透明度と幅をじわじわ変えるためのコントローラー
+  late AnimationController _eFadeController; // 幅アニメーションも兼ねる
+
+  // 全体のタイトルタイピング進行度を制御するコントローラー
+  late AnimationController _titleController;
+  late Animation<double> _titleProgress;
+
+  double _eTextWidth = 0.0; // (e)の幅計測用 (padding込み)
 
   @override
   void initState() {
@@ -252,14 +277,62 @@ class _CoverContentState extends State<_CoverContent>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    _eOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _eFadeController, curve: Curves.easeInOut),
+
+    _titleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2500), // Min(e)Diary全体のタイピング時間
     );
+    _titleProgress = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(_titleController);
+
+    _titleProgress.addListener(() {
+      if (_titleProgress.value >= 0.6 && !_diaryFinished) {
+        // Diaryのタイピングが完了するタイミング (diaryEndThreshold)
+        setState(() => _diaryFinished = true);
+      }
+
+      if (_diaryFinished && // Diaryが完了したら
+          !_eFadeController.isAnimating &&
+          _eFadeController.status != AnimationStatus.completed) {
+        _eFadeController.forward(); // (e)のフェードイン開始
+      }
+
+      if (_titleProgress.value > 0.95 && !_showLastPrompt) {
+        // 少し遅延させて次のプロンプトへ
+        Future.delayed(const Duration(milliseconds: 1200), () {
+          if (mounted) {
+            setState(() => _showLastPrompt = true);
+          }
+        });
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Measure the width of '(e)' after the first frame
+      const titleFontSize = 32.0;
+      final mindStyle = TextStyle(
+        color: const Color(0xFF1B5E20),
+        fontSize: titleFontSize,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 0.0,
+      );
+      final TextPainter textPainter = TextPainter(
+        text: TextSpan(text: '(e)', style: mindStyle),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      setState(() {
+        _eTextWidth = textPainter.width + 8.0; // 左右のPadding 4 * 2 を加算
+      });
+    });
   }
 
   @override
   void dispose() {
     _eFadeController.dispose();
+    _titleController.dispose();
     super.dispose();
   }
 
@@ -327,6 +400,7 @@ class _CoverContentState extends State<_CoverContent>
             Future.delayed(const Duration(milliseconds: 600), () {
               if (mounted) {
                 setState(() => _line2Finished = true);
+                _titleController.forward(); // タイトルタイピングアニメーションを開始
               }
             });
           },
@@ -339,65 +413,91 @@ class _CoverContentState extends State<_CoverContent>
     // 3. 【核心演出】Min (e) Diary
     if (_line2Finished) {
       innerColumnChildren.add(
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            // --- 「Min」を一文字ずつタイプ ---
-            AnimatedTextKit(
-              animatedTexts: [
-                TypewriterAnimatedText(
-                  'Min',
-                  textStyle: mindStyle,
-                  speed: const Duration(milliseconds: 200),
-                ),
-              ],
-              isRepeatingAnimation: false,
-              onFinished: () => setState(() => _minFinished = true),
-            ),
+        AnimatedBuilder(
+          animation: _titleController,
+          builder: (context, child) {
+            // Min
+            final String minText = 'Min';
+            final int minLength = minText.length;
+            final double minProgressThreshold = 0.3; // Minが表示されるまでの進捗
 
-            // --- 【透明な (e)】武尚さんの閃き ---
-            FadeTransition(
-              opacity: _eOpacity,
-              child: Text('(e)', style: mindStyle),
-            ),
+            // (e)
+            final String eText = '(e)';
+            final double eStartWidthAnim = 0.6; // (e)の幅アニメーション開始
+            final double eEndWidthAnim = 1.0; // (e)の幅アニメーション終了
 
-            // --- Diaryとの間の「少しの間隔」を 12px 固定で配置 ---
-            const SizedBox(width: 12),
+            // Diary
+            final String diaryText = 'Diary';
+            final int diaryLength = diaryText.length;
+            final double diaryStartThreshold = 0.3; // Diaryが表示され始める進捗
+            final double diaryEndThreshold = 0.6; // Diaryの表示が完了する進捗
 
-            // --- 「Diary」を一文字ずつタイプ (Minが終わったら開始) ---
-            if (_minFinished)
-              AnimatedTextKit(
-                animatedTexts: [
-                  TypewriterAnimatedText(
-                    'Diary',
-                    textStyle: normalDiaryStyle,
-                    speed: const Duration(milliseconds: 150),
+            // Min の表示文字数
+            int currentMinChars =
+                (_titleController.value / minProgressThreshold * minLength)
+                    .round()
+                    .clamp(0, minLength);
+            String displayedMin = minText.substring(0, currentMinChars);
+
+            // (e) の幅の進行度
+            double eWidthFactor = 0.0;
+            if (_titleController.value >= eStartWidthAnim) {
+              eWidthFactor =
+                  ((_titleController.value - eStartWidthAnim) /
+                          (eEndWidthAnim - eStartWidthAnim))
+                      .clamp(0.0, 1.0);
+            }
+
+            // Diary の表示文字数
+            int currentDiaryChars = 0;
+            if (_titleController.value > diaryStartThreshold) {
+              currentDiaryChars =
+                  ((_titleController.value - diaryStartThreshold) /
+                          (diaryEndThreshold - diaryStartThreshold) *
+                          diaryLength)
+                      .round()
+                      .clamp(0, diaryLength);
+            }
+
+            final String displayedD = currentDiaryChars > 0 ? 'D' : '';
+            final String displayedIary = currentDiaryChars > 1
+                ? diaryText.substring(1, currentDiaryChars)
+                : '';
+
+            return RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                children: [
+                  TextSpan(text: displayedMin, style: mindStyle),
+                  TextSpan(text: '', style: mindStyle), // n( の前のスペース
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.baseline,
+                    baseline: TextBaseline.alphabetic,
+                    child: SizedBox(
+                      width: _eTextWidth * eWidthFactor, // _eTextWidthを使用
+                      child: FadeTransition(
+                        opacity: _eFadeController, // _eFadeControllerで制御
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                          ), // ここで窮屈さを解消
+                          child: Text(
+                            eText,
+                            style: mindStyle,
+                            softWrap: false, // 絶対に改行させない
+                            overflow: TextOverflow.visible,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
+                  TextSpan(text: ' ', style: mindStyle), // ) D の間のスペース
+                  TextSpan(text: displayedD, style: mindStyle),
+                  TextSpan(text: displayedIary, style: normalDiaryStyle),
                 ],
-                isRepeatingAnimation: false,
-                onFinished: () {
-                  // 全ての文字が並び終わった 0.6秒後に、(e) をじわじわ宿らせる
-                  Future.delayed(const Duration(milliseconds: 600), () {
-                    _eFadeController.forward().then((_) {
-                      // 完成の余韻として 1.2秒待ってから、次の説明文へ
-                      Future.delayed(const Duration(milliseconds: 1200), () {
-                        if (mounted) {
-                          setState(() => _showLastPrompt = true);
-                        }
-                      });
-                    });
-                  });
-                },
-              )
-            else
-              // Diaryが出るまでの間、場所が崩れないように透明なDを置いておく
-              Text(
-                'D',
-                style: normalDiaryStyle.copyWith(color: Colors.transparent),
               ),
-          ],
+            );
+          },
         ),
       );
     } else {

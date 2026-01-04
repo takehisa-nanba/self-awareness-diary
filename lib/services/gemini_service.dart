@@ -317,4 +317,41 @@ class GeminiService {
       return '申し訳ありません。星との交信に、少し時間がかかっているようです。';
     }
   }
+
+  /// 新しいタグが5つのエゴ状態（CP, NP, A, FC, AC）のどれに最も近いかを判定します。
+  ///
+  /// [newTag] 分類する新しいタグ。
+  /// 戻り値: 最も近いと判定されたエゴ状態の略称 (例: 'CP')。分類できなかった場合はnull。
+  Future<String?> classifyNewTag(String newTag) async {
+    final prompt =
+        '''
+    以下のタグが、5つのエゴ状態（CP: 批判的な親, NP: 養育的な親, A: 大人, FC: 自由な子供, AC: 適応した子供）のどれに最も近いかを判定してください。
+    回答は、最も近いエゴ状態の略称のみを返してください。
+    例: タグ「ストレス」 -> AC
+    例: タグ「達成感」 -> CP
+    例: タグ「感謝」 -> NP
+    例: タグ「論理的」 -> A
+    例: タグ「興奮」 -> FC
+
+    タグ「$newTag」 -> 
+    ''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final classifiedTag = response.text?.trim();
+
+      // 返されたタグが有効なエゴ状態のいずれかであることを確認
+      final validEgoStates = ['CP', 'NP', 'A', 'FC', 'AC'];
+      if (classifiedTag != null && validEgoStates.contains(classifiedTag)) {
+        return classifiedTag;
+      } else {
+        // 分類できなかった場合や、予期せぬ応答の場合はnullを返す
+        debugPrint('AIタグ分類エラー: 予期せぬ応答 "$classifiedTag" for tag "$newTag"');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('AIタグ分類通信エラー: $e');
+      return null; // エラー時はnullを返す
+    }
+  }
 }

@@ -77,14 +77,17 @@ class DiagnosisProvider with ChangeNotifier {
   List<Map<String, String>> get questions => _questions;
 
   // 質問に対するユーザーの回答
-  final List<int> _answers = []; // 回答はスケール（例：1〜5）であると仮定
+  final List<int?> _answers = List.filled(53, null); // 回答は質問インデックスと回答値のリストで保持
 
   // 回答リストのゲッター
-  List<int> get answers => _answers;
+  List<int?> get answers => _answers;
 
   // 現在のユーザープロファイル
   UserProfile? _userProfile;
   UserProfile? get userProfile => _userProfile;
+
+  bool _isLoading = true;
+  bool get isLoading => _isLoading;
 
   final IsarService _isarService; // データベース操作のための依存関係
 
@@ -96,27 +99,34 @@ class DiagnosisProvider with ChangeNotifier {
 
   // Isarからユーザープロファイルを読み込む
   Future<void> _loadUserProfile() async {
+    _isLoading = true;
+    notifyListeners(); // UIにローディング開始を通知
+
     _userProfile = await _isarService.getUserProfile();
-    notifyListeners(); // プロファイル読み込み完了をUIに通知
+    _isLoading = false;
+    notifyListeners(); // プロファイル読み込み完了とUIに通知
   }
 
-  /// リストに回答を追加する
+  /// 質問インデックスと回答値を受け取り、リストに回答を追加する。
   ///
-  /// [answer] 追加する回答値（例：1〜5の整数）。
-  void addAnswer(int answer) {
-    // 回答数が質問数を超えない場合のみ追加
-    if (_answers.length < _questions.length) {
-      _answers.add(answer); // 回答リストに追加
-      // 全ての回答が収集されたら、回答を処理する
-      if (_answers.length == _questions.length) {
-        processAnswers();
-      }
+  /// [index] 回答する質問のインデックス。
+  /// [value] 追加する回答値（例：1, -1, 0）。
+  void addAnswer(int index, int value) {
+    if (index >= 0 && index < _answers.length) {
+      _answers[index] = value; // 回答をリストに格納
+      debugPrint(
+        'addAnswer: index=$index, value=$value, _answers.length=${_answers.length}',
+      );
       notifyListeners(); // 回答リストの変更をUIに通知
+    } else {
+      debugPrint('Error: Index out of bounds in addAnswer: $index');
     }
   }
 
   /// 収集された回答を処理し、スコアを計算する
   Future<void> processAnswers() async {
+    if (!isAllAnswered) return; // 未回答の質問がある場合は処理を中断
+
     // 実際のスコア計算ロジックのためのプレースホルダー
     // これには、回答をエゴグラムスコア（CP, NP, A, FC, AC）にマッピングすることが含まれる
     // デモンストレーションのために、ダミースコアを作成する
@@ -150,7 +160,7 @@ class DiagnosisProvider with ChangeNotifier {
     // 新しいプロファイルをIsarに保存する
     await _isarService.saveUserProfile(newProfile);
     _userProfile = newProfile; // プロバイダーのプロファイルを更新
-    _answers.clear(); // 処理後に回答リストをクリアする
+    _answers.fillRange(0, _answers.length, null); // 処理後に回答リストをクリアする
     notifyListeners(); // プロファイル更新と回答クリアをUIに通知
   }
 
@@ -158,35 +168,32 @@ class DiagnosisProvider with ChangeNotifier {
   ///
   /// [answers] ユーザーの回答リスト。
   /// [type] 計算するエゴグラムのタイプ（'CP', 'NP', 'A', 'FC', 'AC'）。
-  /// 戻り値：計算されたスコア（0〜99の範囲）。
-  int _calculateEgoGramScore(List<int> answers, String type) {
-    Map<String, int> rawScores = {'CP': 0, 'NP': 0, 'A': 0, 'FC': 0, 'AC': 0};
+  /// 戻り値：計算されたスコア（0〜100の範囲）。
+  int _calculateEgoGramScore(List<int?> answers, String type) {
+    int egoStateTotalScore = 0;
+    int questionCountForEgoState = 0;
 
-    // Define maximum possible scores for each ego state
-    // CP, NP, A have 11 questions, FC, AC have 10 questions
-    Map<String, double> maxScores = {
-      'CP': 11.0,
-      'NP': 11.0,
-      'A': 11.0,
-      'FC': 10.0,
-      'AC': 10.0,
-    };
-
-    for (int i = 0; i < answers.length; i++) {
-      if (i < _questions.length) {
-        String egoState = _questions[i]['egoState']!;
-        rawScores[egoState] = (rawScores[egoState] ?? 0) + answers[i];
+    for (int i = 0; i < _questions.length; i++) {
+      if (_questions[i]['egoState'] == type) {
+        questionCountForEgoState++;
+        egoStateTotalScore += (answers[i] ?? 0); // 回答がない場合は0とする
       }
     }
 
-    double rawScoreForType = rawScores[type]?.toDouble() ?? 0.0;
-    double maxScoreForType = maxScores[type] ?? 1.0; // Avoid division by zero
+    if (questionCountForEgoState == 0) return 50; // 該当する質問がない場合は中央値
 
-    // Normalize to 100 points
-    int normalizedScore = ((rawScoreForType / maxScoreForType) * 100).round();
+    // スコアを0-100の範囲に正規化
+    // 回答は -1, 0, 1 なので、質問数 * -1 から 質問数 * 1 の範囲
+    final double minPossibleScore = -questionCountForEgoState.toDouble();
+    final double maxPossibleScore = questionCountForEgoState.toDouble();
 
-    // Ensure score is within 0-100 range
-    return normalizedScore.clamp(0, 100);
+    // 現在の合計スコアを0-1に正規化
+    final double normalizedToZeroOne =
+        (egoStateTotalScore - minPossibleScore) /
+        (maxPossibleScore - minPossibleScore);
+
+    // 0-100にスケーリング
+    return (normalizedToZeroOne * 100).round().clamp(0, 100);
   }
 
   /// グリットレベル計算のためのプレースホルダー関数。
@@ -208,14 +215,23 @@ class DiagnosisProvider with ChangeNotifier {
     return variance; // グリットレベルの代理として分散を使用する
   }
 
+  /// 性格診断が完了しているかどうかを判定するゲッター。
+  bool get isAllAnswered => !_answers.contains(null);
+
+  /// 未回答の最初の質問のインデックスを返す。全て回答済みであれば-1を返す。
+  int get firstUnansweredIndex => _answers.indexOf(null);
+
+  /// 回答済みの質問の数を返すゲッター。
+  int get answeredCount => _answers.where((e) => e != null).length;
+
   /// 診断を開始するメソッド（例：ボタン押下から）。
   void startDiagnosis() {
-    _answers.clear(); // もしあれば、以前の回答をクリアする
+    _answers.fillRange(0, _answers.length, null); // もしあれば、以前の回答をクリアする
     notifyListeners();
     // 実際のアプリでは、質問を表示する画面にナビゲートし
     // 各回答に対して addAnswer() を呼び出す。
     debugPrint(
-      "Diagnosis started. Please answer 53 questions.",
+      "Diagnosis started. Please answer ${_questions.length} questions.",
     ); // print -> debugPrint
   }
 

@@ -24,6 +24,9 @@ class SettingsProvider extends ChangeNotifier {
 
   // 初回起動かどうかを示すフラグ
   bool isFirstLaunch = true;
+  // 性格診断が完了しているかどうかを示すフラグ (外部から更新される)
+  bool _isDiagnosisComplete = false;
+  bool get isDiagnosisComplete => _isDiagnosisComplete;
   // 設定読み込み中かどうかのフラグ
   bool _isLoading = true;
   bool get isLoading => _isLoading;
@@ -53,6 +56,10 @@ class SettingsProvider extends ChangeNotifier {
     // isFirstLaunchフラグの読み込み
     final firstLaunchFlag = await _isarService.getSetting('isFirstLaunch');
     isFirstLaunch = firstLaunchFlag != 'false'; // 'false'以外はtrueとする
+
+    // isDiagnosisCompleteフラグの読み込みは外部からの更新に委ねる
+    // final diagnosisCompleteFlag = await _isarService.getSetting('isDiagnosisComplete');
+    // isDiagnosisComplete = diagnosisCompleteFlag == 'true'; // 'true'の場合のみtrueとする
 
     // 開始ステップ設定の読み込み
     final savedStepSetting = await _isarService.getSetting('startFromStep2');
@@ -203,6 +210,9 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 性格診断のステータスをリセットし、未完了状態に戻します。
+  /// （このメソッドは、診断完了ステータスが外部で管理されるようになったため、使用されなくなりました。）
+
   /// チュートリアルの開始ステップを設定します。
   Future<void> setStartFromStep2(bool value) async {
     _startFromStep2 = value;
@@ -222,5 +232,13 @@ class SettingsProvider extends ChangeNotifier {
     // ティア変更時に利用回数をリロード＆リセットして、新しいティアの制限に合わせる
     await _loadAndCheckUsageCounts();
     notifyListeners();
+  }
+
+  /// 外部から性格診断の完了ステータスを更新するメソッド。
+  void updateDiagnosisStatus(bool isComplete) {
+    if (_isDiagnosisComplete != isComplete) {
+      _isDiagnosisComplete = isComplete;
+      notifyListeners();
+    }
   }
 }
