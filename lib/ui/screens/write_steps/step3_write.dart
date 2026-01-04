@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../domain/models/subscription_tier.dart';
+import '../../../providers/subscription_provider.dart';
 import '../../../providers/write_provider.dart';
 
 /// 日記作成プロセスにおけるステップ3のUIを構築するウィジェット。
@@ -47,6 +49,7 @@ class _Step3WriteState extends State<Step3Write> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<WriteProvider>();
+    final subscription = context.watch<SubscriptionProvider>(); // SubscriptionProviderを取得
 
     // 動的なガイドメッセージを生成
     final guideText =
@@ -76,44 +79,45 @@ class _Step3WriteState extends State<Step3Write> {
 
         const SizedBox(height: 12),
 
-        // AIからの深掘り質問（あれば）を表示するセクション
-        if (provider.isGenerating)
-          // AIが質問生成中の場合はローディングインジケータを表示
-          const Center(child: CircularProgressIndicator())
-        else if (provider.reflectionQuestion.isNotEmpty)
-          // AIからの質問がある場合は表示
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.tertiaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "🤖 AIからの問いかけ",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onTertiaryContainer,
-                      fontSize: 12,
+        // AIからの深掘り質問（Freeティアでなければ表示）
+        if (subscription.currentTier != SubscriptionTier.free)
+          if (provider.isGenerating)
+            // AIが質問生成中の場合はローディングインジケータを表示
+            const Center(child: CircularProgressIndicator())
+          else if (provider.reflectionQuestion.isNotEmpty)
+            // AIからの質問がある場合は表示
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "🤖 AIからの問いかけ",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onTertiaryContainer,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    provider.reflectionQuestion,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onTertiaryContainer,
-                      height: 1.5,
+                    const SizedBox(height: 8),
+                    Text(
+                      provider.reflectionQuestion,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onTertiaryContainer,
+                        height: 1.5,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
         // 自己分析用のテキスト入力フィールド
         TextField(
